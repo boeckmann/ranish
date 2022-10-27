@@ -1,4 +1,11 @@
 
+!!!NOTE: This is the old README file for versions up to 2.37.11.
+         See README.MD for newer versions.
+         The contact information in this document is outdated.
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
    Ranish Partition Manager     Version 2.37.11    September 15, 1998
 
 

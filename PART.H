@@ -334,7 +334,7 @@ void print_ide_info(void);
 
 void usage(void);
 void command_line(int argc, char **argv);
-
+void cmd_error(char *msg);
 int print_unknown(struct part_long *p);
 
 int print_embr(struct part_long *p);
@@ -465,6 +465,7 @@ void set_messages(void);
  {   0xA400, "-- reserved --",		0,	0,		0,		0 },
  {   0xA500, "FreeBSD, BSD/386",	1,	0,		0,		0 },
  {   0xA600, "-- reserved --",		0,	0,		0,		0 },
+ {   0xA900, "NetBSD",			1,	0,		0,		0 },
  {   0xB100, "-- reserved --",		0,	0,		0,		0 },
  {   0xB300, "-- reserved --",		0,	0,		0,		0 },
  {   0xB400, "-- reserved --",		0,	0,		0,		0 },

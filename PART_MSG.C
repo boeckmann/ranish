@@ -1,10 +1,10 @@
 #include "part.h"
 
      /* VERSION_DATE "2.37.05            June 10, 1998" */
-#define VERSION_DATE "2.37.12            Oct  18, 1998"
-#define VERSION      "2.37.12"
+#define VERSION_DATE "2.99.00            Oct  27, 2022"
+#define VERSION      "2.99.00"
 
-#define HOME_URL "http://www.users.intercom.com/~ranish/part/"
+#define HOME_URL "https://codeberg.org/boeckmann/ranish"
 
 
 #ifdef LANG_de		/* German  */
@@ -1310,4 +1310,3 @@ cs( HELP_CMD_LINE =
  os_desc[i].name = NAME_OS_UNKN;
 
 }/* set_messages */
-

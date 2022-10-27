@@ -1,6 +1,10 @@
 ; object files
 *.obj
 *.exe
+*.zip
+
+; temp files
+*.bak
 
 ; Mac files
 .DS_Store
