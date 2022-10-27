@@ -1,0 +1,903 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR"   CONTENT="Mozilla/4.05 [en] (Win95; I) [Netscape]">
+   <META NAME="DESCRIPTION" CONTENT="Aide de Partition Manager">
+   <META NAME="AUTHOR"      CONTENT="Mikhail Ranish, ranish@intercom.com, Translated: Kilian Cavalotti, kilian.cavalotti@crans.ens-cachan.fr">
+   <META NAME="ROBOTS"      CONTENT="INDEX,NOFOLLOW">
+   <META NAME="URL"         CONTENT="http://www.users.intercom.com/~ranish/part/help.htm">
+   <TITLE>Partition Manager Help</TITLE>
+</HEAD>
+<BODY>
+
+<PRE>
+Aide de Partition Manager (v2.37.10)
+
+   Qu'est-ce que la <A HREF="#part">table de partitions</A>, le <A HREF="#mbr">MBR</A>, l'<A HREF="#ipl">IPL</A>?
+
+   <A HREF="#save">Sauver et Restaurer le MBR</A>
+   <A HREF="#create">Cr‚er une nouvelle partition</A>
+   <A HREF="#format">Formater une partition</A>, <A HREF="#systems">systŠmes de fichiers support‚s</A>
+   <A HREF="#os_inst">Choses que vous devriez faire avant d'installer un nouvel OS</A>
+
+   <A HREF="#compact">Boot Manager Compact</A>
+   <A HREF="#advanced">Boot Manager Avanc‚</A>
+   <A HREF="#virus">D‚tection des Virus</A> et <A HREF="#hints">conseils</A>
+   <A HREF="#setup_adv_example">Lancer le DOS depuis le second disque dur</A>
+
+   <A HREF="#cmd_line">Options de la ligne de commande</A>
+
+   <A HREF="#moreinfo">Liens vers une aide suppl‚mentaire</A>
+
+   <A HREF="#contact">Contacter l'auteur et copyrights</A>
+
+<HR>
+
+<A NAME="part">Qu'est-ce que la table de partitions?
+
+     La table de partitions est situ‚e dans le premier secteur de chaque 
+  disque dur. Elle regroupe les informations de taille et de position des
+  partitions du disque. Qu'est-ce qu'une partition? C'est un morceau de l'
+  espace du disque, marqu‚ comme appartenant … un systŠme d'exploitation.
+  Par exemple, votre disque C: r‚side dans une partition du type <A HREF="#0x0600">BIGDOS</A>.
+
+     La plupart des disques n'ont qu'une partition, mais on peut vouloir
+  ex‚cuter plus d'un systŠme d'exploitation sur son ordinateur, et donc,
+  avoir … diviser ses disques en plusieurs partitions. C'est pourquoi la
+  table de partitions garde ‚galement un indicateur de la partition
+  actuellement 'Active' - celle depuis laquelle l'ordinateur a d‚marr‚.
+<A NAME="mbr"></A><A NAME="ipl"></A>   
+     Quand vous allumez votre ordinateur, le BIOS charge en m‚moire le
+  premier secteur du disque dur, appel‚ MBR (Master Boot Record). En plus
+  de la table de partitions, ce secteur contient un IPL (Initial Program
+  Loader) - un bout de code qui cherche dans la table de partitions le
+  marqueur de la partition 'Active', et charge en m‚moire le secteur de
+  d‚marrage du systŠme d'exploitation correspondant.
+   
+      Un IPL standard charge simplement le secteur de d‚marrage sans aucun
+  message ni question. C'est bien si vous n'avez qu'un seul OS, mais si
+  vous en avez plusieurs, il vous faut quelque chose de plus sophistiqu‚.
+  Par exemple, l'IPL fourni avec ce programme peut demander …
+  l'utilisateur, au <A HREF="#ipl_mesg">moment du boot</A> quel OS il veut d‚marrer, et il se
+  rapellera de son choix, de telle sorte qu'au prochain d‚marrage, il
+  bootera sur le mˆme systŠme d'exploitation.
+
+      La table de partitions est limit‚e … 4 entr‚es au maximum. Ce
+   programme vous permet de cr‚er jusqu'… 31 partitions bootables si vous
+   installez le <A HREF="#setup_adv">Boot Manager Avanc‚.</A>
+
+   <A HREF="#moreinfo">Lien vers plus d'infos</A>
+
+<HR>
+
+<A NAME="save"></A><A NAME="restore"></A>Sauver et Restaurer le MBR
+
+      La premiŠre chose que vous devez faire avant de jouer avec ce
+   logiciel est de sauvegarder votre MBR. 
+  
+      Tout d'abord, cr‚ez une disquette bootable et copiez y ce programme.
+   Ensuite, sauvegardez votre MBR dans un fichier. Vous pouvez le faire
+   en utilisant la commande S du mode interactif, ou bien en lan‡ant le
+   programme depuis la ligne de commande:
+   
+           part -s a:\saved.mbr
+    
+   Si quelque chose se passe mal, vous pourrez toujours restaurer le MBR
+   original en lan‡ant la commande:
+         
+           part -l a:\saved.mbr
+   
+      Si vous utilisez la mˆme disquette avec plusieurs ordinateurs, 
+   veillez … ne pas ‚crire le MBR d'un disque dur sur un autre. Cela ne
+   fera pas de mal, mais vous passerez quelques minutes de panique en
+   pensant que vous avez perdu toutes vos donn‚es, avant de r‚aliser ce
+   qui s'est pass‚. Faites donc attention … nommer diff‚remment les
+   fichiers dans lesquels vous sauvegardez les MBRs.
+   
+      Mais mˆme si vous chargez la mauvaise table, la ligne deviendra
+   probablement <A HREF="#conflict">ROUGE</A>, car la configuration de la partition sera en
+   conflit avec la g‚om‚trie actuelle du disque.
+      
+<HR>
+
+<A NAME="active"></A>S‚lectionner la partition active
+
+      Pour rendre une partition active, appuyez sur ESPACE en mode
+   interactif, ou bien, depuis la ligne de commande:
+   
+            part -p        affiche la table de partitions
+            part -a n      o— n est le num‚ro de la partition
+      
+      Si vous avez install‚ un IPL, vous pouvez s‚lectionner la partition
+   active et presser ESPACE pour la rendre inactive. Lorsque vous 
+   red‚marrerez l'ordinateur, il essaiera de booter depuis le second
+   disque dur, ou depuis une disquette.
+
+<HR>
+
+<A NAME="advanced"></A>Boot Manager Avanc‚
+
+       Avec le Boot Manager Avanc‚, vous pouvez cr‚er jusqu'… 31
+   partitions bootables. Il garde sa propre table de partitions dans un
+   espace s‚par‚ sur le disque.
+
+      Quand vous d‚marrez l'ordinateur, la premiŠre partie du Boot Manager
+  Avanc‚, qui se trouve dans le MBR, essaie de lire la deuxiŠme partie
+  depuis le disque et v‚rifie son int‚grit‚. En cas de corruption, il
+  demande … l'utilisateur s'il veut d‚marrer depuis A: ou depuis le disque
+  dur.
+
+       AprŠs cela, le Boot Manager Avanc‚ effectue une <A HREF="#virus">recherche de virus</A>,
+  puis il compare les enregistrements du MBR avec sa propre table de
+  partitions. S'il constate des changements, le Boot Manager Avanc‚ copie
+  les enregistrements modifi‚s dans sa propre table de partitions et
+  recommande … l'utilisateur de lancer part.exe pour v‚rifier les
+  modifications.
+  Voir ‚galement <A HREF="#os_inst">notes</A> sur l'installation d'un nouvel OS.
+
+       Ensuite, le Boot Manager Avanc‚ propose un menu o— vous pouvez
+  s‚lectionner la partition depuis laquelle vous voulez d‚marrer. Une fois
+  votre choix effectu‚, il copie l'enregistrement de la partition
+  s‚lectionn‚e dans la table du MBR et cache le reste de l'espace disque.
+  
+  Touches du Boot Manager Avanc‚:
+
+  ENTREE - boote depuis la partition s‚lectionn‚e
+           (vous pouvez aussi appuyer sur 1-9)
+  ESC    - boote depuis la partition s‚lectionn‚e, mais n'enregistre pas
+           ce choix pour le prochain d‚marrage.
+  A      - boote depuis A: et place la partition s‚lectionn‚e dans le MBR
+           (Q pour les claviers fran‡ais)
+  H      - boote depuis A: mais cache toutes les partitions du disque dur,
+           … l'exception de la premiŠre partie de l'espace libre plus
+           grande que 63 secteurs. (Utile pour installer un nouvel OS).
+  TAB    - boote depuis le disque dur suivant.
+
+  ALT-ENTREE - comme ENTREE, mais ne place pas les touches dans le buffer
+           clavier si une combinaison de touches est sp‚cifi‚e dans le
+           menu de boot.
+
+<A NAME="setup_adv"></A>Editer le Menu du Boot Manager Avanc‚
+
+  Pour chaque item dans le menu, vous pouvez sp‚cifier:   (voir <A HREF="#setup_adv_example">exemple</A>)
+  
+  - P‚riph‚rique depuis lequel vous voulez booter (Dev)
+
+       C - disque actuel (celui sur lequel r‚side le menu)
+       D - disque dur suivant
+       A - premier lecteur de disquettes
+  
+  - Quelle partition doit ˆtre active sur ce disque (0 - pour aucune).
+  
+  - Colonne dans laquelle cette partition doit ˆtre plac‚e dans le MBR.
+    (voir <A HREF="#setup_adv_example">exemple</A>)
+
+  - Quelles partitions doivent ˆtre visibles depuis la partition
+    bootable. Les options sont: la derniŠre (Last), la pr‚c‚dente (Prev),
+    la suivante (Next), les trois derniŠres (Last3) partitions, en plus
+    de la partition depuis laquelle vous bootez.
+
+  - Si cet item du menu doit ˆtre prot‚g‚ par un mot de passe (PP).
+
+  - Le nom que vous voulez voir dans le menu
+  
+  - Les combinaisons de touches que vous voulez placer dans le buffer du
+    clavier avant de d‚marrer le systŠme d'exploitation. (par exemple,
+    simuler F8 avant de d‚marrer Windows 95 fera apparaŒtre le menu de
+    d‚marrage.)
+
+    
+<A NAME="setup_adv_opt"></A>  Si vous faites Alt-O vous pouvez changer les options du boot manager:
+ 
+      - Titre du menu de boot
+      - Permettre la recherche de <A HREF="#virus">virus de boot</A>
+      - Effacer l'‚cran avant d'afficher le menu
+      - Limite de temps (0 force le boot manager … s'arrˆter et … attendre
+        l'intervention de l'utilisateur)
+      - Partition par d‚faut (annule la derniŠre s‚lection m‚moris‚e)
+      - Mot de passe optionnel pour le Boot Manager Avanc‚
+      - Ignore les partitions inutilis‚es, lors du test "Prev", "Next",
+        "Last".
+
+      L'activation du mot de passe empˆche de booter depuis une disquette
+ (via les touches A,H) et depuis le second disque dur via TAB. Cependant,
+ vous pouvez cr‚er une ligne de menu pour d‚marrer depuis une disquette ou
+ le disque suivant, sans demander de mot de passe (il suffit de ne pas
+ activer l'option "PP" - protection par mot de passe).
+
+<HR>
+
+<A NAME="setup_adv_example"></A>Exemple de r‚glage du Boot Manager Avanc‚
+
+ Supposons que vous ayez deux disques durs:
+
+      Votre nouveau disque de 4.3 Go       Un ancien disque de 340 Mo
+
+      1  BootManagerAvanc‚  30k            1  DOS FAT-16     340M
+      2  Windows FAT-32   2600M
+      3  Windows NT NTFS   400M
+      4  Linux             400M
+      5  Linux swap         30M
+      6  DOS Extended      800M
+ 
+ Le Menu du Boot Manager Avanc‚ pourrait ressembler … ceci:
+ 
+      #  Dev  Partitions  Nom                     Touches
+      
+      1   C   2/*  Last   Windows 95                N
+      2   C   2/*  Last   Windows 95 / Prompt       Y  <-  "F8 6 Entr‚e"
+      3   C   3/2  Last   Windows NT                N
+      4   C   4/3  Next   Linux                     N
+      5   C   4/3  Last3  Linux (voit extended)     N
+      6   D   6/*  ----   Old MS-DOS (voit ext)     N
+      7   D   0    ----   Old MS-DOS (ne voit rien) N
+    
+    Note: pour lancer le DOS depuis le second disque dur, vous
+ devez suivre les ‚tapes suivantes:
+       
+   - Installer le Boot Manager Compact ou Avanc‚ sur le second disque
+   - Aller dans le setup de la partition FAT-16 et r‚gler le num‚ro
+     du disque (Drive number) … 129
+   - Vous assurer que vous n'avez aucune partition primaire FAT-16/12
+     visible sur le premier disque quand vous bootez depuis le second.
+
+    Notez ‚galement que Windows NT et Linux seront respectivement plac‚s
+ dans les colonnes 2 et 3, dans la table de partitions, puisqu'on ne se
+ soucie pas d'o— s'arrˆte Windows 95.
+    Il est important que Windows NT soit toujours dans la mˆme colonne,
+ car son boot.ini a la syntaxe suivante:
+ 
+ multi(0)disk(0)rdisk(0)partition(2)\WINNT="Windows NT" /basevideo /sos
+
+ Et il sera incapable de trouver son noyau si on le d‚place dans une
+ colonne diff‚rente de la table de partitions.
+
+<HR>
+<A NAME="setup_adv_example2"></A>Un autre exemple - pr‚parer l'installation de Windows 98 (ou d'un autre OS)
+   
+   - Cr‚ez une disquette bootable et copiez-y Partition Manager
+   - Cr‚ez puis formatez la partition
+   - Editez le menu de boot
+
+           Vos partitions
+
+    1  BootManagerAvanc‚    30k
+    2  Windows FAT-32     1600M     <-- Partition Windows 95
+    3  Windows FAT-32     1200M     <-- Partition cr‚‚e et format‚e
+    4  DOS Extended        800M       \ pour Windows 98
+ 
+      Menu du Boot Manager Avanc‚
+ 
+      #  Dev  Partitions  Nom                    Touches
+      
+      1   C   2/*  Last   Windows 95                N
+      2   C   2/*  Last   Windows 95 / Prompt       Y  <-  "F8 6 Entr‚e"
+      3   C   3/*  Last   Windows 98                N
+
+   - Sauvegardez ces donn‚es sur le disque dur et dans un fichier sur
+     une disquette
+   - Red‚marrez l'ordinateur
+   - Dans le menu du Boot Manager, s‚lectionnez "Windows 98" et appuyez
+     sur A (ou Q pour les claviers fran‡ais) pour booter depuis une
+     "Disquette de D‚marrage Windows 98"
+   - AprŠs l'installation de Windows 98, lancez Partition Manager pour
+     revoir les changements dans le MBR et <A HREF="#os_inst">r‚installer</A> le boot manager
+     si n‚cessaire.
+
+<HR>
+
+<A NAME="compact"></A><A NAME="setup_ipl"></A>Boot Manager Compact 
+    
+       Le Boot Manager Compact tient en 446 octets et ne n‚cessite pas
+   d'espace disque au-del… du MBR. C'est simplement un <A HREF="#ipl">IPL</A>.
+
+   Quand vous l'installez, vous avez quatre options:
+   
+       - Permettre la recherche des <A HREF="#virus">virus de boot</A>
+       - Limite de temps du prompt
+       - Partition par d‚faut (annule la derniŠre s‚lection m‚moris‚e)
+       - Endroits par d‚faut d'o— booter si aucune des partitions n'est
+         active. Les possibilit‚s sont A: et le disque dur suivant.
+
+  Astuce: si vous d‚finissez la partition par d‚faut comme A, l'ordinateur
+          d‚marrera toujours depuis A: ; si vous choisissez Tab, il
+          bootera depuis le second disque dur ; et si vous choisissez
+          Espace, il s'arrˆtera et attendra votre choix.
+
+<HR>
+
+<A NAME="ipl_mesg"></A>Comprendre les messages du Boot Manager Compact
+
+       Message                         Description
+
+                          Pressez ESC pour passer le prompt et booter l'OS
+                          Pressez ESPACE pour arrˆter et attendre la
+                          s‚lection
+"Booting from: HD1/1..."  Pressez 1-4 pour booter depuis la partition
+                          correspondante
+"Booting from: HD1/_"     Pressez A (ou Q) pour booter depuis une disquette
+                          ou TAB pour booter depuis le second disque.
+                          Toute autre touche fera reprendre le d‚marrage
+                          et restera dans le buffer. Par exemple F4, F5,
+                          F8, ... (voir <A HREF="#hints">conseils</A>)
+
+"Writing changes..."      l'IPL sauvegarde votre s‚lection dans le MBR.
+
+"Error!"                  Erreur de lecture sur le disque ou s‚lection
+                          d'une partition vide.
+
+"Virus !!!"               l'IPL a trouv‚ que l'un des vecteurs
+                          d'interruption ne pointe pas vers la m‚moire
+                          ROM BIOS (voir <A HREF="#virus">protection contre les virus</A>).
+                          Vous pouvez appuyer sur ENTREE pour continuer
+                          le d‚marrage, mais il serait pr‚f‚rable
+                          d'‚teindre l'ordinateur et d'ex‚cuter un
+                          logiciel antivirus, aprŠs avoir boot‚ depuis une
+                          disquette saine.
+
+<HR>
+
+<A NAME="virus"></A>Protection contre les virus
+
+      L'IPL qui accompagne ce program peut d‚tecter les virus avant mˆme
+   que les systŠme d'exploitation ne se charge en m‚moire. C'est un point
+   important, car quelques virus de <A HREF="#mbr">MBR</A> ne peuvent pas ˆtre d‚tect‚s par
+   les antivirus qui sont charg‚s aprŠs le systŠme d'exploitation.
+
+      La d‚tection des virus consiste … v‚rifier 29 vecteurs
+   d'interruption de int 0h … int 1Ch. Ils doivent pointer vers les
+   adresses C000:0000h et suivantes, o— r‚side la ROM BIOS. Ces
+   interruptions contr“lent toutes les fonctions vitales du systŠme, comme
+   l'horloge, l'affichage, le clavier et les disques.
+   
+      Si l'une de ces interruptions a ‚t‚ chang‚e, il est trŠs probable
+   qu'un virus ait infect‚ le systŠme. Dans ce cas, l'IPL s'arrˆte et
+   avertit l'utilisateur. Vous avez le choix de continuer … d‚marrer avec
+   le virus en m‚moire, ou de red‚marrer le systŠme et de lancer un
+   antivirus. Voir la section sur les <A HREF="#ipl_mesg">messages de l'IPL</A>.
+
+      Toutefois, sur certains systŠmes, cette m‚thode de d‚tection des
+   virus produit des fausses alarmes. Dans ce cas, vous pouvez d‚sactiver
+   la d‚tection des virus.
+<A NAME="hints"></A>
+       Une autre maniŠre de se prot‚ger des virus est d'‚viter de booter
+   accidentellement avec le lecteur de disquettes. Ce programme vous
+   permet d'‚viter cela, tout en restant capable de booter depuis une
+   disquette quand vous en avez besoin. Pour cela:
+
+     1. Installez le Boot Manager Compact/Avanc‚ qui accompagne ce
+        programme.
+
+     2. Changez la s‚quence de boot en C:,A: dans le setup du BIOS.
+    
+     3. Quand vous devez booter depuis A:, appuyez sur A (Q si vous
+        utilisez un clavier fran‡ais) au <A HREF="#ipl_mesg">moment du d‚marrage</A>.
+
+     Cette astuce vous permet non seulement de vous pr‚server des virus,
+  mais aussi d'accel‚rer votre travail. C'est particuliŠrement
+  impressionant si vous utilisez QEMM 8.xx avec MS-DOS ou Windows 95. 
+
+     D‚finissez l'option "BootFloppy:N" dans le Quick Boot de QEMM et
+  ajoutez "SWITCHES=/F" … votre CONFIG.SYS.
+
+     Au prochain d‚marrage, le Quick Boot de QEMM passera le test de la
+  m‚moire BIOS et vous amŠnera directement au prompt du Boot Manager
+  Compact, ou vous vous sentirez plus … l'aise pour appuyer sur F4, F5,
+  ou F8 ...
+
+<HR>
+
+<A NAME="create"></A>Cr‚er une nouvelle partition
+
+      Pour cr‚er une nouvelle partition, il suffit de trouver un
+   enregistrement inutilis‚ dans la table de partitions et de presser
+   INS, puis de s‚lectionner le type de SystŠme de Fichiers d‚sir‚.
+   
+      AprŠs cela, Partition Manager d‚finira automatiquement les valeurs
+   de cylindres, tˆtes et secteurs (CHS)
+   
+      Dans la plupart des cas, vous n'avez pas besoin de modifier ces
+   valeurs. Mais si vous avez … l'esprit un sch‚ma de partitionnement
+   particulier, vous pouvez les changer. Quand vous faites cela, veillez
+   … d‚marrer et finir les partitions … la frontiŠre d'un cylindre (ou
+   d'une tˆte). Ce n'est pas absolument n‚cessaire, mais fortement
+   recommand‚. Par exemple, si votre disque dur possŠde 16 tˆtes et 63
+   secteurs par tˆte, vous pourriez d‚marrer un partition … la tˆte 0,
+   secteur 1, et la finir en tˆte 15, secteur 63.
+   
+<A NAME="0xFF00"></A>
+      Si vous voulez installer plusieurs systŠmes d'exploitation comme
+   MS-DOS, Windows 95, ou Windows NT, et que vous voulez ‚viter qu'ils
+   interfŠrent les uns avec les autres, vous pouvez cacher les partitions
+   existantes, installer le systŠme d'exploitation dans une nouvelle,
+   puis les rendre … nouveau visibles.
+
+      Pendant que vous entrez les paramŠtres, les partitions peuvent
+   devenir rouges. Ne vous en pr‚occupez pas avant d'avoir termin‚.
+<A NAME="conflict"></A>
+      La couleur rouge d'une partition signifie que les paramŠtres
+   semblent invalides ou en conflit avec la g‚om‚trie actuelle du disque.
+   
+      Pour vous aider … d‚terminer ce qui ne va pas, j'ai d‚fini quatre
+   codes d'erreur. Ils apparaissent en rouge sur la droite quand vous
+   placez le curseur sur une partition invalide.
+      
+   mbr: la partition recouvre le MBR dans le premier secteur du disque
+        ou d'une partition dos ‚tendue (Extended Dos)
+        
+   plage (range): les valeurs de cylindre, tˆte, ou secteur (CHS) de la
+        partition sont en dehors des limites du disque ou de la partition
+        dos ‚tendue, ou bien elle finit avant l'endroit o— elle commence.
+        D‚placez le curseur sur le champ CHS pour voir les valeurs
+        permises.
+
+   superpos‚ (overlapped): deux partitions se recouvrent.
+   
+   incoh‚rent (inconsistent): ce message signifie que les valeurs CHS ne
+        correspondent pas au secteur de d‚part et … la taille de la
+        partition, qui sont ‚galement stock‚es dans la table de
+        partitions. Cela se produit le plus souvent lorsque la table est
+        endommag‚e ou que la traduction de la g‚ometrie du disque dans le
+        BIOS a chang‚ depuis la derniŠre modification de la table de
+        partitions. Cette erreur apparaŒt ‚galement si vous avez entr‚ la
+        valeur 0 pour un secteur (le secteur doit ˆtre au moins … 1).
+
+        
+      Si la couleur rouge apparaŒt dŠs le lancement, cela peut-ˆtre d–
+   soit au changement du contr“leur du disque ou des paramŠtres du BIOS,
+   soit … la corruption du MBR. Dans ce cas, ne changez aucune valeur …
+   moins d'ˆtre absolument s–r de ce que vous faites.
+      Astuce pour les professionnels: la maniŠre dont le BIOS repr‚sente
+   la g‚om‚trie du disque n'a pas d'importance, seuls le nombre relatif
+   des secteurs et la taille des partitions compte. Pour r‚gler le
+   problŠme de l'incoh‚rence, vous devez passer en mode LBA en appuyant
+   sur F4, noter la taille de la partition, la changer, puis restaurer la
+   bonne valeur. Cela forcera la programme … recalculer les valeurs CHS
+   selon la g‚ometrie actuelle du disque.
+      Cependant, gardez deux choses … l'esprit: pour ce que je peux en
+   dire, le DOS utilise les valeurs CHS pour booter et n'utilise pas les
+   champs secteur de d‚marrage/nombre de secteurs. A la place, il utilise
+   le champ "secteurs de la partition principale" et "nombre total de
+   secteurs" de son enregistrement de boot.
+
+      Si vous avez d‚j… utilis‚ OnTrack DDO ou Ez-Drive, vous devez savoir
+   qu'ils faussent les r‚sultats: OnTrack, de 63 secteurs et Ez-Drive,
+   d'un secteur. Vous devez donc tenir compte de ces changements dans les
+   enregistrements de boot DOS.
+
+<HR>
+
+<A NAME="format"></A>Formater une partition
+      
+      Vous pouvez formater des partitions ou juste v‚rifier l'abscence de
+   secteurs d‚fectueux sur la surface d'un disque sans d‚truire aucune
+   donn‚e.
+   
+      Pour v‚rifier la partition n, appuyez sur V en mode interactif, ou
+   bien lancez:
+      
+             part -v n
+
+      Pour formater la partition n, pressez F en mode interactif, ou bien
+   lancez:
+      
+             part -f n options ...
+      
+      Les options de formatage d‚pendent du <A HREF="#systems">systŠme de fichiers</A> pour
+   lequel vous voulez formater la partition.
+   
+Notes importantes concernant le formatage de partitions DOS
+
+      Tout d'abord, le DOS ne peut pas voir les partitions nouvellement
+   cr‚‚es avant d'avoir reboot‚, car il ne regarde la table de partitions
+   qu'une seule fois.
+      Donc si vous cr‚ez et/ou formatez une nouvelle partition, vous devez
+   red‚marrer avant de pouvoir l'utiliser.
+   
+      Si la partition est d‚j… mont‚e (si vous pouvez la voir comme un
+   lecteur DOS) et si vous avez format‚ la partition avec de nouveaux
+   paramŠtres, vous devez ‚galement red‚marrer l'ordinateur, car le DOS
+   garde en m‚moire les anciens paramŠtres, et d‚teriorera certainement le
+   disque si vous essayez d'‚crire dessus sans rebooter.
+
+      L'autre problŠme concerne les caches disque. Partition Manager les
+   vide en utilisant l'API SmartDrive v 4.00+. La plupart des nouveaux
+   programmes de cache, comme PC-Cache 8.0, NCACHE2, SpeedDrive,
+   supportent cette API. Mais si vous avez un autre programme de cache,
+   vous devriez le d‚sactiver avant de formater les partitions DOS, ou
+   bien rebooter l'ordinateur aprŠs le formatage.
+
+      La diff‚rence de comportement entre part.exe et format.com est que
+   part formate les partitions par num‚ro dans la table de partitions,
+   tandis que format procŠde par lettre dans la liste des p‚riph‚riques
+   DOS. Donc vous ne dvriez pas utiliser de logiciels qui accŠdent aux
+   partitions via le DOS avant d'avoir reboot‚, mais vous pouvez utiliser
+   des programmes qui accŠdent directement aux partitions, sans passer par
+   le DOS. Par exemple, zpart, qui compresse et d‚compresse des partitions
+   entiŠres dans et depuis des fichiers.
+
+      Limitation: actuellement, ce programme ne permet pas de formater des
+   lecteurs logiques DOS depuis la ligne de commande - vous devrez utiliser
+   le mode interactif.
+
+<HR>
+
+<A NAME="os_inst"></A>Sujets importants sur l'installation d'un nouvel OS
+
+      Windows 95 et quelques autres sytŠmes d'exploitation, durant
+   l'installation, remplacent votre <A HREF="#ipl">IPL</A> courant avec
+   leur propre code. Si vous avez install‚ le Boot Manager Compact/Avanc‚
+   sur votre disque dur, vous ne les verrez plus au d‚marrage suivant.
+
+      J'ai travaill‚ sur ce sujet. Cela ne doit pas se solder par une
+   perte de donn‚es, au moins avec Windows 95. Au pire des cas, vous
+   n'aurez qu'… lancer part.exe et r‚installer le Boot Manager. Mais pour
+   vous assurer de ne rien perdre, proc‚dez comme suit avant d'installer
+   un nouvel OS:
+   
+      - Cr‚ez une disquette bootable et copiez-y Partition Manager.
+      - Lancez Partition Manager et cr‚ez une partition pour le nouvel OS.
+      - Si possible, formatez-la avec Partition Manager.
+      - Dans le Boot Manager Avanc‚, ‚ditez le menu de boot (voir <A HREF="#setup_adv_example2">exemple</A>)
+      - Sauvegardez les donn‚es de Partition Manager sur la disquette. (S)
+      - Rebootez l'ordinateur et installez le nouvel OS.
+   
+      Si le MBR a ‚t‚ modifi‚ par l'installation de l'OS, v‚rifiez les
+   changements et r‚installez le Boot Manager. (Appuyez sur F2 pour sauver
+   le MBR et installer le code ex‚cutable du Boot Manager Avanc‚ sur le
+   disque).
+   
+<HR>
+
+<A NAME="systems"></A>SystŠmes de fichiers support‚s
+
+      <A HREF="#0x0000">Partition inutilis‚e</A>
+      <A HREF="#0x0100">SystŠme de fichiers classique MS-DOS</A>
+      <A HREF="#0x0B00">SystŠme de fichiers Windows 95 FAT-32</A>
+      <A HREF="#0x0500">Partition DOS ‚tendue</A>
+      <A HREF="#make_primary">Rendre les partitionslogiques bootables</A>
+
+<HR>
+<A NAME="0x0000"></A>Partition inutilis‚e
+
+      Cela indique simplement que l'entr‚e est disponible dans la table
+   de partitions. Ca ne dit rien sur l'espace libre sur le disque. Vous
+   devez vous le repr‚senter par vous-mˆme.
+
+      Cependant si vous sp‚cifiez un endroit de d‚but et de fin pour
+   une partition de type "inutilis‚", Partition Manager vous permettra
+   de la formater et de v‚rifier l'espace disque.
+   
+      Le formatage admet deux options: "/destructive" ou "/clean". Le
+   premier procŠde … un formatage bas niveau du disque, le second remplit
+   l'espace disque avec des z‚ros.
+
+<HR>
+<A NAME="setup_fat"></A><A NAME="0x0100"></A><A NAME="0x0400"></A><A NAME="0x0600"><A NAME="0x1100"></A><A NAME="0x1400"></A><A NAME="0x1600"></A>SystŠme de fichiers classique MS-DOS
+
+	0x01, "DOS FAT-12"
+        0x04, "DOS FAT-16 (moins de 32Mo)"
+        0x06, "BIGDOS FAT-16 (plus de 32Mo)"
+
+   Tous les systŠmes de fichiers ont la mˆme structure:
+      
+        [Secteur de boot]
+        [PremiŠre copie de la FAT]
+        [Seconde copie de la FAT]
+        [R‚peroire racine]
+        [Cluster 2]
+        [Cluster 3]
+        [Cluster 4]
+   	...
+
+      Les secteur de Boot, les FAT, le r‚pertoire racine et les clusters
+   ont une taille fixe que vous ne pouvez choisir qu'au moment du
+   formatage du disque.
+      L'espace pour tous les sous-r‚pertoires et les fichiers est allou‚
+   par clusters. Si la taille d'un cluster est 8 secteurs = 4096 octets,
+   quand vous cr‚ez un fichier avec une taille d'un octet, il occupera la
+   totalit‚ des 4096 octets du cluster.
+      Il y a une entr‚e dans la FAT (Table d'Allocation des Fichiers) pour
+   chaque cluster, qui indique si le cluster est libre, allou‚ ou
+   endommag‚. Ainsi la taille de la FAT d‚termine le nombre maximal de
+   clusters.
+
+      Le systŠme de fichiers FAT-12 est limit‚ … 4084 clusters. Il est
+   utilis‚ sur les disquettes, mais vous pouvez ‚galement l'employer pour
+   des petites partitions.
+   
+      La FAT-16 est utilis‚e sur les premiers disques durs. La premiŠre
+   version pouvait atteindre 65000 clusters sur des partitions jusqu'…
+   32 Mo.
+   
+      La FAT-16 BIGDOS, qui est arriv‚e avec le DOS 3.31 n'a plus la
+   limitation des 32 Mo et peut aller jusqu'… 2 Go. Pour la compatibilt‚
+   descendante, toutes les versions du DOS sup‚rieures … la 3.31 acceptent
+   … la fois la FAT-12 et la FAT-16 pour les partitions BIGDOS.
+
+      Ce programme inclut un utilitaire de formatage qui supporte ces
+   trois systŠmes de fichiers. Il accepte les options suivantes:
+
+      part -f n [/quick | /destructive] [/l:label_volume]
+                [/c:sect_par_cluster] [/x:nb_max_sect | /x:disk]
+
+      Si vous sp‚cifiez l'option "quick" (rapide), le programme supposera
+   que votre disque dur ne possŠde pas de secteur d‚fectueux. Vous pouvez
+   v‚rifier le disque une fois, puis s'il ne contient pas d'erreur, vous
+   pouvez utiliser le formatage rapide.
+ 
+      Si vous ne sp‚cifiez pas de taille de cluster, elle sera choisie
+   automatiquement selon la taille de la partition, au minimum … 4
+   secteurs. Voici une table pour la FAT-16 BIGDOS:
+
+               Taille des clusters     Taille maximale de la partition
+
+           1 secteur        512 octets          32 Mo
+       *   2 secteurs     1,024 octets          64 Mo      le '*' indique
+       *   4 secteurs     2,048 octets         128 Mo      les tailles de
+       *   8 secteurs     4,096 octets         256 Mo         cluster
+       *  16 secteurs     8,192 octets         512 Mo       recommand‚es.
+       *  32 secteurs    16,384 octets           1 Go
+       *  64 secteurs    32,768 octets           2 Go
+         128 secteurs    65,536 octets           4 Go
+
+      Bien que vous puissiez formater un disque avec chacune de ces
+   tailles de cluster, il est d‚conseill‚ d'utiliser de trŠs petites ou
+   de trŠs grandes valeurs. Beaucoup de logiciels comportent des bugs
+   ‚tranges … ce sujet. Par exemple, SCANDISK plante si la taille des
+   clusters est 128, tandis que Norton Disk Doctor semble fonctionner sans
+   problŠme.
+
+      En sp‚cifiant le paramŠtre nb_max_sect, vous pouvez r‚server de
+   l'espace dans la FAT pour une future expansion de la partition. Si vous
+   tapez "/x:disk" (exactement comme c'est ‚crit), le formatage cr‚era une
+   FAT assez grande pour que vous puissiez ‚tendre votre partition … tout
+   le disque.
+   
+      Vous pouvez r‚duire la taille de la partition. Pour cela, lancez
+   quelque utilitaire de d‚fragmentation (comme DEFRAG.EXE). Puis allez
+   dans l'‚cran de configuration de part.exe (s‚lectionnez la partition et
+   appuyez sur Entr‚e). L'une des lignes indique la taille minimale de la
+   partition, bas‚e sur le dernier cluster occup‚ par des donn‚es. La
+   valeur doit ˆtre ‚gale … la somme des tailles des fichiers et
+   r‚pertoires sur votre disque. Si elle est plus grande, cela signifie
+   que des fichiers cach‚s n'ont pas ete d‚plac‚s par l'utilitaire de
+   d‚fragmentation. Vous devez trouver ces fichiers (par exemple Norton
+   Speed Disk indique leur nom), leur enlever l'attribut systŠme et/ou
+   cach‚, et relancer la d‚fragmentation. Mais soyez prudent en les
+   d‚pla‡ant, car quelques logiciels ont besoin de l'emplacement absolu
+   de ces fichiers pour leur v‚rification d'installation ill‚gale.
+
+<HR>
+<A NAME="setup_fat32"></A><A NAME="0x0B00"></A><A NAME="0x1B00"></A>SystŠme de fichiers Windows 95 FAT-32
+
+	0x0B, "Windows 95 FAT-32"
+
+      Ce systŠme de fichiers a ‚t‚ cr‚‚ pour supporter des disques de
+   capacit‚ sup‚rieure … 2 Go, qui ‚tait la limite de la FAT-16. Les
+   partitions FAT-32 peuvent atteindre 2 To (2048 Go).
+
+   Il possŠde la structure suivante:
+      
+        [Enregistrement de Boot (3 secteurs)]
+        [Copie de Sauvegarde de l'Enregistrement de Boot]
+        [PremiŠre copie de la FAT]
+        [Seconde copie de la FAT]
+   	[Cluster 2]
+   	[Cluster 3]
+   	[Cluster 4]
+   	...
+
+      Le r‚pertoire racine de la FAT-32 est consid‚r‚ comme un r‚pertoire
+   ordinaire, il peut ˆtre plac‚ n'importe o— sur le disque et n'a pas de
+   taille fixe pr‚d‚finie (contrairement … la FAT-16).
+
+      Les options pour le formatage des partitions FAT-32 sont semblables
+   … celles de la FAT-16:
+
+      part -f n [/quick | /destructive] [/l:label_volume]
+                [/c:sect_par_cluster] [/x:nb_max_sect | /x:disk]
+
+      La strat‚gie pour redimensionner une partition FAT-32 est ‚galement
+   la mˆme que pour la FAT-16:
+   
+      - Lancer un utilitaire de d‚fragmentation sur la partition FAT-32
+      - Changer la taille de la partition dans la table des partitions
+      - Faire les changements dans l'‚cran de configuration
+        (s'assurer de leur validit‚ - sinon ils deviennent rouge)
+      - Red‚marrer l'ordinateur et lancer scandisk pour v‚rifier que tout
+        est ok et ‚galement pour initialiser l'espace libre.
+
+<HR>
+
+<A NAME="0x0500"></A><A NAME="0x1500"></A><A NAME="extended"></A>Partition DOS ‚tendue
+
+      La table des partitions ne peut contenir que 4 enregistrements. Pour
+   avoir plus de 4 partitions, le DOS utilise un systŠme de partitions DOS
+   ‚tendues. Ce systŠme vous permet d'avoir jusqu'… 23 volumes DOS sur un
+   seul disque physique. Malheureusement, le programme DOS natif FDISK
+   impose une autre limitation qui vous empˆche d'avoir plus d'une
+   partition MS-DOS primaire (bootable) sur le disque dur. En fait, on
+   PEUT en avoir plus d'une. Le problŠme est que le FDISK du DOS refuse
+   d'en cr‚er une seconde pour vous.
+   
+      Si vous lancez FDISk, il va cr‚er une partition primaire, puis il
+   va marquer le reste de l'espace disque comme une partition ‚tendue. Le
+   premier secteur de la partition ‚tendue est appel‚ EMBR (Extended MBR).
+   Il a la mˆme structure que le MBR. A l'int‚rieur de chaque partition
+   ‚tendue, vous pouvez avoir une partition FAT (ou NTFS), appel‚e lecteur
+   logique, et une autre partition ‚tendue. Pour des raisons inconnues,
+   les secteurs relatifs des partitions ‚tendues internes sont calcul‚s
+   … partir du d‚but de la partition la plus … l'ext‚rieur, tandis que les
+   secteurs relatifs des partitions de la FAT sont calcul‚s … partir du
+   d‚but de la partition ‚tendue interne.
+
+   Voici un exemple:
+
+      HD  520 Mo
+      ----------------------------------------------------
+      FAT-16 primaire 120 Mo                                [ C: 120 Mo ]
+      DOS ‚tendue     300 Mo -----------------------------
+                             FAT-16 100 Mo                  [ D: 100 Mo ]
+                             ExtDOS 200 Mo ---------------
+                                           FAT-16  200 Mo   [ E: 200 Mo ]
+                                           ---------------
+                             -----------------------------
+      Linux           100 Mo                                [ /  100 Mo ]
+      ----------------------------------------------------
+
+      Notez que l'ordre des partitions sur le disque est important. Les
+   partitions FAT doivent ˆtre en premier. Et les partitions ‚tendues
+   doivent suivre.
+   
+      Astuce: dans Partition Manager vous pouvez utiliser PgUp et PgDn
+   pour basculer entre les niveaux EMBR.
+
+      Vous ne pouvez pas booter depuis une partition ‚tendue, ni depuis
+   un lecteur logique de cette partition. Si vous essayez, le systŠme
+   plantera, car son enregistrement de boot, contrairement aux autres
+   systŠmes de fichiers, n'a pas de code pour le lancement. Il ne contient
+   que des z‚ros. Vous pouvez installer un simulacre d'enregistrement de
+   boot, non bootable, qui, au lieu de planter la machine, affichera le
+   message:
+  
+      Extended DOS partition is not bootable.
+      Press any key to reboot...
+
+      (La partiton ‚tendue DOS n'est pas bootable.
+       Appuyez sur une touche pour red‚marrer...)
+   
+<A NAME="make_primary"></A>Rendre les lecteurs logiques bootables.
+
+      Comme je l'ai d‚j… mentionn‚, vous ne pouvez pas booter depuis
+   une partition ‚tendue ni depuis un lecteur logique inclus dans
+   celle-ci. Mais que faire si vous en avez besoin ? La solution est
+   simple. Tout ce que vous avez … faire est de d‚placer l'enregistrement
+   qui d‚crit le lecteur logique de l'EMBR au MBR principal, et d'ajuster
+   la taille de la partition ‚tendue. Ensuite, vous devez r‚gler
+   correctement le nombre de "secteurs avant la partition" dans le secteur
+   de boot du DOS, valeur qui est utilis‚e pour charger les fichiers
+   systŠme. Et enfin, vous devez lancer sys.com pour installer les
+   fichiers systŠme sur le disque.
+
+      Voyons comment faire avec <A HREF="#extended">notre exemple</A>.
+
+   Variante 1.
+  
+      Remarquez que la taille de la partition ‚tendue a ‚t‚ chang‚e, et
+   que la partition ‚tendue n'est plus l….
+
+      HD  520 Mo
+      ----------------------------------------------------
+      FAT-16 primaire 120 Mo                                [ C: 120 Mo ]
+      DOS ‚tendue     100 Mo -----------------------------
+                             FAT-16  100 Mo                 [ D: 100 Mo ]
+                             -----------------------------
+      FAT-16 primaire 200 Mo                                [ E: 200 Mo ]
+      Linux           100 Mo                                [ /  100 Mo ]
+      ----------------------------------------------------
+      
+
+   Variante 2.
+
+      Ici, on a juste d‚plac‚ les enregistrements de la partition ‚tendue
+   dans le MBR.
+
+      HD  520 Mo
+      -----------------------------------------------------
+      FAT-16 primaire  120 Mo                               [ C: 120 Mo ]
+      FAT-16 primaire  100 Mo                               [ D: 100 Mo ]
+      DOS ‚tendue      200 Mo -----------------------------
+                              FAT-16  200Mb                 [ E: 200 Mo ]
+                              -----------------------------
+      Linux            100 Mo                               [ /  100 Mo ]
+      -----------------------------------------------------
+      
+
+   Variante 3.
+  
+      HD  520 Mo
+      ---------------------------------------------------
+      FAT-16 primaire  120 Mo                               [ C: 120 Mo ]
+      FAT-16 primaire  100 Mo                               [ D: 100 Mo ]
+      FAT-16 primaire  200 Mo                               [ E: 200 Mo ]
+      Linux            100 Mo                               [ /  100 Mo ]
+      ---------------------------------------------------
+ 
+<HR>
+
+<A NAME="cmd_line"></A>Options de la ligne de commande
+
+Usage: part [-q] [-d disque] [-commande ...]
+
+ part          - Mode Interactif
+ part -i       - Affiche les informations disque IDE
+ part -p       - Affiche la table de partitions
+ part -p -r    - Affiche les info r‚cursivement
+ part -a n     - Active la n-iŠme partition 
+ part -v n     - Verifie la n-iŠme partition
+ part -f n ... - Formate la n-iŠme partition
+ part -s fich  - Sauve le MBR dans un fichier
+ part -l fich  - Charge le MBR depuis un fichier
+ part -c fich  - Compare le MBR avec un fichier
+ part -Reboot  - Red‚marre l'ordinateur
+
+ Le programme retourne le code de sortie 0 s'il n'y a pas d'erreurs et/ou
+ si les objets compar‚s n'ont aucune diff‚rence (1 est retourn‚ sinon).
+
+<HR>
+<A NAME="moreinfo"></A>
+Informations et aide suppl‚mentaires
+
+   <A HREF="http://www.users.intercom.com/~ranish/part/">Page principale de Partition Manager</A>
+
+   <A HREF="http://www.users.intercom.com/~ranish/part/primer.htm">Introduction au Partitionnement</A>
+   <A HREF="http://www.users.intercom.com/~ranish/part/faq.htm">FAQ de Partition Manager (toujours … jour)</A>
+   <A HREF="http://www.users.intercom.com/~ranish/links.htm#partitioning">Liens vers des sujets relatifs au partitionnement et au bootstrap</A>
+
+   <A HREF="news:comp.os.ms-windows.win95.setup">comp.os.ms-windows.win95.setup</A>
+   <A HREF="news:comp.os.ms-windows.setup.win95">comp.os.ms-windows.setup.win95</A>
+   <A HREF="news:comp.os.linux.setup">comp.os.linux.setup</A>
+   <A HREF="news:comp.sys.ibm.pc.hardware.storage">comp.sys.ibm.pc.hardware.storage</A>
+
+   L'interface est ‚galement disponible en plusieurs langues. Si vous
+ utilisez l'une d'entre elles, vous devriez remercier ces personnes pour
+ leur effort:
+ 
+   Interface tchŠque: Jiri Kuchta, <A HREF="mailto:kuchta@fee.vutbr.cz">kuchta@fee.vutbr.cz</A>
+   Interface hollandaise: Eymert Versteegt, <A HREF="mailto:jw.versteegt@wxs.nl">jw.versteegt@wxs.nl</A>
+   Interface fran‡aise: Patrick Robbe, <A HREF="mailto:probbe@mail.dotcom.fr">probbe@mail.dotcom.fr</A>
+   Interface allemande: Peter H. Dillinger, <A HREF="mailto:dilli@rumms.uni-mannheim.de">dilli@rumms.uni-mannheim.de</A>
+   Interface italienne: Claudio Bondavalli, <A HREF="mailto:claudiob@iol.it">claudiob@iol.it</A>
+   Interface espagnole: Alberto Cajigas Jr., <A HREF="mailto:BeLion007@aol.com">BeLion007@aol.com</A>
+   Interface su‚doise: Dan Olav Mikael Hultgren, <A HREF="mailto:mikhu265@student.liu.se">mikhu265@student.liu.se</A>
+
+   Quoi qu'il en soit, essayez de ne pas trop les embˆter … moins que vos
+ questions ne concernent que la traduction. Les questions techniques 
+ doivent ˆtre envoy‚es … <A HREF="mailto:ranish@intercom.com">ranish@intercom.com</A> et exclusivement en anglais.
+<HR>
+
+<A NAME="contact"></A>Contacter l'auteur et copyrights
+
+   Ce programme est un FreeWare. Vous pouvez le distribuer librement.
+   Le code source est disponible en t‚l‚chargement sur ma page web.
+
+   Avant d'envoyer une question, assurez vous de lire cette aide et
+ la FAQ. Visitez ‚galement mon site Web pour voir les mises … jour
+ des fichiers d'aide et v‚rifier si la derniŠre version du programme
+ ne r‚sout pas votre problŠme. Je ne r‚pondrai pas aux questions list‚es
+ dans la FAQ.
+
+   Quand vous envoyez une question, incluez s'il-vous-plaŒt la sortie
+ des commandes "part -p -r" et "part -d 2 -p -r" si vous avez un second
+ disque. Essauyez ‚galement de dire clairement quels systŠmes
+ d'exploitation sont install‚s ou vous pr‚voyez d'installer sur ces
+ partitions.
+
+<HR>
+Translated by: Kilian Cavalotti <A HREF="mailto:kilian.cavalotti@crans.ens-cachan.fr">kilian.cavalotti@crans.ens-cachan.fr</A>
+Mikhail Ranish <A HREF="mailto:ranish@intercom.com">ranish@intercom.com</A>
+<A HREF="http://www.users.intercom.com/~ranish">http://www.users.intercom.com/~ranish</A>
+<A HREF="http://www.ml.brooklyn.cuny.edu/~mranish">http://www.ml.brooklyn.cuny.edu/~mranish</A></PRE>
+</BODY>
+</HTML>

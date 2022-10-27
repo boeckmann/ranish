@@ -1,0 +1,6 @@
+; object files
+*.obj
+*.exe
+
+; Mac files
+.DS_Store

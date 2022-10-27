@@ -1,0 +1,62 @@
+#
+# Tools used to compile this project:
+#
+#   MAKE Version 3.6  Copyright (c) 1991 Borland International
+#   Turbo C++ Version 3.00 Copyright (c) 1992 Borland International
+#   Turbo Link  Version 5.0 Copyright (c) 1992 Borland International
+#   Turbo Assembler  Version 3.1  Copyright (c) 1992 Borland International
+#
+
+CC = tcc -ml -G -O -M -N -d
+AS = tasm -ml -m3
+LD = tlink
+
+INC  = part.h conio.h diskio.h
+
+OBJ = part.obj part_aux.obj part_gen.obj part_gui.obj part_htm.obj \
+      part_ide.obj part_msg.obj s_fat16.obj s_fat32.obj s_unknwn.obj \
+      conio.obj diskio.obj ipl.obj ipl2.obj fat_boot.obj manager.obj 
+
+en: $(OBJ)
+	$(CC) -epart *.obj
+
+cs de ru se sp fr it nl: $(OBJ)
+	$(CC) -c -DLANG_$@ part_msg.c
+	$(CC) -epart-$@ *.obj
+	del part_msg.obj
+
+all:	en cs de ru se sp fr it nl
+
+zip:
+	pklite *.exe
+	pkzip -ex sources makefile *.c *.h *.asm *.inc
+	pkzip -ex part readme.txt install.bat part.exe part.htm sources.zip
+	pkzip -ex part-cs         inst-cs.bat part-cs.exe
+	pkzip -ex part-de                     part-de.exe
+	pkzip -ex part-se                     part-se.exe
+	pkzip -ex part-sp         inst-sp.bat part-sp.exe
+	pkzip -ex part-ru                     part-ru.exe alt_font.com
+	pkzip -ex part-fr         inst-fr.bat part-fr.exe
+	pkzip -ex part-it                     part-it.exe
+	pkzip -ex part-nl         inst-nl.bat part-nl.exe
+
+$(OBJ): $(INC)
+
+.c.obj:
+	$(CC) -c $<
+
+.asm.obj:
+	$(AS) $<
+
+mesg:  mesg.c
+	$(CC) mesg.c
+	del mesg.obj
+
+keys: keycodes.c conio.obj conio.h
+	$(CC) keycodes.c conio.obj
+	del keycodes.obj
+
+clean:
+	del *.obj
+	del *.map
+	del *.lst

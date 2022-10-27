@@ -1,0 +1,871 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.5 [en] (X11; U; SunOS 5.6 sun4u) [Netscape]">
+   <meta name="DESCRIPTION" content="Partition Manager Help">
+   <meta name="AUTHOR" content="Mikhail Ranish, ranish@intercom.com">
+   <meta name="ROBOTS" content="INDEX,NOFOLLOW">
+   <meta name="URL" content="http://www.users.intercom.com/~ranish/part/help.htm">
+   <title>Partition Manager Help</title>
+</head>
+<body>
+
+<pre>Partition Manager Help (v2.37.10)
+
+&nbsp;&nbsp; Was ist eine <a href="#part">Partition Table</a>, <a href="#mbr">MBR</a>, <a href="#ipl">IPL</a>?
+
+&nbsp;&nbsp; <a href="#save">Sichern und Wiederherstellen des MBR
+</a>&nbsp;&nbsp; <a href="#create">Erstellen einer neuen Partition
+</a>&nbsp;&nbsp; <a href="#format">Formatieren einer Partition</a>, <a href="#systems">unterst&uuml;tzte Dateisysteme
+</a>&nbsp;&nbsp; <a href="#os_inst">Bevor Sie ein neues Betriebssytem intallieren ...
+
+</a>&nbsp;&nbsp; <a href="#compact">Compact Boot Manager
+</a>&nbsp;&nbsp; <a href="#advanced">Advanced Boot Manager
+</a>&nbsp;&nbsp; <a href="#virus">Viren-Erkennung</a> und <a href="#hints">Hinweise
+</a>&nbsp;&nbsp; <a href="#setup_adv_example">DOS von der zweiten Festplatte starten
+
+</a>&nbsp;&nbsp; <a href="#cmd_line">Optionen auf der Kommandozeile
+
+</a>&nbsp;&nbsp; <a href="#moreinfo">Links zu weiterer Hilfe
+
+</a>&nbsp;&nbsp; <a href="#contact">Kontakt zum Autor und Copyrights
+
+<hr>
+
+<a NAME="part"></a></a>Was ist eine Partition Table?
+
+&nbsp;&nbsp;&nbsp; Die Partitionstabelle findet sich auf dem ersten Sektor einer jeden
+Harddisk. Sie beinhaltet Informationen zur Gr&ouml;sse und Platzierung der
+Partitionen auf der Harddisk. Eine Partition ist ein Teil einer Platte;
+sie geh&ouml;rt zu einem bestimmten Betriebssystem. Beispiel: das Laufwerk C:
+ist in der Partition vom Typ <a href="#0x0600">BIGDOS</a> angesiedelt.
+
+&nbsp;&nbsp;&nbsp; Meist ist die gesamte Festplatte als eine einzige Partition organisiert,
+doch will man mehrere Betriebssysteme auf einem Computer installieren, so
+muss man seine Festplatte in mehrere Partitionen aufteilen. Daher ist in der
+Partitionstabelle auch abgespeichert, welche Partition nun gerade die 'aktive'
+ist - diejenige, von der der Rechenr bootet.&nbsp;
+<a NAME="mbr"></a><a NAME="ipl"></a>
+&nbsp;&nbsp;&nbsp; Wird der Computer angeschaltet, so l&auml;dt das BIOS den ersten Sektor
+der Harddisk, den sogenannten MBR (Master Boot Record) in der Hauptspeicher.
+Neben der Partitionstabelle enth&auml;lt dieser Sektor einen IPL (Initial Program
+Loader), ein St&uuml;ck Software, das nach der 'aktiven' Partition in der Parti-
+tionstabelle sucht und dann den Boot-Sektor des entsprechenden Betriebssystems
+in den Hauptspeicher l&auml;dt.</pre>
+
+<pre>&nbsp;&nbsp;&nbsp; Der normale IPL l&auml;dt einfach den Boot-Sektor ohne jede Meldung oder Fragen,
+was bei nur einem installierten Betriebssytem durchaus sinnvoll ist. Sind aber
+mehrere zum Booten bereit, ben&ouml;tigt man etwas mehr Kommunikationswillen sei-
+tens der Maschine. Der mit Partition Manager mitgelieferte IPL kann dem Be-
+diener <a href="#ipl_mesg">w&auml;hrend der Bootverz&ouml;gerung</a> eine Auswahl an Bootm&ouml;glichkeiten pr&auml;sen-
+tieren und sich die Wahl auch gleich merken, sodass das n&auml;chste Hochfahren
+des Rechners mit demselben Betriebssytem geschieht.</pre>
+
+<pre>&nbsp;&nbsp;&nbsp; Die Partitonstabelle kann maximal 4 Eintr&auml;ge aufnehmen. Dieses Programm er-
+m&ouml;glicht es, bis zu 31 bootf&auml;hige Partitionen zu erstellen, wenn der
+<a href="#setup_adv">Advanced Boot Manager</a> installiert wird.</pre>
+
+<pre>&nbsp;&nbsp;&nbsp; <a href="#moreinfo">Links zu weiteren Informationen und Hilfe
+
+<hr>
+
+<a NAME="save"></a><a NAME="restore"></a></a>Sichern und Zur&uuml;ckschreiben des MBR</pre>
+
+<pre>&nbsp;&nbsp;&nbsp; Bevor mit diesem Programm irgendwelche Experimente gemacht werden, sollte
+unbedingt eine Sicherung des MBR vorgenommen werden.</pre>
+
+<pre>&nbsp;&nbsp;&nbsp; Zuerst sollte eine bootf&auml;hige Floppy Disk erstellt werden, auf das dieses
+Programm kopiert wird. Danach kann der MBR gesichert werden; entweder geschieht
+dies interaktiv im Programm oder auf der Kommandozeile mit
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; part -s a:\saved.mbr
+
+&nbsp;&nbsp;&nbsp; Falls irgend etwas schiefgeht, kann jederzeit mit der Floppy gebootet und
+der MBR zur&uuml;ckgeschrieben werden:</pre>
+
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; part -l a:\saved.mbr
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; Falls die Diskette auch auf anderen Rechnern benutzt wird, sollte man auf-
+passen, nicht versehentlich einen MBR einer anderen Maschine zur&uuml;ckzuschreiben.
+Es ist zwar harmlos, aber es k&ouml;nnte zartbeseiteten Gem&uuml;tern doch ans Lebende
+gehen, ein paar Minuten angstvolles Starren auf den roten Bildschirm - und
+dann kann man sich in aller Ruhe die Anleitung einverleiben. Trotzdem, daher&nbsp;
+und deswegen ist es ratsam, den gespeicherten MBR's sinnvolle Namen zu geben.</pre>
+
+<pre>&nbsp;&nbsp;&nbsp; Ist das obgenannte Szenario dann eingetreten, so erscheint also ein roter
+Screen, eine <a href="#conflict">Fehlermeldung</a> vom Programm, dass die Partitionseinstellungen
+nicht mit der Geometrie der Festplatte &uuml;bereinstimmen.</pre>
+
+<pre>
+
+<hr>
+
+<a NAME="active"></a>Wahl der aktiven Partition
+
+&nbsp;&nbsp;&nbsp; Um eine Partition zur aktiven Partition zu machen, kann im interaktiven
+Modus die Leertaste gedr&uuml;ckt werden; im Kommandozeilenmodus sieht das so aus:
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; part -p&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Partitionstabelle anzeigen (print)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; part -a n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; aktiviere Partition n
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Falls ein IPL installiert wurde, so kann die aktive Partition mit der Leertaste
+deaktiviert werden - wird nun neu gebootet, so f&auml;hrt der Rechner von der zwei-
+ten Platte oder vom Floppy-Laufwerk hoch.</pre>
+
+<pre>
+
+<hr>
+
+<a NAME="advanced"></a>Advanced Boot Manager
+
+&nbsp;&nbsp;&nbsp; Mit dem Advanced Boot Manager ist es m&ouml;glich, bis zu 31 bootf&auml;hige
+Partitionen zu erstellen. Er h&auml;lt seine eigene Partitionstabelle in einem
+separaten Teil der Festplatte.</pre>
+
+<pre>&nbsp;&nbsp;&nbsp; Wenn der Rechner gebootet wird, versucht der erste Teil des Advanced Boot
+Managers (er sitzt im MBR), den zweiten Teil von der Festplatte zu lesen und
+pr&uuml;ft dessen Integrit&auml;t. Ist dieser Teil defekt, so fordert er den Benutzer
+auf, von Diskette oder Festplatte zu booten.</pre>
+
+<pre>&nbsp;&nbsp;&nbsp; Danach sucht der Advanced Boot Manager <a href="#virus">nach Viren</a> und vergleicht dann
+die Eintr&auml;ge im MBR mit seiner eigenen Partitionstabelle. Falls irgendwelche
+&Auml;nderungen vorgenommen wurden, kopiert der Advanced Boot Manager diese in seine
+eigene Partitionstabelle und fordert den Benutzer auf, part.exe auszuf&uuml;hren, um
+die &Auml;nderungen angezeigt zu bekommen. Siehe hierzu auch die <a href="#os_inst">Bemerkungen</a> zur
+Installation eines neuen Betriebssystems.</pre>
+
+<pre>&nbsp;&nbsp;&nbsp; Der Advanced Boot Manager pr&auml;sentiert nun ein Menu, in dem die Partition
+markiert werden kann, von der gebootet werden soll. Nachdem die Auswahl erfolgt
+ist, wird der Eintrag der selektierten Partition in die MBR Tabelle kopiert; der
+Rest der Harddisk wird versteckt.</pre>
+
+<pre>&nbsp;&nbsp;&nbsp; Die Eingaben f&uuml;r den Advanced Boot Manager sind:&nbsp;&nbsp;
+
+&nbsp;&nbsp;&nbsp; ENTER - Booten von der markierten Partition (Tasten 1-9 funktionieren auch)
+&nbsp;&nbsp;&nbsp; ESC&nbsp;&nbsp; - Booten von der markierten Partition, ohne dass sich der Advanced
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Boot Manager f&uuml;r das n&auml;chste Booten merkt
+&nbsp;&nbsp;&nbsp; A&nbsp;&nbsp;&nbsp;&nbsp; - Booten von A und die markierte Partition in den MBR schreiben
+&nbsp;&nbsp;&nbsp; H&nbsp;&nbsp;&nbsp;&nbsp; - Booten von A, aber alle Partitionen der Harddisk verstecken,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; mit Ausnahme des ersten Teils des unbenutzten Platzes, der gr&ouml;sser
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; als 63 Sektoren ist. (um ein neues OS zu installieren).
+&nbsp;&nbsp;&nbsp; TAB&nbsp;&nbsp; - Booten von der n&auml;chsten Festplatte.
+
+&nbsp;&nbsp;&nbsp; ALT-ENTER - Wie ENTER, aber ohne die im Boot-Manu angegebenen Tastatur-
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; eingaben in den Keyboard-Buffer zu legen.
+
+<a NAME="setup_adv"></a>Advanced Boot Manager Menu bearbeiten
+
+&nbsp; F&uuml;r jeden Menu-Eintrag kann man folgendes spezifizieren:&nbsp;&nbsp; (<a href="#setup_adv_example">Beispiel</a>)
+&nbsp;&nbsp;
+&nbsp; - Ger&auml;t, von dem gebootet werden soll (Dev)
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C - aktuelle Harddisk (worauf dieses Menu residiert)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; D - n&auml;chste Harddisk
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A - erstes Floppy Laufwerk
+&nbsp;&nbsp;
+&nbsp; - Partitionen, die aktiviert werden sollen (0 - keine)
+&nbsp;&nbsp;
+&nbsp; - Reihe, in die die Partition plaziert werden soll.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (<a href="#setup_adv_example">Beispiel</a>)
+
+&nbsp; - Welche Partitionen zusammen mit der Bootpartition gezeigt werden sollen.&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; Zur Verf&uuml;gung stehen: Last, Previous, Next, und Last3,
+&nbsp;&nbsp;&nbsp; einschliesslich der Bootpartition.
+
+&nbsp; - Passwortschutz f&uuml;r die Partition (PP)
+
+&nbsp; - Der gew&uuml;nschte Name der Partition im Auswahlmenu
+&nbsp;&nbsp;
+&nbsp; - Tastatureingaben, die in den Keyboardbuffer gelegt werden sollen, bevor
+&nbsp;&nbsp;&nbsp; das Booten beginnt.
+&nbsp;&nbsp;&nbsp; (Beispiel: F4 vor dem Booten mit Win95 veranlasst ein Booten mit der vor-
+&nbsp;&nbsp;&nbsp; g&auml;ngigen MS-DOS Version)
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+<a NAME="setup_adv_opt"></a>&nbsp; Die Boot Manager Optionen k&ouml;nnen mit Alt-O ge&auml;ndert werden:
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Boot Menu Titel
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - <a href="#virus">Boot Virus</a> Check aktivieren
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Vor dem Anzeigen des Boot Menus den Bildschirm l&ouml;schen
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Timeout (0 beendet das Herunterz&auml;hlen und wartet auf eine
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Benutzereingabe)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Standard Partition (&uuml;berschreibt die gemerkte "zuletzt gew&auml;hlt")
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Optionales Passwort f&uuml;r den Advanced Boot Manager&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Ignorieren der ungenutzten Partitionen, wenn "Prev", "Next", "Last"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; evaluiert wird</pre>
+
+<pre>&nbsp;&nbsp;&nbsp; Ein gesetztes Passwort sch&uuml;tzt vor dem Booten vom Floppy (via Taste A, H)
+und von der zweiten Festplatte via TAB, Es ist jedoch m&ouml;glich, einen Menu-
+eintrag einzugeben, um von Floppy oder von der zweiten Festplatte zu booten,
+ohne Passwortschutz: das PP - password protected - flag einfach nicht setzen.
+
+<hr>
+
+<a NAME="setup_adv_example"></a>Setup-Beispiel Advanced Boot Manager</pre>
+
+<pre>Angenommen, es befinden sich zwei Harddisks im System:
+
+&nbsp;&nbsp;&nbsp; Die neue 4.3Gb Harddisk&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Eine alte 340Mb Harddisk
+
+&nbsp;&nbsp;&nbsp; 1&nbsp; AdvBootManager&nbsp;&nbsp;&nbsp; 30k&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; DOS FAT-16&nbsp;&nbsp;&nbsp;&nbsp; 340Mb
+&nbsp;&nbsp;&nbsp; 2&nbsp; Windows FAT-32&nbsp; 2600M
+&nbsp;&nbsp;&nbsp; 3&nbsp; Windows NT NTFS&nbsp; 400M
+&nbsp;&nbsp;&nbsp; 4&nbsp; Linux&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 400M
+&nbsp;&nbsp;&nbsp; 5&nbsp; Linux swap&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 30M
+&nbsp;&nbsp;&nbsp; 6&nbsp; DOS Extended&nbsp;&nbsp;&nbsp;&nbsp; 800M
+&nbsp;
+&nbsp;Damit k&ouml;nnte das Advanced Boot Manager Menu etwa so aussehen:
+&nbsp;
+&nbsp;&nbsp;&nbsp; #&nbsp; Dev&nbsp; Partitions&nbsp; Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Keys
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; C&nbsp;&nbsp; 2/*&nbsp; Last&nbsp;&nbsp; Windows 95&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; N
+&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp; C&nbsp;&nbsp; 2/*&nbsp; Last&nbsp;&nbsp; Windows 95 / Prompt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Y&nbsp; &lt;-&nbsp; "F8 6 Enter"
+&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; C&nbsp;&nbsp; 3/2&nbsp; Last&nbsp;&nbsp; Windows NT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; N
+&nbsp;&nbsp;&nbsp; 4&nbsp;&nbsp; C&nbsp;&nbsp; 4/3&nbsp; Next&nbsp;&nbsp; Linux&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; N
+&nbsp;&nbsp;&nbsp; 5&nbsp;&nbsp; C&nbsp;&nbsp; 4/3&nbsp; Last3&nbsp; Linux (sees extended)&nbsp;&nbsp;&nbsp;&nbsp; N
+&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp; D&nbsp;&nbsp; 6/*&nbsp; ----&nbsp;&nbsp; Old MS-DOS (sees ext)&nbsp;&nbsp;&nbsp;&nbsp; N
+&nbsp;&nbsp;&nbsp; 7&nbsp;&nbsp; D&nbsp;&nbsp; 0&nbsp;&nbsp;&nbsp; ----&nbsp;&nbsp; Old MS-DOS (sees nothing) N</pre>
+
+<pre>&nbsp;&nbsp;&nbsp; Bemerkung: Damit DOS auch von der zweiten Festplatte gestartet werden kann,
+sind folgende Schritte n&ouml;tig:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; - Der Compact oder Advanced Boot Manager ist auf der zweiten Festplatte zu
+&nbsp;&nbsp;&nbsp;&nbsp; installieren
+&nbsp;&nbsp; - Im Setup Screen f&uuml;r die FAT-16 Partition ist die Drive Number auf 129 zu
+&nbsp;&nbsp;&nbsp;&nbsp; setzen.
+&nbsp;&nbsp; - Kontrollieren Sie, dass Sie keine nicht-versteckten prim&auml;ren FAT-16
+&nbsp;&nbsp;&nbsp;&nbsp; Partitionen auf der ersten Festplatte haben, wenn Sie von der zweiten booten.
+
+&nbsp;&nbsp;&nbsp; Zu beachten ist ferner, dass Windows NT und Linux in den Reihen 2 und 3 der
+Partitionstabelle plaziert werden, wobei es keine Rolle spielt, wohin Win95 hinkommt.
+&nbsp;&nbsp;&nbsp; F&uuml;r Windows NT ist es wichtig, immer in derselben Reihe zu sitzen; seine boot.ini
+hat n&auml;mlich eine die folgende Syntax:
+&nbsp;
+multi(0)disk(0)rdisk(0)partition(2)\WINNT="Windows NT" /basevideo /sos
+
+und es wird seinen Kernel bestimmt nicht finden, wenn sein Platz in der Partitions-
+tabelle verschoben wird.
+
+<hr>
+<a NAME="setup_adv_example2"></a>Anderes Beispiel - Vorbereitung f&uuml;r die Installation von Win98 (oder anderes OS)
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; - Erstellen Sie eine Bootdiskette, auf der Partition Manager drauf ist.
+&nbsp;&nbsp; - Erstellen Sie die Partition und formatieren Sie sie.
+&nbsp;&nbsp; - Editieren Sie das Bootmenu
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ihre Partitionen
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp; AdvBootManager&nbsp;&nbsp;&nbsp; 30k
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp; Windows FAT-32&nbsp; 1600M&nbsp;&nbsp;&nbsp;&nbsp; &lt;-- Windows 95 Partition
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp; Windows FAT-32&nbsp; 1200M&nbsp;&nbsp;&nbsp;&nbsp; &lt;-- die neu erstellte Partition
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4&nbsp; DOS Extended&nbsp;&nbsp;&nbsp;&nbsp; 800M&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; \ formatiert f&uuml;r Windows 98
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Advanced Boot Manager Menu
+&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; #&nbsp; Dev&nbsp; Partitions&nbsp; Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Keys
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1&nbsp;&nbsp; C&nbsp;&nbsp; 2/*&nbsp; Last&nbsp;&nbsp; Windows 95&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; N
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp; C&nbsp;&nbsp; 2/*&nbsp; Last&nbsp;&nbsp; Windows 95 / Prompt&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Y&nbsp; &lt;-&nbsp; "F8 6 Enter"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3&nbsp;&nbsp; C&nbsp;&nbsp; 3/*&nbsp; Last&nbsp;&nbsp; Windows 98&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; N
+
+&nbsp;&nbsp; - Speichern Sie diese Daten auf Festplatte und auf Floppy
+&nbsp;&nbsp; - Maschine neu booten
+&nbsp;&nbsp; - Im Bootmanager Menu "Windows 98" w&auml;hlen und A dr&uuml;cken
+&nbsp;&nbsp;&nbsp;&nbsp; um von Floppy a: das "Windows 98 Setup" zu starten&nbsp;
+&nbsp;&nbsp; - Nach der Installation von Windows 98 starten Sie den Partition Manager
+&nbsp;&nbsp;&nbsp;&nbsp; um etwelche &Auml;nderungen im MBR durchzusehen und <a href="#os_inst">reinstalliern</a> den Boot-
+&nbsp;&nbsp;&nbsp;&nbsp; manager falls n&ouml;tig.
+
+<hr>
+
+<a NAME="compact"></a><a NAME="setup_ipl"></a>Compact Boot Manager
+</pre>
+
+<pre>&nbsp;&nbsp; Der Compact Boot Manager passt in 446 Bytes hinein und braucht keinen
+Platz auf der HD &uuml;ber dem f&uuml;r einen normalen MBR vorgesehenen Platz.
+Er ist einfach ein <a href="#ipl">IPL</a>.
+
+Beim Installieren haben Sie 4 Optionen:&nbsp;
+
+&nbsp;&nbsp;&nbsp; - Einschalten des <a href="#virus">BootViruses</a> Checks
+&nbsp;&nbsp;&nbsp; - Time-Out f&uuml;r die Boot Auswahl
+&nbsp;&nbsp;&nbsp; - Standard Partition (&uuml;berschreibt den Eintrag "last selected")
+&nbsp;&nbsp;&nbsp; - Standard Boot Partition, falls keine der Partitionen aktiv ist.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Die M&ouml;glichkeiten sind: A: und "next hard drive".
+
+Tip:&nbsp; Falls die Standard Partition auf A gesetzt wird, wird der Rechner&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; immer von A: booten, falls Tab gedr&uuml;ckt wird - von der n&auml;chsten HD,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; und wenn Space gedr&uuml;ckt wird - dann wird der Time-Out angehalten und
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Sie k&ouml;nnen w&auml;hlen.
+
+<hr>
+
+<a NAME="ipl_mesg"></a>Meldungen des Compact Boot Manager
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Meldung&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Beschreibung
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ESC um das OS zu booten
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SPACE um Time-Out zu stoppen und Auswahl zu treffen
+"Booting from: HD1/1..."&nbsp; 1-4 dr&uuml;cken um von der 1-4 Partitionzu booten
+"Booting from: HD1/_"&nbsp;&nbsp;&nbsp;&nbsp; A um vom Floppy zu booten oder TAB um von der&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; n&auml;chsten Harddisk. Jede andere Taste wird das
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Booten fortfahren lassen und bleibt im Puffer.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; zb. F4, F5, F8, ... (siehe <a href="#hints">Tips</a>)
+
+"Writing changes..."&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Der IPL speichert Ihre Auswahl im MBR.
+
+"Error!"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Fehler beim Lesen der Disk oder leere Partition.
+
+"Virus !!!"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Es wurde ein IPL gefunden, bei dem ein Interruptvektor
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nocht ins ROM BIOS Memory zeigt (siehe <a href="#virus">Viren-Schutz</a>).
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Sie k&ouml;nnen ENTER dr&uuml;cken um zu booten, aber es w&auml;re
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; vern&uuml;nftiger, den Rechner auszuschalten und ein
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Antivirus-Programm laufen zu lassen, nachdem von
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; einer sauberen Floppy gestartet wurde.
+
+<hr>
+
+<a NAME="virus"></a>Viren-Schutz
+
+&nbsp;&nbsp; Der IPL vom Partition Manager kann Viren erkennen noch bevor das&nbsp;
+ein Betriebssystem ins Memory geladen wird. Dies ist wichtig, weil
+<a href="#mbr">MBR</a> Viren von Antivirenprogrammen nicht erkannt werden k&ouml;nnen, wenn sie
+nach dem Betriebssystem geladen werden.
+
+&nbsp;&nbsp; Die Virenerkennung ist implementiert, indem 29 Interrupt Vektoren
+von Int 0h bis Int 1Ch getestet werden. Diese m&uuml;ssen auf C000:0000h oder&nbsp;
+h&ouml;her zeigen, wo also das ROM BIOS sitzt. Diese Interrupts kontrollieren
+alle lebenswichtigen Funktionen des Systems, so etwa Timer, Video, Keyboard
+und Disk.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; Falls einer dieser Interrupts ge&auml;ndert wurde, so ist es sehr wahrscheinlich,
+dass ein Virus das System infiziert hat. In diesem Falle h&auml;lt der IPL und
+gibt eine Warnung aus. Man kann nun diese Warnung ignorieren und mit dem Virus
+booten oder neu booten und ein Antivirus-Programm laufen lassen. Siehe hierzu
+<a href="#ipl_mesg">IPL Meldungen</a>.
+
+&nbsp;&nbsp; Auf manchen Sytemen kann es aber auch zu Fehlalarm kommen. In diesem Falle
+k&ouml;nnen Sie die Virenwarnung deaktivieren.
+<a NAME="hints"></a>
+&nbsp;&nbsp; Eine andere M&ouml;glichkeit, sich vor Viren zu sch&uuml;tzen, ist das Verhindern von
+ungewolltem Booten von einer Floppy. Mit diesem Programm ist dies m&ouml;glich: und
+dennoch kann von einer Floppy gebootet werden, wenn man dies w&uuml;nscht. Um dies
+zu erreichen, ist folgendes zu tun:
+
+&nbsp;&nbsp; 1. Installieren Sie entweder den Advanced oder Compact Boot Manager.
+
+&nbsp;&nbsp; 2. Die Boot-Reihenfolge ist auf C:,A: im BIOS Setup zu &auml;ndern.&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; 3. Falls man von A: booten m&ouml;chte, dr&uuml;ckt man zur <a href="#ipl_mesg">Bootzeit</a> A.
+
+&nbsp;&nbsp; Dieser Trick bewahrt Sie nicht nur vor Viren, sondern erh&ouml;ht auch die
+Arbeitsgeschwindigkeit. Eindr&uuml;cklich zeigt sich dies vor allem bei der Kombina-
+tion von QEMM 8.xx zusammen mit MS-DOS oder Windows 95.&nbsp;
+
+&nbsp;&nbsp; Setzen Sie daf&uuml;r die Option "BootFloppy:N" in QEMM's Quick Boot und f&uuml;gen
+sie "SWITCHES=/F" in die CONFIG.SYS ein.
+
+&nbsp;&nbsp; Beim n&auml;chsten Reboot wird QEMM's Quick Boot den BIOS Memory Test &uuml;ber-
+springen und f&uuml;hrt Sie direkt zum Compact Boot Manager Prompt, wo Ihnen ein
+komfortables Booten mittels F4, F5, oder F8 zur Verf&uuml;gung steht ...
+
+<hr>
+
+<a NAME="create"></a>Neue Partition einrichten
+
+&nbsp;&nbsp; Um eine neue Partition einzurichten suchen Sie einen unbenutzten Eintrag
+in der Partitionstabelle und dr&uuml;cken INS, dann w&auml;hlen Sie den gew&uuml;nschten
+Typ des Filesystems.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; Danach wird der Partition Manager automatisch die richtigen Werte f&uuml;r
+Zylinder, Heads und Sektoren eintragen.&nbsp;
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; Normalerweise m&uuml;ssen Sie diese Werte nicht &auml;ndern. Falls Sie aber eine
+eigene Vorstellung des Partitionierungsschemas habe, so k&ouml;nnen Sie diese
+Werte &auml;ndern. Machen Sie sowas, so ist es empfohlen, jedoch nicht notwendig,
+Start und Ende an den Grenzen vom Zylinder (oder Head) zu setzen.
+Beispiel:
+Die Harddisk hat 16 Heads und 63 Sektoren pro Head, dann sollte die Partition
+bei Head 0, Sektor 1 beginnen und bei Head 15, Sektor 63 aufh&ouml;ren.
+<a NAME="0xFF00"></a>
+&nbsp;&nbsp; Falls Sie mehrere Betriebssysteme wie MS-DOS, Windows 95 oder Windows NT
+installieren m&ouml;chten, dann sollten Sie aufpassen, dass sie sich nicht in die
+Quere kommen: Verstecken Sie die vorhandenen Partitionen mit Ausnahme der zu
+installierenden, installieren das neue OS und holen die versteckten Partitionen
+wieder zur&uuml;ck (unhide).&nbsp;
+
+&nbsp;&nbsp; Solange Sie Zahlen eingeben, k&ouml;nnen sich die Partitionseintr&auml;ge rot f&auml;rben:
+machen Sie sich dar&uuml;ber keine Gedanken bevor sie das Partitionieren nicht
+abgeschlossen haben.
+<a NAME="conflict"></a>
+&nbsp;&nbsp; Rote Partitionseintr&auml;ge bedeuten, dass die Einstellungen ung&uuml;ltig sind oder
+in Konflikt zu der momentanen Disk-Geometrie stehen.
+
+&nbsp;&nbsp; Es gibt vier Error-Codes, um herauszufinden, was falsch ist. Sie werden rot
+angezeigt, wenn der Cursor &uuml;ber den ung&uuml;ltigen Partitionseintrag gef&uuml;hrt wird.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+mbr: die Partition &uuml;berlappt den MBR im ersten Sektor der Disk oder
+&nbsp;&nbsp;&nbsp;&nbsp; eine Extended DOS Partition.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+range: die Partition hat Werte f&uuml;r Zylinder, Head, oder Sektor (CHS)
+&nbsp;&nbsp;&nbsp;&nbsp; ausserhalb des g&uuml;ltigen Bereichs der Disk oder der Extended DOS Partitions-
+&nbsp;&nbsp;&nbsp;&nbsp; grenzen oder der End-Werte ist kleiner als der Begin-Wert. Bewegen Sie den
+&nbsp;&nbsp;&nbsp;&nbsp; Cursor auf die CHS-Felder, um die erlaubten Werte zu sehen.
+
+overlapped: zwei Partitionen &uuml;berlappen sich.
+&nbsp;&nbsp;&nbsp;
+inconsistent: diese Meldung bedeutet, dass die CHS-Werte nicht mit dem Start-
+&nbsp;&nbsp;&nbsp;&nbsp; Sektor und der Partitionsgr&ouml;sse &uuml;bereinstimmen, was auch in der Partitions-
+&nbsp;&nbsp;&nbsp;&nbsp; tabelle abgespeichert ist. Dieser Fehler tritt normalerweise auf, wenn
+&nbsp;&nbsp;&nbsp;&nbsp; die Partitionstabelle besch&auml;digt ist oder wenn das BIOS die Disk-Geometrie-
+&nbsp;&nbsp;&nbsp;&nbsp; &Uuml;bersetzung seit der letzten Partitionstabellenmodifizierung ge&auml;ndert hat.
+&nbsp;&nbsp;&nbsp;&nbsp; Es kann auch sein, dass der Wert 0 f&uuml;r Sektor eingegeben wurde (Sektor muss
+&nbsp;&nbsp;&nbsp;&nbsp; mindestens 1 sein).
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; Falls die rote Farbe schon beim Starten auftritt, so ist es wahrscheinlich,
+dass der Disk-Controller gewechselt wurde, die BIOS-Einstellungen ge&auml;ndert wurden
+oder der MBR besch&auml;digt ist. Falls dem so ist, hantieren Sie nicht an den Werten
+herum, ausser Sie sind sich absolut sicher, was Sie tun.
+&nbsp;&nbsp; Ratschlag f&uuml;r Profis: Es spielt keine Rolle, wie das BIOS die Disk-Geometrie&nbsp;
+anzeigt, die relative Zahl von Sektoren und die Partitionsgr&ouml;sse bleiben immer
+gleich. Um das Inkonsistenzproblem zu beheben, muss man den LBA Mode per Taste F4
+einschalten, die Partitionsgr&ouml;sse notieren, &auml;ndern und sie dann erneut auf den
+notierten Wert (die korrekte Gr&ouml;sse) &auml;ndern. Das wird das Programm zwingen, die
+Werte im CHS neu zu berechnen und zwar in &Uuml;bereinstimmung mit der momentanen
+Disk-Geometrie.
+&nbsp;&nbsp; Beachten Sie zwei Dinge: Soweit ich das beurteilen kann, benutzt DOS die&nbsp;
+CHS Werte zum Booten und nicht die "Start Sektor/Anzahl-Sektoren" Eintr&auml;ge.
+Es benutzt die Felder "sectors prior partition" und "big total number of sectors"
+aus seinem Boot-Eintrag (Record).
+
+&nbsp;&nbsp; Falls Sie OnTrack DDO oder Ez-Drive benutzt haben, dann wissen Sie, dass diese
+die Disk "verdrehen": OnTrack um 63 Sektoren und Ez-Drive um 1 Sektor. Daher m&uuml;ssen
+sie diesen Umstand im Boot-Record f&uuml;r DOS mitber&uuml;cksichtigen.
+
+<hr>
+
+<a NAME="format"></a>Formatieren einer Partition
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; Partitionen k&ouml;nnen formatiert werden oder nur auf fehlerhafte
+Sektoren gepr&uuml;ft werden - ohne die Daten zu zerst&ouml;ren.&nbsp;
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; Um eine Partition zu verifizieren, dr&uuml;cken Sie V im interaktiven
+Modus oder f&uuml;hren part wie folgt aus (n = Nummer der Partition):
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; part -v n
+
+&nbsp;&nbsp; Um eine Partition zu formatieren, dr&uuml;cken Sie F im interaktiven
+Modus oder f&uuml;hren part wie folgt aus (n = Nummer der Partition):
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; part -f n options ...
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; Die Format-Optionen h&auml;ngen vom gew&uuml;nschten <a href="#systems">Filesystem</a> ab.
+&nbsp;&nbsp;&nbsp;
+Wichtige Bemerkung zum Formatieren von DOS Partitionen
+
+&nbsp;&nbsp; Erstens: DOS sieht keine neu erstellten Partitionen, bevor der Rechner
+nicht neu gestartet wurde, weil es die Partitionstabelle nur einmal scannt.
+&nbsp;&nbsp; Wurde also eine Partition erstellt und/oder formatiert, so muss der
+Rechner neu gebootet werden.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; Falls die Partition schon montiert wurde (man kann sie als DOS-Laufwerk
+sehen) und sie wurde mit anderen Parametern neu formatiert, so ist ebenfalls
+ein Neustart notwendig, weil DOS die alten Werte im Memory beh&auml;lt und die
+Harddisk mit Bestimmtheit in Unordnung bringen wird, wenn man auf diese
+schreibt, ohne den Rechner zu booten.
+
+&nbsp;&nbsp; Das zweite Problem ist der Disk-Cache. Partition Manager leert diesen mit
+Hilfe des SmartDrive v 4.00+ API. Die meisten neuen Cache-Programme, wie
+etwa PC-Cache 8.0, NCACHE2 oder SpeedDrive unterst&uuml;tzen dies. Falls aber
+andere Cache-Manager zum Einsatz kommen, sollten sie vor der Formatierung von
+DOS-Partitionen abgeschaltet werden oder - booten Sie den Rechner nach einer
+Formatierung neu.&nbsp;
+
+&nbsp;&nbsp; Der Unterschied im Verhalten von part.exe und format.com ist, dass part
+Partitionen anhand der Nummer in der Partitionstabelle formatiert, format
+hingegen anhand des Buchstabens in der DOS Device Liste. Daher sollten vor
+einem Neustart keine Programme benutzt werden, die Partitionen via DOS
+ansprechen; Programme, die Partitionen ansprechen, ohne DOS zu bem&uuml;hen, k&ouml;nnen
+problemlos benutzt werden; zB. zpart, das ganze Partitionen (de)komprimiert
+(von) in Files.
+
+&nbsp;&nbsp; Einschr&auml;nkung: Momentan kann part logische DOS Drives nur im interaktiven
+Modus formatieren.
+
+<hr>
+
+<a NAME="os_inst"></a>Wichtige Anweisung zur Installation eines neuen OS
+
+&nbsp;&nbsp; Windows 95 und einige andere Betriebssysteme ersetzten bei der
+Installation den <a href="#ipl">IPL</a> mit ihrem eigenen Code. Ist der Compact oder Advanced
+Boot Manager auf der Festplatte installiert, so wird dieser beim Booten nach
+einer Installation eines solchen OS nicht mehr erscheinen.
+
+&nbsp;&nbsp; Ich habe mich um diese Sache gek&uuml;mmert. Es sollte nicht zu Datenverlust
+f&uuml;hren, auf alle F&auml;lle nicht mit Windows 95. Im schlimmsten Falle m&uuml;sste
+part.exe ausgef&uuml;hrt werden und der Boot Manager neu installiert werden. Um
+sicher zu gehen, dass nichts verloren geht, halten Sie sich an diese Vorgehens-
+weise, um ein neues OS zu installieren:
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; - Erstellen Sie eine bootf&auml;higes Floppy und kopieren Sie den Partition
+&nbsp;&nbsp;&nbsp;&nbsp; Manager darauf.
+&nbsp;&nbsp; - Starten Sie den Partition Manager und erstellen Sie die Partition f&uuml;r das
+&nbsp;&nbsp;&nbsp;&nbsp; neue OS.
+&nbsp;&nbsp; - Falls m&ouml;glich, formatieren Sie diese Partition mit dem Partition Manager.
+&nbsp;&nbsp; - Im Advanced Boot Manager editieren Sie das Boot Menu (siehe <a href="#setup_adv_example2">Beispiel</a>)
+&nbsp;&nbsp; - Speichern Sie die Partition Manager Daten auf die eben erstellte Floppy.
+&nbsp;&nbsp; - Starten Sie den Rechner neu und installieren Sie das neue OS.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; Falls nun der MBR vom neuen OS modifiziert wurde, schauen Sie sich die
+&Auml;nderungen an und installieren den Boot Manager erneut. (Dr&uuml;cken Sie F2 um den
+MBR zu sichern und den ausf&uuml;hrbaren Advanced Boot Manager Code auf Disk zu
+installieren).
+&nbsp;&nbsp;&nbsp;
+
+<hr>
+
+<a NAME="systems"></a>Unterst&uuml;tzte Filesysteme
+
+&nbsp;&nbsp; <a href="#0x0000">Nicht-benutzte Partition
+</a>&nbsp;&nbsp; <a href="#0x0100">Klassische MS-DOS Filesysteme
+</a>&nbsp;&nbsp; <a href="#0x0B00">Windows 95 FAT-32 Filesystem
+</a>&nbsp;&nbsp; <a href="#0x0500">Extended DOS Partition
+</a>&nbsp;&nbsp; <a href="#make_primary">Bootf&auml;higkeit von Logischen Laufwerken
+
+<hr>
+<a NAME="0x0000"></a></a>Nicht-benutzte Partition
+
+&nbsp;&nbsp; Dies zeigt einfach an, dass der Eintrag in der Partitionstabelle
+verf&uuml;gbar ist. Es sagt nichts dar&uuml;ber aus, wieviel Platz auf der Disk
+vorhanden ist - das muss man selber herausfinden.
+
+&nbsp;&nbsp; Wenn man die Start- und End-Werte der Partition angibt mit Typ "Unused",
+so wird der Partition Manager ein Formatieren und Verifizieren des Diskspace
+erlauben.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; Format kenn zwei Optionen: "/destructive" oder "/clean". Die erste f&uuml;hrt
+eine Low Level Disk Formatierung durch, die zweite &uuml;berschreibt den Disk
+Space mit lauter Nullen.
+
+<hr>
+<a NAME="setup_fat"></a><a NAME="0x0100"></a><a NAME="0x0400"></a><a NAME="0x0600"></a><a NAME="0x1100"></a><a NAME="0x1400"></a><a NAME="0x1600"></a>Klassische MS-DOS Filesysteme
+
+&nbsp;&nbsp;&nbsp;&nbsp; 0x01, "DOS FAT-12"
+&nbsp;&nbsp;&nbsp;&nbsp; 0x04, "DOS FAT-16 (unter 32M)"
+&nbsp;&nbsp;&nbsp;&nbsp; 0x06, "BIGDOS FAT-16 (&uuml;ber 32M)"
+
+Alle Filesysteme haben dieselbe Struktur:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp; [Boot Sektor]
+&nbsp;&nbsp;&nbsp;&nbsp; [Erste Kopie der FAT]
+&nbsp;&nbsp;&nbsp;&nbsp; [Zweite Kopie der FAT]
+&nbsp;&nbsp;&nbsp;&nbsp; [Wurzelverzeichnis]
+&nbsp;&nbsp;&nbsp;&nbsp; [Cluster 2]
+&nbsp;&nbsp;&nbsp;&nbsp; [Cluster 3]
+&nbsp;&nbsp;&nbsp;&nbsp; [Cluster 4]
+&nbsp;&nbsp;&nbsp;&nbsp; ...
+
+&nbsp;&nbsp; Der Boot Sektor, die FATs, das Wurzelverzeichnis und die Cluster haben
+eine feste Gr&ouml;sse: sie k&ouml;nnen nur mit anschliessendem Formatieren ge-
+&auml;ndert werden.
+&nbsp;&nbsp; Platz f&uuml;r alle Unterverzeichnisse und Dateien wird von den Clustern
+alloziert. Ist die Clustergr&ouml;sse 8 Sektoren = 4,096 Bytes, dann ben&ouml;tigt
+auch eine Datei mit nur einem Byte einen solchen Cluster von 4,096 Bytes.
+&nbsp;&nbsp; F&uuml;r jeden Cluster existiert ein Eintrag in der FAT (File Allocation
+Table), der dar&uuml;ber Auskunft gibt, ob der Cluster frei, alloziert oder
+besch&auml;digt ist. Daher bestimmt die Gr&ouml;sse der FAT die maximale Anzahl
+Clusters.
+
+&nbsp;&nbsp; Das FAT-12 Filesystem ist auf 4084 Clusters beschr&auml;nkt. &Uuml;blicherweise
+wird es f&uuml;r Disketten gebraucht, aber auch kleine Harddiskpartitionen sind&nbsp;
+denkbar.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; FAT-16 wurde auf den ersten Festplatten benutzt. Die originale Version
+konnte bis zu 65,000 Cluster auf Partitionen bis zu 32M aufnehmen.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; BIGDOS FAT-16, welches mit DOS 3.31 freigegeben wurde, hat die 32M&nbsp;
+Beschr&auml;nkung nicht mehr: es kann bis 2T aufnehmen. F&uuml;r die R&uuml;ckw&auml;rts-
+kompatibilit&auml;t akzeptieren alle DOS Versionen ab 3.31 FAT-12 und FAT-16
+Filesysteme innerhalb der BIGDOS Partition.
+
+&nbsp;&nbsp; In diesem Programm ist ein Formatierungsutility eingebaut, das alle drei
+Filesytem-Typen formatieren kann mit den folgenden Optionen:
+
+&nbsp;&nbsp; part -f n [/quick | /destructive] [/l:volume_label]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [/c:sect_per_cluster] [/x:max_num_sect | /x:disk]
+
+&nbsp;&nbsp; Wird die Option "quick" gew&auml;hlt, so wird angenommen, dass keine
+fehlerhaften Sektoren auf dem Laufwerk sind. Man kann die Disk einmal veri-
+fizieren und - falls es keine fehlerhaften Sektoren gibt - diese Option
+verwenden.
+&nbsp;
+&nbsp;&nbsp; Wird keine Clustergr&ouml;sse angegeben, so wird diese automatisch in
+Abh&auml;ngigkeit von der Partitionsgr&ouml;sse von 4 Sektoren und dar&uuml;ber selektiert.
+Eine Tabelle f&uuml;r das BIGDOS FAT-16 Filesystem:
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cluster-Gr&ouml;sse&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Maximale Gr&ouml;sse der Partition
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1 Sektor&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 512 Bytes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 32M
+&nbsp;&nbsp;&nbsp; *&nbsp;&nbsp; 2 Sektoren&nbsp;&nbsp;&nbsp; 1,024 Bytes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 64M&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; empfohlene
+&nbsp;&nbsp;&nbsp; *&nbsp;&nbsp; 4 Sektoren&nbsp;&nbsp;&nbsp; 2,048 Bytes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 128M&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Cluster-Gr&ouml;ssen
+&nbsp;&nbsp;&nbsp; *&nbsp;&nbsp; 8 Sektoren&nbsp;&nbsp;&nbsp; 4,096 Bytes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 256M&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sind mit '*'
+&nbsp;&nbsp;&nbsp; *&nbsp; 16 Sektoren&nbsp;&nbsp;&nbsp; 8,192 Bytes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 512M&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; markiert
+&nbsp;&nbsp;&nbsp; *&nbsp; 32 Sektoren&nbsp;&nbsp; 16,384 Bytes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1G
+&nbsp;&nbsp;&nbsp; *&nbsp; 64 Sektoren&nbsp;&nbsp; 32,768 Bytes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2G
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 128 Sektoren&nbsp;&nbsp; 65,536 Bytes&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4G
+
+Obwohl man eine Disk mit jeder dieser Cluster-Gr&ouml;ssen formatieren kann,
+ist es nicht ratsam, sehr grosse oder sehr kleine Werte zu verwenden.
+Viele Programme zeigen damit ein eigenartiges Fehlverhalten. Beispiels-
+weise blockiert SCANDISK mit einer Clustergr&ouml;sse von 128, Norton Disk
+Doctor scheint ohne Probleme zu laufen.
+
+&nbsp;&nbsp; Mit dem max_num_sect Parameter kann Platz in der FAT f&uuml;r zuk&uuml;nftige
+Erweiterungen der Partition reserviert werden. Wird die Option "/x:disk"
+(genau so wie geschrieben) verwendet, wird Format die FAT gen&uuml;gend gross
+anlegen, so dass die Partition auf die gesamte Disk vergr&ouml;ssert werden
+kann.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; Man kann auch FAT-Partition verkleinern (schrumpfen). Um dies zu
+bewerkstelligen, starten Sie einen Defragmentierer (etwa DEFRAG.EXE). Dann
+gehen Sie zum Setup Screen in part.exe. Eine der Zeilen zeigt die minimale
+Partitionsgr&ouml;sse, basierend auf dem letzten mit Daten belegten Cluster. Der
+Wert sollte gleich der Summe der Datei- und Verzeichnisgr&ouml;ssen auf der Hard-
+disk sein. Ist er gr&ouml;sser, so bedeutet das, dass einige versteckte (hidden)
+Dateien vom Defragmentierer nicht verschoben wurden. Nun m&uuml;ssen diese Dateien
+gesucht werden (zB. Norton Speed Disk zeigt ihre Namen), die System- und
+Hidden-Attribute entfernt werden und der Defragmentierer erneut gestartet
+werden. Vorsicht beim verschieben von solchen Dateien: einige Programme
+benutzen die absolute Position eines Files, um illegalen Installationen
+vorzubeugen.
+
+<hr>
+<a NAME="setup_fat32"></a><a NAME="0x0B00"></a><a NAME="0x1B00"></a>Windows 95 FAT-32 Filesystem
+
+&nbsp;&nbsp;&nbsp;&nbsp; 0x0B, "Windows 95 FAT-32"
+
+&nbsp;&nbsp; Diese Filesystem wurde geschaffen, um Disks mit einer Kapazit&auml;t von
+mehr als 2G zu unterst&uuml;tzen, welches die Grenze des FAT-16 Filesystems ist.
+FAT-32 Partition k&ouml;nnen 2T (2,048G) gross sein.&nbsp;
+
+Es hat die folgende Struktur:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp; [Boot Record (3 Sektoren)]
+&nbsp;&nbsp;&nbsp;&nbsp; [Backup Kopie des Boot Records]
+&nbsp;&nbsp;&nbsp;&nbsp; [Erste Kopie der FAT]
+&nbsp;&nbsp;&nbsp;&nbsp; [Zweite Kopie der FAT]
+&nbsp;&nbsp;&nbsp;&nbsp; [Cluster 2]
+&nbsp;&nbsp;&nbsp;&nbsp; [Cluster 3]
+&nbsp;&nbsp;&nbsp;&nbsp; [Cluster 4]
+&nbsp;&nbsp;&nbsp;&nbsp; ...
+
+&nbsp;&nbsp; Das Wurzelverzeichnis (Root directory) auf FAT-32 wird wie ein normales
+Verzeichnis behandelt, kann &uuml;berall auf der Disk liegen und hat keine vor-
+definierte feste Gr&ouml;sse (im Gegensatz zu FAT-16).
+
+&nbsp;&nbsp; Die Optionen f&uuml;r die Formatierung mit dem FAT-32 Filesystem sind
+(&auml;hnlich FAT-16):
+
+&nbsp;&nbsp; part -f n [/quick | /destructive] [/l:volume_label]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [/c:sect_per_cluster] [/x:max_num_sect | /x:disk]
+
+&nbsp;&nbsp; Die Strategie zur Gr&ouml;ssen&auml;nderung einer FAT-32 Partition ist ebenfalls
+&auml;hnlich wie bei FAT-16:
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; - Lassen Sie einen Defragmentierer auf die FAT-32 Partition los.
+&nbsp;&nbsp; - &Auml;ndern sie die Partitionsgr&ouml;sse in der Partitionstabelle.
+&nbsp;&nbsp; - Wechseln Sie zum Setup Screen und nehmen sie die selben &Auml;nderungen hier
+&nbsp;&nbsp;&nbsp;&nbsp; vor (pr&uuml;fen Sie sie auf G&uuml;ltigkeit - sie werden sonst rot dargestellt)
+&nbsp;&nbsp; - Booten Sie den Rechner neu und f&uuml;hren Sie ScanDisk aus, um die Disk zu
+&nbsp;&nbsp;&nbsp;&nbsp; checken und um den Betrag des freien Speicherplatzes zu resetten.
+
+<hr>
+
+<a NAME="0x0500"></a><a NAME="0x1500"></a><a NAME="extended"></a>Extended (erweiterte) DOS Partition
+
+&nbsp;&nbsp; Eine Partitionstabelle bietet Platz fu&uuml;r vier Eintrage. Um mehr als vier
+Partitionen zu benutzen, bedient sich DOS des Extended DOS Partitionen Schemas.
+Dieses erlaubt es bis zu 23 logische DOS Laufwerke auf einem physikalischen
+Laufwerk zu haben. Leider schr&auml;nkt das native DOS Programm FDISK die Anzahl
+der prim&auml;ren (also bootf&auml;higen) Partitionen auf gerade mal eins pro Harddisk ein.
+In Wirklichkeit KANN man mehr als eine prim&auml;re Partiton haben. Das Problem ist,
+dass das MS-DOS FDISK sich beharrlich weigert, eine zweite solche Partition an-
+zulegen.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; FDISK erstellt nur eine prim&auml;re Partition und markiert den verbelibenden Rest
+des Platzes als ein Extended Partition. Der erste Sektor der Extended Partition
+wird EMBR (Extended MBR) genannt und dieser hat dieselbe Struktur wie der MBR.
+Innerhalb jeder Extended Partition kann eine FAT (oder NTFS) Partition sein
+(genannt Logisches Laufwerk) und eine weitere Extended Partition. Aus unersich-
+lichen Gr&uuml;nden werden die relativen Sektoren der inneren Extended Partitionen vom
+Start der &auml;ussersten Partition berechnet, die relativen Sektoren der FAT Partition
+jedoch vom Start der einschliessenden Extended Partition.
+
+Hier ein Beispiel dazu:
+
+&nbsp;&nbsp; HD&nbsp; 520 Mb
+&nbsp;&nbsp; ---------------------------------------------------
+&nbsp;&nbsp; Primary FAT-16&nbsp; 120Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ C: 120Mb ]
+&nbsp;&nbsp; Extended DOS&nbsp;&nbsp;&nbsp; 300Mb -----------------------------
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FAT-16&nbsp; 100Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ D: 100Mb ]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ExtDOS&nbsp; 200Mb ---------------
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FAT-16&nbsp; 200Mb&nbsp;&nbsp;&nbsp; [ E: 200Mb ]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ---------------
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -----------------------------
+&nbsp;&nbsp; Linux&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 100Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ /&nbsp; 100Mb ]
+&nbsp;&nbsp; ---------------------------------------------------
+
+&nbsp;&nbsp; Zu bemerken ist, dass die Reihenfolge der Partitionen auf der Disk ebenfalls
+eine Rolle spielen. FAT-Partition m&uuml;ssen am Anfang stehen. Und die Extended
+Partition muss folgen.
+&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp; Tip: Im Partition Manager kann man PgUp und PgDn benutzen um zwischen den EMBR
+Levels zu wechseln.
+
+&nbsp;&nbsp; Man kann weder von Extended Partitionen booten, noch von etwelchen Logischen
+Laufwerken innerhalb dieser. Falls man es trotzdem versucht, so h&auml;ngt sich das&nbsp;
+System einfach auf, weil dieser Boot Record im Gegensatz zu anderen Filesystemen
+keinen Loader Code enth&auml;lt. An dessen Paltz stehen nur Nullen. Man k&ouml;nnte einen
+"nicht-bootbaren" Dummy Boot Record installieren, der anstatt zu crashen eine
+Meldung ausgibt:
+&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Extended DOS partition is not bootable.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Press any key to reboot...
+&nbsp;&nbsp;&nbsp;
+<a NAME="make_primary"></a>Bootf&auml;higkeit von Logischen Laufwerken
+
+&nbsp;&nbsp; Wie weiter oben erw&auml;hnt, ist es nicht m&ouml;glich von einer Extended Partition
+oder von einem Logischen Laufwerk darin zu booten. Was aber, wenn man muss? Die
+L&ouml;sung ist einfach. Alles, was zu tun ist, ist den Record, der das Logische
+Laufwerk beschreibt, vom EMBR in den prim&auml;ren MBR zu schreiben und die Gr&ouml;sse
+der Extended Partition anzupassen. Dann muss man die korrekte Anzahl der&nbsp;
+"Sektoren vor der Partition" im DOS Boot Sektor setzen, dessen Wert gebraucht
+wird, um die System Files zu laden. Schliesslich ist sys.com auszuf&uuml;hren, um
+die System Files auf Disk zu schreiben.
+
+Sehen wir mal, was wir mit <a href="#extended">unserem Beispiel</a> tun k&ouml;nnen.
+
+Variante 1.
+&nbsp;&nbsp;
+&nbsp;&nbsp; Zu bemerken ist, dass die Gr&ouml;sse der Extended Partition ge&auml;ndert wurde
+und die zweite Extended Partition verschwunden ist.
+
+&nbsp;&nbsp; HD&nbsp; 520 Mb
+&nbsp;&nbsp; ---------------------------------------------------
+&nbsp;&nbsp; Primary FAT-16&nbsp; 120Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ C: 120Mb ]
+&nbsp;&nbsp; Extended DOS&nbsp;&nbsp;&nbsp; 100Mb -----------------------------
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FAT-16&nbsp; 100Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ D: 100Mb ]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -----------------------------
+&nbsp;&nbsp; Primary FAT-16&nbsp; 200Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ E: 200Mb ]
+&nbsp;&nbsp; Linux&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 100Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ /&nbsp; 100Mb ]
+&nbsp;&nbsp; ---------------------------------------------------
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+Variante 2.
+
+&nbsp;&nbsp; Beide Eintrage (Records) wurden von der Extended Partition in den MBR
+verschoben.
+
+&nbsp;&nbsp; HD&nbsp; 520 Mb
+&nbsp;&nbsp; ---------------------------------------------------
+&nbsp;&nbsp; Primary FAT-16&nbsp; 120Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ C: 120Mb ]
+&nbsp;&nbsp; Primary FAT-16&nbsp; 100Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ D: 100Mb ]
+&nbsp;&nbsp; Extended DOS&nbsp;&nbsp;&nbsp; 200Mb -----------------------------
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FAT-16&nbsp; 200Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ E: 200Mb ]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -----------------------------
+&nbsp;&nbsp; Linux&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 100Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ /&nbsp; 100Mb ]
+&nbsp;&nbsp; ---------------------------------------------------
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+
+Variante 3.
+&nbsp;&nbsp;
+&nbsp;&nbsp; HD&nbsp; 520 Mb
+&nbsp;&nbsp; ---------------------------------------------------
+&nbsp;&nbsp; Primary FAT-16&nbsp; 120Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ C: 120Mb ]
+&nbsp;&nbsp; Primary FAT-16&nbsp; 100Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ D: 100Mb ]
+&nbsp;&nbsp; Primary FAT-16&nbsp; 200Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ E: 200Mb ]
+&nbsp;&nbsp; Linux&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 100Mb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ /&nbsp; 100Mb ]
+&nbsp;&nbsp; ---------------------------------------------------
+&nbsp;
+
+<hr>
+
+<a NAME="cmd_line"></a>Kommandozeilen-Optionen
+
+Usage: part [-q] [-d disk] [-command ...]
+
+&nbsp;part&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Interaktiver Modus
+&nbsp;part -i&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - IDE Disk Information drucken
+&nbsp;part -p&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - Partitionstabelle drucken
+&nbsp;part -p -r&nbsp;&nbsp;&nbsp; - Info rekursiv ausgeben
+&nbsp;part -a n&nbsp;&nbsp;&nbsp;&nbsp; - Aktivieren der n-ten Partition
+&nbsp;part -v n&nbsp;&nbsp;&nbsp;&nbsp; - Verifizieren der n-ten Partition
+&nbsp;part -f n ... - Formatieren der n-ten Partition
+&nbsp;part -s file&nbsp; - MBR in Datei speichern
+&nbsp;part -l file&nbsp; - MBR aus Datei laden
+&nbsp;part -c file&nbsp; - MBR mit Datei vergleichen
+&nbsp;part -Reboot&nbsp; - Rechner rebooten
+
+&nbsp;Das Programm gibt einen Exit Code 0 zur&uuml;ck, falls kein Fehler aufgetreten
+&nbsp;ist und/oder die verglichenen Objekte identisch waren (sonst wird 1
+&nbsp;zur&uuml;ckgegeben).
+
+<hr>
+<a NAME="moreinfo"></a>Zus&auml;tzliche Information und Hilfen
+
+&nbsp;&nbsp; <a href="http://www.users.intercom.com/~ranish/part/">Partition Manager Home Page
+
+</a>&nbsp;&nbsp; <a href="http://www.users.intercom.com/~ranish/part/primer.htm">Partitioning Primer
+</a>&nbsp;&nbsp; <a href="http://www.users.intercom.com/~ranish/part/faq.htm">Partition Manager FAQ (always up to date)
+</a>&nbsp;&nbsp; <a href="http://www.users.intercom.com/~ranish/links.htm#partitioning">Links to partitioning and bootstrap related materials
+
+</a>&nbsp;&nbsp; <a href="news:comp.os.ms-windows.win95.setup">comp.os.ms-windows.win95.setup
+</a>&nbsp;&nbsp; <a href="news:comp.os.ms-windows.setup.win95">comp.os.ms-windows.setup.win95
+</a>&nbsp;&nbsp; <a href="news:comp.os.linux.setup">comp.os.linux.setup
+</a>&nbsp;&nbsp; <a href="news:comp.sys.ibm.pc.hardware.storage">comp.sys.ibm.pc.hardware.storage
+
+</a>&nbsp;&nbsp; Es gibt auch verschiedene Sprachinterfaces. Falls Sie diese
+benutzen, sollten Sie den untenstehenden Leuten danken:
+&nbsp;
+&nbsp;&nbsp; Tschechisches Interface: Jiri Kuchta, <a href="mailto:kuchta@fee.vutbr.cz">kuchta@fee.vutbr.cz
+</a>&nbsp;&nbsp; Holl&auml;ndisches Interface: Eymert Versteegt, <a href="mailto:jw.versteegt@wxs.nl">jw.versteegt@wxs.nl
+</a>&nbsp;&nbsp; Franz&ouml;sisches Interface: Patrick Robbe, <a href="mailto:probbe@mail.dotcom.fr">probbe@mail.dotcom.fr
+</a>&nbsp;&nbsp; Deutsches Interface: Peter H. Dillinger, <a href="mailto:dilli@rumms.uni-mannheim.de">dilli@rumms.uni-mannheim.de
+</a>&nbsp;&nbsp; Italienisches Interface: Claudio Bondavalli, <a href="mailto:claudiob@iol.it">claudiob@iol.it
+</a>&nbsp;&nbsp; Spanisches Interface: Alberto Cajigas Jr., <a href="mailto:BeLion007@aol.com">BeLion007@aol.com
+</a>&nbsp;&nbsp; Schwedisches Interface: Dan Olav Mikael Hultgren, <a href="mailto:mikhu265@student.liu.se">mikhu265@student.liu.se
+
+</a>&nbsp;&nbsp; Beachten Sie, dass diese Personen im Allgemeinen nur die Sprach-
+anpassung vorgenommen haben: Technische Fragen sollten an&nbsp;
+ranish@intercom.com gemailt werden und nur in englischer Sprache.
+
+<hr>
+
+<a NAME="contact"></a>Kontakt zu Autor und Copyrights
+
+&nbsp;&nbsp; Dieses Programm ist FreeWare. Es kann frei verteilt werden.
+&nbsp;&nbsp; Der Quellcode ist erh&auml;ltlich auf meiner Webseite.
+
+&nbsp;&nbsp; Bevor Sie Fragen an mich mailen, lesen Sie bitte die Hilfedateien
+und die FAQs. Besuchen Sie zuerst meine Also Website f&uuml;r ein allf&auml;lliges
+Update der Hilfedateien und &uuml;berpr&uuml;fen Sie, ob die neueste Version des
+Programms Ihr Problem bereits l&ouml;st. Ich werde keine Fragen beantworten,
+die in den FAQs behandelt sind.&nbsp;
+
+&nbsp;&nbsp; Wenn Sie Fragen haben, senden Sie bitte den Output der Befehle
+"part -p -r" (und "part -d 2 -p -r" falls eine zweite HD angeschlossen ist).
+ebenfalls mit. Versuchen Sie auch, klar mitzuteilen, welche Betriebssysteme&nbsp;
+installiert sind bzw. installiert werden sollen.
+
+<hr>
+<img SRC="counter"  align=RIGHT>
+Mikhail Ranish <a href="mailto:ranish@intercom.com">ranish@intercom.com
+</a><a href="http://www.users.intercom.com/~ranish">http://www.users.intercom.com/~ranish
+</a><a href="http://www.ml.brooklyn.cuny.edu/~mranish">http://www.ml.brooklyn.cuny.edu/~mranish</a>
+
+This document was translated into German by Stefan Martig (martig@iamexwi.unibe.ch)
+Thank you, Stefan!
+</pre>
+
+</body>
+</html>
