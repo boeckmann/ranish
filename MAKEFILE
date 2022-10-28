@@ -21,34 +21,35 @@ en: $(OBJ)
         $(CC) -epart *.obj
 
 cs de ru se sp fr it nl: $(OBJ)
-	$(CC) -c -DLANG_$@ part_msg.c
-	$(CC) -epart-$@ *.obj
-	del part_msg.obj
+   $(CC) -c -DLANG_$@ part_msg.c
+   $(CC) -epart-$@ *.obj
+   del part_msg.obj
 
-all:	en cs de ru se sp fr it nl
+all:  en cs de ru se sp fr it nl
 
 zip:
-        7z a sources.zip makefile *.c *.h *.asm *.inc
-        7z a part.zip readme.txt install.bat part.exe part.htm sources.zip
+        pklite *.exe
+        pkzip -ex sources makefile *.c *.h *.asm *.inc
+        pkzip -ex part readme.* install.bat part.exe part.htm sources.zip
 
 $(OBJ): $(INC)
 
 .c.obj:
-	$(CC) -c $<
+   $(CC) -c $<
 
 .asm.obj:
-	$(AS) $<
+   $(AS) $<
 
 mesg:  mesg.c
-	$(CC) mesg.c
-	del mesg.obj
+   $(CC) mesg.c
+   del mesg.obj
 
 keys: keycodes.c conio.obj conio.h
-	$(CC) keycodes.c conio.obj
-	del keycodes.obj
+   $(CC) keycodes.c conio.obj
+   del keycodes.obj
 
 clean:
         del *.obj
-	del *.map
-	del *.lst
+        del *.map
+        del *.lst
         del *.tmp

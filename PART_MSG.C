@@ -1,8 +1,8 @@
 #include "part.h"
 
      /* VERSION_DATE "2.37.05            June 10, 1998" */
-#define VERSION_DATE "2.99.00            Oct  27, 2022"
-#define VERSION      "2.99.00"
+#define VERSION_DATE "2.37.99            Oct  27, 2022"
+#define VERSION      "2.37.99"
 
 #define HOME_URL "https://codeberg.org/boeckmann/ranish"
 
