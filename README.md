@@ -1,25 +1,15 @@
 # Ranish Partition Manager
 
-This is a fork of Ranish Partition Manager 2.37.11 developed until 1998
-by Mikhail Ranish. Version 2.37.11 was the last version of the software with
-source code distributed under public domain.
+This is a fork of Ranish Partition Manager 2.37.11, developed until 1998
+by Mikhail Ranish. Version 2.37.11 was the last version of which the
+source code is distributed under public domain. There are more capable binary versions of RANISH, but these are not public domain.
 
 The public domain statement for the source code of RANISH is given in the
-original README.TXT file. The README.TXT also states that the binaries are
-freeware. Because they are not public domain I did not include the binaries
-in the repository. I gave the original version git tag v2.37.11-original.
+original README.TXT file. I have put the source code in this repository under Creative Commons CC-0 1.0 license.
 
-I plan to make some small modifications to the source code and have put it
-under Creative Commons CC-0 1.0 license.
+## Binaries
+The original binaries are not included in the repository. They are freeware but not public domain. To provide binaries I rebuilt the original sources with Borland C++ 3.1 and Borland TASM and released it as 2.37.99 with updated contact information and URL references to this repository on codeberg. Beside that it should hopefully be bug for bug compatible with the original version. 
 
-## Building
-Because of the missing binary `ALT_FONT.COM` the creation of the make target
-`zip` fails for the original version. I am not sure for what `ALT_FONT.COM`
-is good, but it seams to have something to do with the russian version.
 
-## Change Log
-
-### Version 2.37.99
- * Relicense under Creative Commons CC-0 license
- * Recompile with Borland C++ 3.1
- * Remove old links and point to new repository
+## Port to Open Watcom C and NASM
+I am in the process of porting RANISH to the Open Watcom C Compiler and Netwide Assembler (NASM). This process is performed in the watcom branch.
