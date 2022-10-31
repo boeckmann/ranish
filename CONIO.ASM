@@ -1,63 +1,66 @@
-segment data
+.MODEL LARGE
+.DATA
 
-global	_ScreenWidth
-global	_ScreenHeight
-global	_MouseInstalled
+PUBLIC	_ScreenWidth
+PUBLIC	_ScreenHeight
+PUBLIC	_MouseInstalled
 
-_ScreenOffset	dw   0	; 0000h
-_ScreenSegment	dw   0	; B800h
-_ScreenWidth	db   0	;  80
-_ScreenHeight	db   0	;  25
-_ScreenLength	dw   0	; 80*25
-_MouseInstalled	dw   0	; 0 or 1
-_LastKeyShifts	dw   0	;
-_LastMousePosX	dw   0  ;
-_LastMousePosY	dw   0  ;
-_LastMouseBtns	dw   0	;
-OriginalTimer1	dw   0	;
-OriginalTimer2	dw   0	;
+_ScreenArea	EQU DWord Ptr _ScreenOffset
+_ScreenOffset	DW   ?	; 0000h
+_ScreenSegment	DW   ?	; B800h
+_ScreenWidth	DB   ?	;  80
+_ScreenHeight	DB   ?	;  25
+_ScreenLength	DW   ?	; 80*25
+_MouseInstalled	DW   ?	; 0 or 1
+_LastKeyShifts	DW   ?	;
+_LastMousePosX	DW   ?  ;
+_LastMousePosY	DW   ?  ;
+_LastMouseBtns	DW   ?	;
+OriginalTimer1	DW   ?	;
+OriginalTimer2	DW   ?	;
 
-segment code
+.CODE
+LOCALS
 
-global	_conio_init
-global	_conio_exit
-global	_show_mouse
-global	_hide_mouse
-global	_move_mouse
-global	_cursor_size
-global	_move_cursor
-global	_get_event
-global	_write_char
-global	_write_string
-global	_load_window
-global	_save_window
-global	_clear_window
-global	_scroll_window
-global	_border_window
+PUBLIC	_conio_init
+PUBLIC	_conio_exit
+PUBLIC	_show_mouse
+PUBLIC	_hide_mouse
+PUBLIC	_move_mouse
+PUBLIC	_cursor_size
+PUBLIC	_move_cursor
+PUBLIC	_get_event
+PUBLIC	_write_char
+PUBLIC	_write_string
+PUBLIC	_load_window
+PUBLIC	_save_window
+PUBLIC	_clear_window
+PUBLIC	_scroll_window
+PUBLIC	_border_window
 
 
-%macro Show_Mouse 0
-		cmp	word [_MouseInstalled], 1
-		jne	.nomouse1
+Show_Mouse	MACRO
+		cmp	_MouseInstalled, 1
+		jne	@@nomouse1
 		mov	ax, 0001h
 		int	33h
-    .nomouse1:
-%endmacro
+    @@nomouse1:
+		ENDM
 
 
-%macro Hide_Mouse 0
-		cmp	word [_MouseInstalled], 1
-		jne	.nomouse2
+Hide_Mouse	MACRO
+		cmp	_MouseInstalled, 1
+		jne	@@nomouse2
 		mov	ax, 0002h
 		int	33h
-    .nomouse2:
-%endmacro
+    @@nomouse2:
+		ENDM
 
 
 ;----------------------------------------------------------------
 
 
-_conio_init:
+_conio_init	PROC
 		push	bp
 		mov	bp, sp
 		push	es
@@ -68,18 +71,18 @@ _conio_init:
 		int	10h
 
 		cmp	al,07h
-		je	.Mono
+		je	@@Mono
 		cmp	al,03h
-		je	.Color
-    .Reset:
+		je	@@Color
+    @@Reset:
 		mov	ax,03		; If unknown set Color 80x25
 		int	10h
-    .Color:  
-		mov	word [_ScreenSegment], 0B800h
-		jmp	.skip1
-    .Mono:
-		mov	word [_ScreenSegment], 0B000h
-    .skip1:
+    @@Color:  
+		mov	_ScreenSegment, 0B800h
+		jmp	@@skip1
+    @@Mono:
+		mov	_ScreenSegment, 0B000h
+    @@skip1:
 		push	ds
 		mov	ax, 0
 		mov	ds, ax
@@ -87,76 +90,83 @@ _conio_init:
 		mov	al, [bx]
 		pop	ds
 		inc	al
-		mov	[_ScreenHeight], al
+		mov	_ScreenHeight, al
 		mov	ah,0Fh
 		int	10h
-		mov	[_ScreenWidth], ah
-		mov	al, [_ScreenHeight]
-		mov	ah, [_ScreenWidth]
+		mov	_ScreenWidth, ah
+		mov	al, _ScreenHeight
+		mov	ah, _ScreenWidth
 		mul	ah
-		mov	[_ScreenLength], ax
-		mov	word [_ScreenOffset], 0h
+		mov	_ScreenLength, ax
+		mov	_ScreenOffset, 0h
 		
 		mov	ax,0000h	; Check for a mouse
 		int	33h
 		cmp	ax, 0h
-		je	.No_Mouse
+		je	@@No_Mouse
 		cmp	ax, 3h
-		je	._Mouse
+		je	@@_Mouse
 		cmp	ax, 2h
-		je	._Mouse
+		je	@@_Mouse
 		cmp	ax, 0FFFFh
 		mov	ax, 2h
-		je	._Mouse
+		je	@@_Mouse
 		mov	ax, 1h
-    ._Mouse:
-		mov	word [_MouseInstalled], 1
+    @@_Mouse:
+		mov	_MouseInstalled, 1
 		mov	ax, 0003h	; Reset mouse
 		int	33h
-		mov	[_LastMousePosX], cx
-		mov	[_LastMousePosY], dx
-		mov	[_LastMouseBtns], bx
-		jmp	.skip2
-    .No_Mouse:
-		mov	word [_MouseInstalled], 0
-    .skip2:	
+		mov	_LastMousePosX, cx
+		mov	_LastMousePosY, dx
+		mov	_LastMouseBtns, bx
+		jmp	@@skip2
+    @@No_Mouse:
+		mov	_MouseInstalled, 0
+    @@skip2:	
 		mov	ah, 12h		; Get keyboard status
 		int	16h
-		mov	[_LastKeyShifts], ax
+		mov	_LastKeyShifts, ax
 		
 		pop	di
 		pop	si
 		pop	es
 		pop	bp
 		retf
+_conio_init	ENDP
 
 
-_conio_exit:
+_conio_exit	PROC
 		retf
+_conio_exit	ENDP
 
 
 ;----------------------------------------------------------------
 
-_show_mouse:
+
+_show_mouse	PROC
 		Show_Mouse
 		retf
+_show_mouse	ENDP
 
 
-_hide_mouse:
+
+_hide_mouse	PROC
 		Hide_Mouse
 		retf
+_hide_mouse	ENDP
 
 
-_move_mouse:
 
-  .Y		equ	08h
-  .X		equ	06h
+_move_mouse	PROC
+
+	Y	EQU	[bp+08h]
+	X	EQU	[bp+06h]
 
 		push	bp
 		mov	bp, sp
 		mov	ax, 0004h
-		mov	cx, [bp+.X]
-		mov	dx, [bp+.Y] 
+		mov	cx, X
+		mov	dx, Y 
 
 		dec	cx
 		shl	cx, 1
@@ -171,54 +181,57 @@ _move_mouse:
 		int	33h
 		pop	bp
 		retf
+_move_mouse  ENDP
 
 
 ;----------------------------------------------------------------
 
 
-_move_cursor:
+_move_cursor	PROC
 
-  .Y		equ	08h
-  .X		equ	06h
+	Y	EQU	[bp+08h]
+	X	EQU	[bp+06h]
 
 		push	bp
 		mov	bp, sp
 		mov	ah, 02
 		mov	bh, 00
-		mov	dl, [bp+.X]
-		mov	dh, [bp+.Y]
+		mov	dl, X
+		mov	dh, Y
 		sub	dx, 0101h
 		int	10h
 		pop	bp
 		retf
+_move_cursor	ENDP
 
 
-_cursor_size:
+_cursor_size	PROC
 
-  .Bottom	equ	08h
-  .Top		equ	06h
+      Bottom	EQU	[bp+08h]
+	Top	EQU	[bp+06h]
 
 		push	bp
 		mov	bp, sp
 		mov	ah, 01
-		mov	cl, [bp+.Top]
-		mov	ch, [bp+.Bottom]
+		mov	cl, Top
+		mov	ch, Bottom
 		and	cx, 1F1Fh
 		int	10h
 		pop	bp
 		retf
 
+_cursor_size	ENDP
 
 
 ;----------------------------------------------------------------
 
 
-_write_char:
+_write_char	PROC
 
-	.C	equ	0Ch
-	.Y	equ	0Ah
-	.X	equ	08h
-    .Attribute	equ	06h
+	C	EQU	[bp+0Ch]
+	Y	EQU	[bp+0Ah]
+	X	EQU	[bp+08h]
+    Attribute	EQU	[bp+06h]
 
 		Hide_Mouse
 
@@ -232,19 +245,19 @@ _write_char:
 		mov	cx, bx
 		mov	dx, cx
 	
-		mov	dl, [_ScreenWidth]
-		mov	al, [bp+.Y]
-		mov	bl, [bp+.X]	 
+		mov	dl, _ScreenWidth
+		mov	al, Y
+		mov	bl, X	 
 		dec	al
 		dec	bl	 
 		mul	dl
 		add	ax, bx
 		shl	ax, 1
-		les	di, [_ScreenOffset]
+		les	di, _ScreenArea
 		add	di, ax
 
-		mov	al, [bp+.C]
-		mov	ah, [bp+.Attribute]
+		mov	al, C
+		mov	ah, Attribute
 		stosw
 
 		pop	si
@@ -254,15 +267,16 @@ _write_char:
 
 		Show_Mouse
 		retf
+_write_char	ENDP
 
 
 
-_write_string:
+_write_string	PROC
 
-	.S	equ	0Ch
-	.Y	equ	0Ah
-	.X	equ	08h
-    .Attribute	equ	06h
+	S	EQU	[bp+0Ch]
+	Y	EQU	[bp+0Ah]
+	X	EQU	[bp+08h]
+    Attribute	EQU	[bp+06h]
 
 		Hide_Mouse
 
@@ -276,26 +290,26 @@ _write_string:
 		mov	cx, bx
 		mov	dx, cx
 	
-		mov	dl, [_ScreenWidth]
-		mov	al, [bp+.Y]
-		mov	bl, [bp+.X]	 
+		mov	dl, _ScreenWidth
+		mov	al, Y
+		mov	bl, X	 
 		dec	al
 		dec	bl	 
 		mul	dl
 		add	ax, bx
 		shl	ax, 1
-		les	di, [_ScreenOffset]
-		lds	si, [bp+.S]
+		les	di, _ScreenArea
+		lds	si, S
 		add	di, ax
 
-		mov	ah, [bp+.Attribute]
-		jmp	.first
-    .next:
+		mov	ah, Attribute
+		jmp	@@first
+    @@next:
 		stosw
-    .first:
+    @@first:
 		lodsb
 		cmp	al, 0
-		jne	.next
+		jne	@@next
 		
 		pop	si
 		pop	di
@@ -304,18 +318,19 @@ _write_string:
 
 		Show_Mouse
 		retf
+_write_string	ENDP
 
 
 ;----------------------------------------------------------------
 
 
-_save_window:
+_save_window	PROC
 
-   .Destination	equ	0Eh
-	.H	equ	0Ch
-	.W	equ	0Ah
-	.Y	equ	08h
-	.X	equ	06h
+   Destination	EQU	[bp+0Eh]
+	H	EQU	[bp+0Ch]
+	W	EQU	[bp+0Ah]
+	Y	EQU	[bp+08h]
+	X	EQU	[bp+06h]
 
 		Hide_Mouse
 
@@ -329,27 +344,28 @@ _save_window:
 		mov	cx, bx
 		mov	dx, cx
 	
-		mov	dl, [_ScreenWidth]
-		mov	al, [bp+.Y]
-		mov	bl, [bp+.X]	 
+		mov	dl, _ScreenWidth
+		mov	al, Y
+		mov	bl, X	 
 		dec	al
 		dec	bl	 
 		mul	dl
 		add	ax, bx
 		shl	ax, 1
-		les	di, [bp+.Destination]
-		lds	si, [_ScreenOffset]
+		les	di, Destination
+		lds	si, _ScreenArea
 		add	si, ax
-		mov	bl, [bp+.W]
-		mov	bh, [bp+.H]
+		mov	bl, W
+		mov	bh, H
 		sub	dl, bl
 		shl	dx, 1
-    .next_row:
+    @@next_row:
 		mov	cl, bl
-		rep	movsw
+		rep
+		 movsw
 		add	si, dx
 		dec	bh
-		jne	.next_row
+		jne	@@next_row
 
 		pop	si
 		pop	di
@@ -358,15 +374,17 @@ _save_window:
 
 		Show_Mouse
 		retf
+_save_window	ENDP
 
 
-_load_window:
 
-     .Source	equ	0Eh
-	.H	equ	0Ch
-	.W	equ	0Ah
-	.Y	equ	08h
-	.X	equ	06h
+_load_window	PROC
+
+     Source	EQU	[bp+0Eh]
+	H	EQU	[bp+0Ch]
+	W	EQU	[bp+0Ah]
+	Y	EQU	[bp+08h]
+	X	EQU	[bp+06h]
 
 		Hide_Mouse
 
@@ -380,29 +398,30 @@ _load_window:
 		mov	cx, bx
 		mov	dx, cx
 	
-		mov	dl, [_ScreenWidth]
-		mov	al, [bp+.Y]
-		mov	bl, [bp+.X]	 
+		mov	dl, _ScreenWidth
+		mov	al, Y
+		mov	bl, X	 
 		dec	al
 		dec	bl	 
 		mul	dl
 		add	ax, bx
 		shl	ax, 1
-		les	di, [_ScreenOffset]
-		lds	si, [bp+.Source]
+		les	di, _ScreenArea
+		lds	si, Source
 		add	di, ax
 
-		mov	bl, [bp+.W]
-		mov	bh, [bp+.H]
+		mov	bl, W
+		mov	bh, H
 		sub	dl, bl
 		shl	dx, 1
 		
-    .next_row:
+    @@next_row:
 		mov	cl, bl
-		rep	movsw
+		rep
+		 movsw
 		add	di, dx
 		dec	bh
-		jne	.next_row
+		jne	@@next_row
 				
 		pop	si
 		pop	di
@@ -411,18 +430,19 @@ _load_window:
 
 		Show_Mouse
 		retf
+_load_window ENDP
 
 
 ;----------------------------------------------------------------
 
 
-_clear_window:
+_clear_window	PROC
 
-	.H	equ	0Eh
-	.W	equ	0Ch
-	.Y	equ	0Ah
-	.X	equ	08h
-    .Attribute	equ	06h
+	H	EQU	[bp+0Eh]
+	W	EQU	[bp+0Ch]
+	Y	EQU	[bp+0Ah]
+	X	EQU	[bp+08h]
+    Attribute	EQU	[bp+06h]
 
 		Hide_Mouse
 
@@ -436,32 +456,32 @@ _clear_window:
 		mov	cx, bx
 		mov	dx, cx
 	
-		mov	dl, [_ScreenWidth]
-		mov	al, [bp+.Y]
-		mov	bl, [bp+.X] 
+		mov	dl, _ScreenWidth
+		mov	al, Y
+		mov	bl, X	 
 		dec	al
 		dec	bl	 
 		mul	dl
 		add	ax, bx
 		shl	ax, 1
-		les	di, [_ScreenOffset]
+		les	di, _ScreenArea
 		add	di, ax
 
-		mov	bl, [bp+.W]
-		mov	bh, [bp+.H]
+		mov	bl, W
+		mov	bh, H
 		sub	dl, bl
 		shl	dx, 1
 		
-		mov	ah, [bp+.Attribute]
+		mov	ah, Attribute
 		mov	al, ' '
 
-    .next_row:
+    @@next_row:
 		mov	cl, bl
 		rep
 		stosw
 		add	di, dx
 		dec	bh
-		jne	.next_row
+		jne	@@next_row
 				
 		pop	si
 		pop	di
@@ -470,17 +490,18 @@ _clear_window:
 
 		Show_Mouse
 		retf
+_clear_window	ENDP
 
 
 
-_scroll_window:
+_scroll_window	PROC
 
-       .Len	equ	10h
-	.H	equ	0Eh
-	.W	equ	0Ch
-	.Y	equ	0Ah
-	.X	equ	08h
-    .Attribute	equ	06h
+       Len	EQU	[bp+10h]
+	H	EQU	[bp+0Eh]
+	W	EQU	[bp+0Ch]
+	Y	EQU	[bp+0Ah]
+	X	EQU	[bp+08h]
+    Attribute	EQU	[bp+06h]
 
 		Hide_Mouse
 
@@ -494,31 +515,31 @@ _scroll_window:
 		mov	cx, bx
 		mov	dx, cx
 	
-		mov	dl, [_ScreenWidth]
-		les	di, [_ScreenOffset]
-		lds	si, [_ScreenOffset]
+		mov	dl, _ScreenWidth
+		les	di, _ScreenArea
+		lds	si, _ScreenArea
 		mov	cl, dl
-		sub	dl, [bp+.W]
+		sub	dl, W
 		shl	dx, 1
 	
-		mov	al, [bp+.Len]
+		mov	al, Len
 		imul	cl
 		shl	ax, 1
 		add	si, ax
 		or	ax, ax
 	
-		mov	al, [bp+.Y]
-		mov	ah, [bp+.X]
-		mov	bl, [bp+.H]
-		mov	bh, [bp+.W]
-		jns	.n12
+		mov	al, Y
+		mov	ah, X
+		mov	bl, H
+		mov	bh, W
+		jns	@@n12
 
 		std
-		neg	Byte [bp+.Len]
+		neg	Byte Ptr Len
 		neg	dx
 		add	ax, bx
 		sub	ax, 0101h
-    .n12:
+    @@n12:
 		sub	ax, 0101h
 		xchg	ah, cl
 		mul	ah
@@ -526,26 +547,28 @@ _scroll_window:
 		shl	ax, 1
 		add	si, ax
 		add	di, ax
-		sub	bl, [bp+.Len]
+		sub	bl, Len
 	
-    .next_row:
+    @@next_row:
 		mov	cl, bh
-		rep	movsw
+		rep
+		  movsw
 		add	di, dx
 		add	si, dx
 		dec	bl
-		jne	.next_row
+		jne	@@next_row
 
-		mov	bl, [bp+.Len]
-		mov	ah, [bp+.Attribute]
+		mov	bl, Len
+		mov	ah, Attribute
 		mov	al, ' '
 
-    .clr_row:
+    @@clr_row:
 		mov	cl, bh
-		rep	stosw
+		rep
+		  stosw
 		add	di, dx
 		dec	bl
-		jne	.clr_row
+		jne		@@clr_row
 
 		cld
 
@@ -556,17 +579,18 @@ _scroll_window:
 
 		Show_Mouse
 		retf
+_scroll_window	ENDP
 
 
 
-_border_window:
+_border_window	PROC
 
-      .Border	equ	10h
-	 .H	equ	0Eh
-	 .W	equ	0Ch
-	 .Y	equ	0Ah
-	 .X	equ	08h
-     .Attribute	equ	06h
+      Border	EQU	[bp+10h]
+	 H	EQU	[bp+0Eh]
+	 W	EQU	[bp+0Ch]
+	 Y	EQU	[bp+0Ah]
+	 X	EQU	[bp+08h]
+     Attribute	EQU	[bp+06h]
 
 		Hide_Mouse
 
@@ -580,64 +604,67 @@ _border_window:
 		mov	cx, bx
 		mov	dx, cx
 	
-		mov	dl, [_ScreenWidth]
-		mov	al, [bp+.Y]
-		mov	bl, [bp+.X]	 
+		mov	dl, _ScreenWidth
+		mov	al, Y
+		mov	bl, X	 
 		dec	al
 		dec	bl	 
 		mul	dl
 		add	ax, bx
 		shl	ax, 1
-		les	di, [_ScreenOffset]
-		lds	si, [bp+.Border]
+		les	di, _ScreenArea
+		lds	si, Border
 		add	di, ax
 
-		mov	bl, [bp+.W]
-		mov	bh, [bp+.H]
+		mov	bl, W
+		mov	bh, H
 		sub	dl, bl
 		shl	dx, 1
 		sub	bx, 0202h
 		
-		mov	ah, [bp+.Attribute]
+		mov	ah, Attribute
 
 		lodsb			; Upper row
 		stosw
 		mov	cl, bl
 		lodsb
-		rep	stosw
+		rep
+		  stosw
 		lodsb
 		stosw
 		add	di, dx
 		cmp	bh, 00
-		je	.NoMiddleRows
+		je	@@NoMiddleRows
 	
-    .next_row:
+    @@next_row:
 		lodsb			; All rows in the middle
 		stosw
 		mov	cl, bl
 		lodsb
 		cmp	al, 00
-		je	.NoFill
-		rep	stosw
-		jmp	.FillDone
-    .NoFill:
+		je	@@NoFill
+		rep
+		  stosw
+		jmp	@@FillDone
+    @@NoFill:
 		add	di, cx
 		add	di, cx
-    .FillDone:
+    @@FillDone:
 		lodsb
 		stosw
 		add	di, dx
 		sub	si, 03
 		dec	bh
-		jne	.next_row
+		jne	@@next_row
 
- .NoMiddleRows:
+ @@NoMiddleRows:
 		add	si, 03		; Bottom row
 		lodsb
 		stosw
 		mov	cl, bl
 		lodsb
-		rep	stosw
+		rep
+		  stosw
 		lodsb
 		stosw
 
@@ -648,37 +675,38 @@ _border_window:
 
 		Show_Mouse
 		retf
+_border_window	ENDP
 
 
 ;----------------------------------------------------------------
 
 
-_get_event:
+_get_event	PROC
 
-  .flags	equ	0Ah
-  .event	equ	06h
+  flags		EQU	Word Ptr [bp+0Ah]
+  event		EQU	[bp+06h]
 
-  .ev_type	equ	0
+ ev_type	EQU	Word Ptr es:[si]
 
-  .key		equ	2
-  .scan		equ	4
-  .shift	equ	6
-  .shiftX	equ	8
+ key		EQU	Word Ptr es:[si+2]
+ scan		EQU	Word Ptr es:[si+4]
+ shift		EQU	Word Ptr es:[si+6]
+ shiftX		EQU	Word Ptr es:[si+8]
 
-  .x		equ	10
-  .y		equ	12
-  .left		equ	14
-  .right	equ	16
-  .middle	equ	18
+ x		EQU	Word Ptr es:[si+10]
+ y		EQU	Word Ptr es:[si+12]
+ left		EQU	Word Ptr es:[si+14]
+ right		EQU	Word Ptr es:[si+16]
+ middle		EQU	Word Ptr es:[si+18]
 
-  .timer1	equ	20
-  .timer2	equ	22
+ timer1		EQU	Word Ptr es:[si+20]
+ timer2		EQU	Word Ptr es:[si+22]
 
-  EV_KEY	equ	 1
-  EV_SHIFT	equ	 2
-  EV_MOUSE	equ	 4
-  EV_TIMER	equ	 8
-  EV_NONBLOCK	equ	16
+ EV_KEY		EQU	 1
+ EV_SHIFT	EQU	 2
+ EV_MOUSE	EQU	 4
+ EV_TIMER	EQU	 8
+ EV_NONBLOCK	EQU	16
 
 		push	bp
 		mov	bp, sp
@@ -686,109 +714,109 @@ _get_event:
 		push	es
 		push	si
 		push	di
-		les	si, [bp+.event]
+		les	si, event
 		sub	ax, ax
-		mov	[es:si+.ev_type], ax
-		mov	[es:si+.key], ax
-		mov	[es:si+.scan], ax
+		mov	ev_type, ax
+		mov	key, ax
+		mov	scan, ax
 
-		test	word [bp+.flags], EV_TIMER
-		jz	.main_loop
+		test	flags, EV_TIMER
+		jz	@@main_loop
 		mov	ah, 0h
 		int	1Ah
-		mov	[OriginalTimer1], dx
-		mov	[OriginalTimer2], cx
+		mov	OriginalTimer1, dx
+		mov	OriginalTimer2, cx
 
-    .main_loop:
-		test	 word [bp+.flags], EV_KEY
-		jz	.test_shifts
+    @@main_loop:
+		test	flags, EV_KEY
+		jz	@@test_shifts
 
 		mov	ah, 11h			; Check for a key
 		int	16h
-		jz	.test_shifts
+		jz	@@test_shifts
 
-		or	word [es:si+.ev_type], EV_KEY		; Key was pressed
+		or	ev_type, EV_KEY		; Key was pressed
 		mov	ah, 10h
 		int	16h
-		mov	[es:si+.scan], ax
+		mov	scan, ax
 		cmp	al, 0E0h		; Is it an extended key
-		jne	.normal_key
+		jne	@@normal_key
 		cmp	ah, 0
-		je	.normal_key
+		je	@@normal_key
 		mov	al, 0
-    .normal_key:
+    @@normal_key:
 		mov	ah, 0
-		mov	[es:si+.key], ax
-		jmp	.break_out
+		mov	key, ax
+		jmp	@@break_out
 
-    .test_shifts:
-		test	word [bp+.flags], EV_SHIFT
-		jz	.test_mouse
+    @@test_shifts:
+		test	flags, EV_SHIFT
+		jz	@@test_mouse
 
 		mov	ah, 12h			; Check if shifts changed
 		int	16h
-		cmp	ax, [_LastKeyShifts]
-		jz	.test_mouse
+		cmp	ax, _LastKeyShifts
+		jz	@@test_mouse
 
-		or	word [es:si+.ev_type], EV_SHIFT
-		mov	bx, [_LastKeyShifts]
+		or	ev_type, EV_SHIFT
+		mov	bx, _LastKeyShifts
 		xor	bx, ax
-		mov	[es:si+.shift], ax
-		mov	[es:si+.shiftX], bx
-		mov	[_LastKeyShifts], ax
-		jmp	.break_out2
+		mov	shift, ax
+		mov	shiftX, bx
+		mov	_LastKeyShifts, ax
+		jmp	@@break_out2
 
-    .test_mouse:
-		test	word [bp+.flags], EV_MOUSE
-		jz	.test_time
-		cmp	word [_MouseInstalled], 1
-		jne	.test_time
+    @@test_mouse:
+		test	flags, EV_MOUSE
+		jz	@@test_time
+		cmp	_MouseInstalled, 1
+		jne	@@test_time
 
 		mov	ax, 0003h		; Check mouse status
 		int	33h
-		cmp	bx, [_LastMouseBtns]
-		jne	.mouse
-		cmp	cx, [_LastMousePosX]
-		jne	.mouse
-		cmp	dx, [_LastMousePosY]
-		je	.test_time
-    .mouse:
-		or	word [es:si+.ev_type], EV_MOUSE
+		cmp	bx, _LastMouseBtns
+		jne	@@mouse
+		cmp	cx, _LastMousePosX
+		jne	@@mouse
+		cmp	dx, _LastMousePosY
+		je	@@test_time
+    @@mouse:
+		or	ev_type, EV_MOUSE
 
-		mov	[_LastMouseBtns], bx
-		mov	[_LastMousePosX], cx
-		mov	[_LastMousePosY], dx
-		jmp	.break_out
-    .test_time:
-		test	word [bp+.flags], EV_TIMER
-		jz	.loop_tail
+		mov	_LastMouseBtns, bx
+		mov	_LastMousePosX, cx
+		mov	_LastMousePosY, dx
+		jmp	@@break_out
+    @@test_time:
+		test	flags, EV_TIMER
+		jz	@@loop_tail
 
 		mov	ah, 0h			; Check timer
 		int	1Ah
-		sub	dx, [OriginalTimer1]
-		sbb	cx, [OriginalTimer2]
-		cmp	cx, [es:si+.timer2]
-		jb	.loop_tail
-		cmp	dx, [es:si+.timer1]
-		jb	.loop_tail
-		or	word [es:si+.ev_type], EV_TIMER
-		jmp	.break_out
-    .loop_tail:
-		test	word [bp+.flags], EV_NONBLOCK
-		jnz	.break_out
-		jmp	.main_loop
+		sub	dx, OriginalTimer1
+		sbb	cx, OriginalTimer2
+		cmp	cx, timer2
+		jb	@@loop_tail
+		cmp	dx, timer1
+		jb	@@loop_tail
+		or	ev_type, EV_TIMER
+		jmp	@@break_out
+    @@loop_tail:
+		test	flags, EV_NONBLOCK
+		jnz	@@break_out
+		jmp	@@main_loop
 
-    .break_out:
+    @@break_out:
 		mov	ah, 12h		; Updayte shift status
 		int	16h
-		mov	[es:si+.shift], ax
-		mov	bx, [_LastKeyShifts]
+		mov	shift, ax
+		mov	bx, _LastKeyShifts
 		xor	bx, ax
-		mov	[es:si+.shiftX], bx
+		mov	shiftX, bx
 
-    .break_out2:
-    		cmp	word [_MouseInstalled], 1
-    		jne	.end
+    @@break_out2:
+    		cmp	_MouseInstalled, 1
+    		jne	@@end
 
 		mov	ax, 0003h	; Update mouse status
 		int	33h
@@ -797,40 +825,42 @@ _get_event:
 		shr	cx, 1
 		shr	cx, 1
 		inc	cx
-		mov	[es:si+.x], cx
+		mov	x, cx
 		shr	dx, 1
 		shr	dx, 1
 		shr	dx, 1
 		inc	dx
-		mov	[es:si+.y], dx
+		mov	y, dx
 
 		test	bx, 0001h
-		jne	.jleft
-		mov	word [es:si+.left], 0h
-		jmp	.leftE
-	.jleft:
-		mov	word [es:si+.left], 1h
-	.leftE:
+		jne	@@left
+		mov	word ptr left, 0h
+		jmp	@@leftE
+	@@left:
+		mov	word ptr left, 1h
+	@@leftE:
 		test	bx, 0002h
-		jne	.jright
-		mov	word [es:si+.right], 0h
-		jmp	.rightE
-	.jright:
-		mov	word [es:si+.right], 1h
-	.rightE:
+		jne	@@right
+		mov	word ptr right, 0h
+		jmp	@@rightE
+	@@right:
+		mov	word ptr right, 1h
+	@@rightE:
 		test	bx, 0004h
-		jne	.jmiddle
-		mov	word [es:si+.middle], 0h
-		jmp	.middleE
-	.jmiddle:
-		mov	word [es:si+.middle], 1h
-	.middleE:
+		jne	@@middle
+		mov	word ptr middle, 0h
+		jmp	@@middleE
+	@@middle:
+		mov	word ptr middle, 1h
+	@@middleE:
 
-	.end:
+	@@end:
 		pop	di
 		pop	si
 		pop	es
 		pop	ds
 		pop	bp
 		retf
+_get_event	ENDP
 
+END
