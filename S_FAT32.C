@@ -1,5 +1,5 @@
 #include "part.h"
-
+#include <time.h>
 
 struct boot_fat32
     {
@@ -120,7 +120,7 @@ int format_fat32(struct part_long *p, char **argv)
     {
      if( strcmpi(*argv,"/destructive")==0 ) form_type=F_DESTR;
      else if(  strcmpi(*argv,"/quick")==0 ) form_type=F_QUICK;
-     else if( strncmpi(*argv,"/c:", 3)==0 )
+     else if( _strnicmp(*argv,"/c:", 3)==0 )
        {
         k=atoi((*argv)+3);
         for( i=k/2, j=0 ; i!=0 && j<7 ; j++, i/=2 );
@@ -131,7 +131,7 @@ int format_fat32(struct part_long *p, char **argv)
            goto failed;
           }
        }
-     else if( strncmpi(*argv,"/x:", 3)==0 )
+     else if( _strnicmp(*argv,"/x:", 3)==0 )
        {
         if( strcmpi(*argv,"/x:disk")==0 )
           l=dinfo.total_sects;
@@ -139,7 +139,7 @@ int format_fat32(struct part_long *p, char **argv)
           l=atol((*argv)+3);
         if( l>num_sect ) num_sect=l;
        }
-     else if( strncmpi(*argv,"/l:", 3)==0 )
+     else if( _strnicmp(*argv,"/l:", 3)==0 )
        {
         strncpy(tmp,(*argv)+3,11);
         tmp[11]=0;

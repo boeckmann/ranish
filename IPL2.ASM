@@ -1,7 +1,5 @@
 
-segment data
-
-segment code
+section IPL2_TEXT class=CODE align=16
 
 global	_EMP_IPL
 global	_STD_IPL

@@ -1,4 +1,4 @@
-segment data
+section DATA class=DATA
 
 SECT_SIZE	equ	512	; If not we will eventually crash
 
@@ -15,7 +15,7 @@ _detected_os	dw	0
 
 _reboot_addr	dd	0FFFF0000h
 
-segment code
+section DISKIO_TEXT class=CODE align=16
 
 global _diskio_init
 global _diskio_exit
@@ -493,3 +493,4 @@ _disk_format:
 		pop	es
 		pop	bp
 		retf
+

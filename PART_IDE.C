@@ -1,6 +1,8 @@
 #include "part.h"
 
 #include <bios.h>
+#include <conio.h>
+#include <dos.h>
 
 /*
  This piece of code was derived from program
@@ -71,7 +73,7 @@ void print_ide_info(void)
 
      /* Wait for controller not busy */
      l=0;
-     while( inportb(port_base+7)!=0x50 && l<20000) 
+     while( inp(port_base+7)!=0x50 && l<20000) 
         { 
          l++;
          if( l%4000==0 ) sleep(1);
@@ -80,14 +82,14 @@ void print_ide_info(void)
      if( l==20000 ) { printf("Time out!\n\n"); continue; }
 
      /* Get first/second drive */
-     outportb(port_base+6, hd_id);
+     outp(port_base+6, hd_id);
 
      /* Get drive info data */
-     outportb(port_base+7, 0xEC);         
+     outp(port_base+7, 0xEC);         
 
      /* Wait for data ready */
      l=0;
-     while( inportb(port_base+7)!=0x58 && l<20000)
+     while( inp(port_base+7)!=0x58 && l<20000)
         { 
          l++;
          if( l%4000==0 ) sleep(1);
@@ -96,7 +98,7 @@ void print_ide_info(void)
      
 
      /* Read "sector" */
-     for( i=0 ; i<256 ; i++ ) dd[i] = inport(port_base);
+     for( i=0 ; i<256 ; i++ ) dd[i] = inpw(port_base);
 
      printf("%5d cyl x %3d heads x %2d sects = %4ldM = %10s sectors\n",
 	 dd[1], dd[3], dd[6],

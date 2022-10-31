@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
+#include <io.h>
 
 #include "conio.h"
 #include "diskio.h"
