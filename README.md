@@ -19,9 +19,7 @@ is good, but it seams to have something to do with the russian version.
 
 ## Change Log
 
-### Version 2.99.00
+### Version 2.37.99
  * Relicense under Creative Commons CC-0 license
  * Recompile with Borland C++ 3.1
  * Remove old links and point to new repository
- * Update makefile to use 7zip instead of PKzip
-
