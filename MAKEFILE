@@ -7,10 +7,10 @@
 #   Turbo Assembler  Version 3.1  Copyright (c) 1992 Borland International
 #
 
-CC = wcl -q -ecc -ml -bcl=dos
-AS = tasm -ml -m3
+CC = wcl -q -ecc -mm -bcl=dos
+AS = tasm /ml /m3 /t
 NASM = nasm
-LD = tlink
+LD = wlink
 
 #INC  = part.h conio.h diskio.h
 
@@ -18,8 +18,10 @@ OBJ = part.obj part_aux.obj part_gen.obj part_gui.obj part_htm.obj &
       part_ide.obj part_msg.obj s_fat16.obj s_fat32.obj s_unknwn.obj &
       conio.obj diskio.obj ipl.obj ipl2.obj fat_boot.obj manager.obj 
 
+all: part.exe
+
 part.exe: $(OBJ)
-	$(CC) -fe=$@ -fm=part.map *.obj
+	$(LD) @part
 	
 .c.obj:
    $(CC) -c $<
@@ -55,7 +57,7 @@ keys: keycodes.c conio.obj conio.h
    del keycodes.obj
 
 clean:
-        del *.obj
+   del *.obj
    del *.map
    del *.lst
-        del *.tmp
+   del *.tmp

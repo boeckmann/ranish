@@ -1,4 +1,5 @@
-section DATA class=DATA
+section DISKIO_DATA class=DATA align=2
+GROUP DGROUP DISKIO_DATA
 
 SECT_SIZE	equ	512	; If not we will eventually crash
 

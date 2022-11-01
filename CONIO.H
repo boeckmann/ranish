@@ -42,12 +42,12 @@
 #define  Blink         0x80
 
 
-#define EV_KEY		 1
-#define EV_SHIFT	 2
-#define EV_MOUSE	 4
-#define EV_TIMER	 8
+#define EV_KEY     1
+#define EV_SHIFT   2
+#define EV_MOUSE   4
+#define EV_TIMER   8
 
-#define EV_NONBLOCK	16
+#define EV_NONBLOCK  16
 
 #define CONIO_TICKS_PER_SEC     18.2
 #define CONIO_TIMER(seconds)  ((seconds)*18.2)
@@ -79,8 +79,8 @@ extern unsigned int const MouseInstalled;
 extern "C" {
 #endif
 
-void conio_init( void );
-void conio_exit( void );
+void __cdecl conio_init( void );
+void __cdecl conio_exit( void );
 
 void show_mouse( void );
 void hide_mouse( void );
@@ -106,24 +106,24 @@ void border_window( int attr, int x, int y, int w, int h, char *border );
 #endif
 
 
-#define SK_R_SHIFT	0x01
-#define SK_L_SHIFT	0x02
-#define SK_SHIFT	0x03
-#define SK_CTRL		0x04
-#define SK_ALT		0x08
+#define SK_R_SHIFT   0x01
+#define SK_L_SHIFT   0x02
+#define SK_SHIFT  0x03
+#define SK_CTRL      0x04
+#define SK_ALT    0x08
 #define SK_SCROLL_LOCKED 0x10
-#define SK_NUM_LOCKED	0x20
-#define SK_CAPS_LOCKED	0x40
-#define SK_INSERT	0x80
+#define SK_NUM_LOCKED   0x20
+#define SK_CAPS_LOCKED  0x40
+#define SK_INSERT 0x80
 
-#define SK_L_CTRL	0x0100
-#define SK_L_ALT	0x0200
-#define SK_R_CTRL	0x0400
-#define SK_R_ALT	0x0800
-#define SK_SCROLL_LOCK	0x1000
-#define SK_NUM_LOCK	0x2000
-#define SK_CAPS_LOCK	0x4000
-#define SK_SYS_REQ	0x8000
+#define SK_L_CTRL 0x0100
+#define SK_L_ALT  0x0200
+#define SK_R_CTRL 0x0400
+#define SK_R_ALT  0x0800
+#define SK_SCROLL_LOCK  0x1000
+#define SK_NUM_LOCK  0x2000
+#define SK_CAPS_LOCK 0x4000
+#define SK_SYS_REQ   0x8000
 
 
 
