@@ -1,5 +1,5 @@
 
-section IPL2_TEXT class=CODE align=16
+section DUMMY_BOOT class=BOOT align=16
 
 global	_EMP_IPL
 global	_STD_IPL

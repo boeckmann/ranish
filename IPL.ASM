@@ -1,4 +1,4 @@
-section IPL_TEXT class=CODE align=16
+section IPL_BOOT class=BOOT align=16
 
 global	_IPL
 _IPL:
