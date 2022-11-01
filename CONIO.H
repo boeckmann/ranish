@@ -82,24 +82,24 @@ extern "C" {
 void __cdecl conio_init( void );
 void __cdecl conio_exit( void );
 
-void show_mouse( void );
-void hide_mouse( void );
-void move_mouse( int x, int y );
+void __cdecl show_mouse( void );
+void __cdecl hide_mouse( void );
+void __cdecl move_mouse( int x, int y );
 
-void move_cursor( int x, int y );
-void cursor_size( int top, int bottom );
+void __cdecl move_cursor( int x, int y );
+void __cdecl cursor_size( int top, int bottom );
 
-void get_event( struct event *ev, int flags );
+void __cdecl get_event( struct event *ev, int flags );
 
-void write_char( int attr, int x, int y, int ch );
-void write_string( int attr, int x, int y, char *str );
+void __cdecl write_char( int attr, int x, int y, int ch );
+void __cdecl write_string( int attr, int x, int y, char *str );
 
-void save_window( int x, int y, int w, int h, char *buf );
-void load_window( int x, int y, int w, int h, char *buf );
+void __cdecl save_window( int x, int y, int w, int h, char *buf );
+void __cdecl load_window( int x, int y, int w, int h, char *buf );
 
-void clear_window(  int attr, int x, int y, int w, int h );
-void scroll_window( int attr, int x, int y, int w, int h, int len );
-void border_window( int attr, int x, int y, int w, int h, char *border );
+void __cdecl clear_window(  int attr, int x, int y, int w, int h );
+void __cdecl scroll_window( int attr, int x, int y, int w, int h, int len );
+void __cdecl border_window( int attr, int x, int y, int w, int h, char *border );
 
 #ifdef __cplusplus
 }

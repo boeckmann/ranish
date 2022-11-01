@@ -7,7 +7,7 @@
 #   Turbo Assembler  Version 3.1  Copyright (c) 1992 Borland International
 #
 
-CC = wcl -q -ecc -mm -bcl=dos
+CC = wcl -q -ml -bcl=dos
 AS = tasm /ml /m3 /t
 NASM = nasm
 LD = wlink

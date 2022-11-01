@@ -232,12 +232,12 @@ struct os_desc
 #define  VERT_BORDER  "บ บบ บบ บ"
 #define  HRZN_BORDER  " ฤ       "
 
-void IPL(void);			/* external assembly code */
-void ADV_IPL(void);
-void EMP_IPL(void);
-void STD_IPL(void);
-void FAT_BOOT(void);
-void ADV_MANAGER(void);
+void __cdecl IPL(void);			/* external assembly code */
+void __cdecl ADV_IPL(void);
+void __cdecl EMP_IPL(void);
+void __cdecl STD_IPL(void);
+void __cdecl FAT_BOOT(void);
+void __cdecl ADV_MANAGER(void);
 
 
 #define ABS_REL_SECT(p) ( (p)->start_cyl*dinfo.sect_per_cyl + \
@@ -316,7 +316,7 @@ void edit_boot_menu(struct adv *adv, int p, int flag);
 void select_system_type(struct part_long *p);
 int  enter_string(int x, int y, char *prompt, int maxlen, char *str, char *help);
 
-unsigned int encrypt_password(char *password);
+unsigned int __cdecl encrypt_password(char *password);
 
 void edit_str_field(struct event *ev, int ev_mask,
                     int attr, int x, int y, int maxlen, char *str, int *pos);
