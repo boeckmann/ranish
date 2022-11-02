@@ -2,7 +2,6 @@
 
 #include "part.h"
 
-
 int num_disks;
 
 
@@ -1462,7 +1461,7 @@ void command_line(int argc, char **argv)
  if( argv[0][0]=='-' || argv[0][0]=='/' ) argv[0]++;
                                      else usage();
 
- if( strcmpi(argv[0],"Reboot")==0 )  reboot();
+ if( _stricmp(argv[0],"Reboot")==0 )  reboot();
 
  for( i=0 ; (ch="IiPpCcAaVvFfSsLlHh"[i])!=0 ; i++ )
    if( argv[0][0]==ch ) break;

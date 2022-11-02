@@ -1,7 +1,7 @@
 #include "part.h"
 #include <time.h>
 
-struct boot_ms_dos
+_Packed struct boot_ms_dos
     {
      unsigned char  jmp[3];	/* Must be 0xEB, 0x3C, 0x90		*/
      unsigned char  sys_id[8];	/* Probably:   "MSDOS5.0"		*/
@@ -81,8 +81,8 @@ int format_fat(struct part_long *p, char **argv)
 
  while(*argv!=0)
     {
-     if( strcmpi(*argv,"/destructive")==0 ) form_type=F_DESTR;
-     else if(  strcmpi(*argv,"/quick")==0 ) form_type=F_QUICK;
+     if( _stricmp(*argv,"/destructive")==0 ) form_type=F_DESTR;
+     else if(  _stricmp(*argv,"/quick")==0 ) form_type=F_QUICK;
      else if( _strnicmp(*argv,"/c:", 3)==0 )
        {
         k=atoi((*argv)+3);
@@ -96,7 +96,7 @@ int format_fat(struct part_long *p, char **argv)
        }
      else if( _strnicmp(*argv,"/x:", 3)==0 )
        {
-        if( strcmpi(*argv,"/x:disk")==0 )
+        if( _stricmp(*argv,"/x:disk")==0 )
           l=dinfo.total_sects;
         else
           l=atol((*argv)+3);

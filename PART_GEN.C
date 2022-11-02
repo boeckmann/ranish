@@ -249,8 +249,8 @@ int format_unused(struct part_long *p, char **argv)
 {
  int x;
 
- if( argv==0 || *argv==0 || strcmpi(*argv,"/clean")!=0 &&
-                            strcmpi(*argv,"/destructive")!=0 )
+ if( argv==0 || *argv==0 || _stricmp(*argv,"/clean")!=0 &&
+                            _stricmp(*argv,"/destructive")!=0 )
    {
     progress("^I will not do that.");
     progress("To enforce operation use option \"/clean\" or \"/destructive\" ");
@@ -259,7 +259,7 @@ int format_unused(struct part_long *p, char **argv)
 
  flush_caches();
 
- if( strcmpi(*argv,"/clean")==0 )
+ if( _stricmp(*argv,"/clean")==0 )
    {
     x=generic_clean(p);
    }

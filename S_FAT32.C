@@ -1,7 +1,7 @@
 #include "part.h"
 #include <time.h>
 
-struct boot_fat32
+_Packed struct boot_fat32
     {
      /* Sector 1 */
      
@@ -118,8 +118,8 @@ int format_fat32(struct part_long *p, char **argv)
 
  while(*argv!=0)
     {
-     if( strcmpi(*argv,"/destructive")==0 ) form_type=F_DESTR;
-     else if(  strcmpi(*argv,"/quick")==0 ) form_type=F_QUICK;
+     if( _stricmp(*argv,"/destructive")==0 ) form_type=F_DESTR;
+     else if(  _stricmp(*argv,"/quick")==0 ) form_type=F_QUICK;
      else if( _strnicmp(*argv,"/c:", 3)==0 )
        {
         k=atoi((*argv)+3);
@@ -133,7 +133,7 @@ int format_fat32(struct part_long *p, char **argv)
        }
      else if( _strnicmp(*argv,"/x:", 3)==0 )
        {
-        if( strcmpi(*argv,"/x:disk")==0 )
+        if( _stricmp(*argv,"/x:disk")==0 )
           l=dinfo.total_sects;
         else
           l=atol((*argv)+3);
