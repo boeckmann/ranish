@@ -39,8 +39,8 @@ ipl2.obj: ipl2.asm
    $(NASM) -f obj $< -o $@
 
 fat_boot.obj: fat_boot.asm
-   $(AS) $<
-#   $(NASM) -f obj $< -o $@
+#   $(AS) $<
+   $(NASM) -f obj $< -o $@
 
 manager.obj: manager.asm
    $(AS) $<

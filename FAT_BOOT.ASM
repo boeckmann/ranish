@@ -1,19 +1,24 @@
-.MODEL LARGE
+; Source code under Creative Commons CC-0
 
-FAT_BOOT SEGMENT PARA 'BOOT'
-ASSUME CS:FAT_BOOT, DS:FAT_BOOT, ES:FAT_BOOT, SS:FAT_BOOT
-LOCALS
-PUBLIC	_FAT_BOOT
-_FAT_BOOT	PROC	NEAR
+; Assemble to OMF object with:	nasm fatboot.asm -t -f obj
+; Or assemble to binary with:	nasm fatboot.asm -t
+
+%ifidni __OUTPUT_FORMAT__, obj
+	section FAT_BOOT class=BOOT align=16
+	global _FAT_BOOT
+%endif
+
+_FAT_BOOT:
 	;
 	;  MBR loads BOOT at 0000:7C00h
 	;
-	jmp	short @@xcode
+	jmp	short .xcode
 	nop
 	;
-RESERVD	DB	59 Dup(?)
+RESERVD: equ $
+	times 59 db 0
 	;
-@@xcode:
+.xcode:
 	xor	ax, ax
 	mov	ds, ax
 	mov	es, ax
@@ -24,13 +29,13 @@ RESERVD	DB	59 Dup(?)
 	mov	[bp+24h], dl	; Save disk number
 
 	mov	al, 20h			; 32 bytes in each directory entry
-	mul	word ptr [bp+11h]	; number of entries in root directory
-	div	word ptr [bp+0Bh]	; sector size
+	mul	word [bp+11h]	; number of entries in root directory
+	div	word [bp+0Bh]	; sector size
 	mov	cx, ax			; number of sectors in root directory
 
 	mov	al, [bp+10h]		; Number of FATs
 	cbw
-	mul	word ptr [bp+16h]	; Size of the FAT
+	mul	word [bp+16h]	; Size of the FAT
 	add	ax, [bp+0Eh]		; Reserved Sectors
 	adc	dx, 0
 	add	ax, [bp+1Ch]		; Hidden sectors
@@ -46,7 +51,7 @@ RESERVD	DB	59 Dup(?)
 					; root directory (more than 944 entr.)
 
 	call	READ_N_SECT		; Reading CX sectors to address BX
-	jb	@@print_error		; starting with sector DX:AX
+	jb	.print_error		; starting with sector DX:AX
 
 	add	ax, cx
 	adc	dx, 0
@@ -57,12 +62,12 @@ RESERVD	DB	59 Dup(?)
 	; Looking for WINBOOT.SYS, IO.SYS, ...
 
 	lea	di, [bp+(IO_SYS-_FAT_BOOT)]
-@@next_name:
+.next_name:
 	mov	si, bx
-	cmp	Byte Ptr [di], 0
-	je	@@print_error
+	cmp	Byte [di], 0
+	je	.print_error
 	mov	cx, [bp+11h]	; number of entries in root directory
-@@next_entr:
+.next_entr:
 	push	si
 	push	di
 	push	cx
@@ -72,18 +77,18 @@ RESERVD	DB	59 Dup(?)
 	pop	cx
 	pop	di
 	pop	si
-	jz	@@found
+	jz	.found
 	add	si, 20h
-	loop	@@next_entr
+	loop	.next_entr
 	add	di, 0Bh
-	jmp	@@next_name
-@@found:
+	jmp	.next_name
+.found:
 	push	ax
 	push	dx
 
 	mov	di, [si+1Ah]	; first cluster in file
 	lea	ax, [di-2]
-	jc	@@print_error
+	jc	.print_error
 	mov	dl, [bp+0Dh]	; cluster size
 	mov	dh, 0
 	mul	dx
@@ -98,22 +103,20 @@ RESERVD	DB	59 Dup(?)
 
 	call	READ_N_SECT
 
-	jb	@@print_error
+	jb	.print_error
 
-	cmp	word ptr [bx], 5A4Dh	; "MZ"
-	je	@@win95
+	cmp	word [bx], 5A4Dh	; "MZ"
+	je	.win95
 	
 	pop	bx	;ax
 	pop	ax	;dx
 
 	mov	ch, [bp+15h]	; Media descriptor byte
 	mov	dl, [bp+24h]	; Hard drive number
-@@dos:
-;	jmp	0070:0000
-		DB	0EAh
-		DW	0000, 0070h
+.dos:
+	jmp	0070h:0000h
 
-@@win95:
+.win95:
 	mov	bx, 0078h	; IO.SYS expects to see all this garbage.
 	lds	si, [bx]	; Plus it's cluster number in DI and
 	push	ds		; it's relative sector in [bp-02]:[bp-04].
@@ -121,31 +124,30 @@ RESERVD	DB	59 Dup(?)
 	push	ss
 	push	bx
 	lea	si, [bp+(NULL00-_FAT_BOOT)]
-;	jmp	0070:0200
-		DB	0EAh
-		DW	200h, 0070h
+	jmp	0070h:0200h
+
 	;
 	; Print error, wait for key, reboot.
 	;
-@@print_error:
+.print_error:
 	lea	si, [bp+(ERRMSG-_FAT_BOOT)]
 	mov	ah, 0Eh
 	mov	bx, 0007h
-@@pr1:
+.pr1:
 	lodsb
 	or	al, al
-	jz	@@pr2
+	jz	.pr2
 	int	10h
-	jmp	@@pr1
-@@pr2:
+	jmp	.pr1
+.pr2:
 	xor	ax, ax
 	int	16h
 	int	19h
-_FAT_BOOT	ENDP
+
 	;
 	;
 	;
-READ_N_SECT	PROC	NEAR
+READ_N_SECT:
 		;
 		;
 		;	ES:BX - Destination address
@@ -159,27 +161,27 @@ READ_N_SECT	PROC	NEAR
 		push	cx
 		push	dx
 
-@@next_sect:
+.next_sect:
 		call	READ_SECT
-		jb	@@end
+		jb	.end
 
 		add	ax, 1
 		adc	dx, 0
 
 		add	bx, [bp+0Bh]	; Sector size
 
-		loop	@@next_sect
-@@end:
+		loop	.next_sect
+.end:
 		pop	dx
 		pop	cx
 		pop	bx
 		pop	ax
 		ret
-READ_N_SECT	ENDP
+
 		;
 		;
 		;
-READ_SECT	PROC	NEAR
+READ_SECT:
 		;
 		;
 		;	ES:BX - Destination address
@@ -196,11 +198,11 @@ READ_SECT	PROC	NEAR
 
 		mov	cx, 3
 		push	cx
-@@next_try:
+.next_try:
 		mov	ah, 08		; Get disk parameters
 		mov	dl, [bp+24h]	; Hard disk number
 		int	13h
-		jb	@@reset
+		jb	.reset
 
 		mov	ah, 0
 		mov	al, dh
@@ -233,17 +235,17 @@ READ_SECT	PROC	NEAR
 		mov	dl, [bp+24h]	; Hard disk number
 		mov	ax, 0201h	; Read (AH=02) 1 Sector (AL=01)
 		int	13h
-		jnb	@@end
-@@reset:
+		jnb	.end
+.reset:
 		pop	cx
 		dec	cx
 		push	cx
-		jb	@@end
+		jb	.end
 		
 		mov	ax, 0
 		int	13h
-		jmp	@@next_try
-@@end:
+		jmp	.next_try
+.end:
 		pop	cx
 		pop	ax
 		pop	dx
@@ -252,7 +254,7 @@ READ_SECT	PROC	NEAR
 		pop	di
 		pop	si
 		ret
-READ_SECT	ENDP
+
 	;
 	;
 	;
@@ -267,15 +269,6 @@ IO_SYS:
 	DB 0
 	;
 
-GAP	PROC
-GAPLEN	EQU	(1FEh-(GAP-_FAT_BOOT))
-IF GAPLEN
-	DB	GAPLEN DUP(0)	
-ENDIF
-GAP	ENDP
+	times 510 - ($ - $$) db 0
 
-;	DB	40h DUP(0)
 	DB	055h, 0AAh
-
-ENDS
-END
