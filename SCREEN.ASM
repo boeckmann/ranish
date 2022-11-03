@@ -1,5 +1,5 @@
-section CONIO_DATA class=DATA align=2
-group DGROUP CONIO_DATA
+section SCREEN_DATA class=DATA align=2
+group DGROUP SCREEN_DATA
 
 global   _ScreenWidth
 global   _ScreenHeight
@@ -20,8 +20,8 @@ OriginalTimer2 dw   0   ;
 
 section CONIO_TEXT class=CODE align=16
 
-global   _conio_init
-global   _conio_exit
+global   _screen_init
+global   _screen_exit
 global   _show_mouse
 global   _hide_mouse
 global   _move_mouse
@@ -58,7 +58,7 @@ global   _border_window
 ;----------------------------------------------------------------
 
 
-_conio_init:
+_screen_init:
       push  bp
       mov   bp, sp
       push  es
@@ -124,7 +124,7 @@ _conio_init:
       retf
 
 
-_conio_exit:
+_screen_exit:
       retf
 
 

@@ -36,7 +36,7 @@ void main(int argc, char **argv)
      else break;
     }
 
- conio_init();
+ screen_init();
  diskio_init();
 
  if( detected_os==SYS_WIN_NT )
@@ -59,7 +59,7 @@ void main(int argc, char **argv)
    }
 
  diskio_exit();
- conio_exit();
+ screen_exit();
  exit(0);
 }/* main */
 

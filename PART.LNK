@@ -4,4 +4,4 @@ option quiet
 option map
 file { part.obj part_aux.obj part_gen.obj part_gui.obj part_htm.obj
       part_ide.obj part_msg.obj s_fat16.obj s_fat32.obj s_unknwn.obj
-      conio.obj diskio.obj ipl.obj ipl2.obj fat_boot.obj manager.obj }
+      screen.obj diskio.obj ipl.obj ipl2.obj fat_boot.obj manager.obj }

@@ -7,7 +7,7 @@
 #include <malloc.h>
 #include <io.h>
 
-#include "conio.h"
+#include "screen.h"
 #include "diskio.h"
 
 

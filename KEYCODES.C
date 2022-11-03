@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <malloc.h>
 
-#include "conio.h"
+#include "screen.h"
 
 void key_codes(void);
 
@@ -9,7 +9,7 @@ void main(void)
 {
  struct event ev;
 
- conio_init();
+ screen_init();
  cursor_size(16,14);
  show_mouse();
 

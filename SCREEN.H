@@ -1,5 +1,5 @@
-#ifndef _CONIO_H
-#define _CONIO_H
+#ifndef _SCREEN_H
+#define _SCREEN_H
 
 #define  Border11f  "ÚÄ¿³ ³ÀÄÙ"     /* The middle character will be  */
 #define  Border12f  "ÕÍ¸³ ³ÔÍ¾"     /* used to fill the window space */
@@ -49,8 +49,8 @@
 
 #define EV_NONBLOCK  16
 
-#define CONIO_TICKS_PER_SEC     18.2
-#define CONIO_TIMER(seconds)  ((seconds)*18.2)
+#define SCREEN_TICKS_PER_SEC     18.2
+#define SCREEN_TIMER(seconds)  ((seconds)*18.2)
 
 struct event
     {
@@ -79,8 +79,8 @@ extern unsigned int const MouseInstalled;
 extern "C" {
 #endif
 
-void __cdecl conio_init( void );
-void __cdecl conio_exit( void );
+void __cdecl screen_init( void );
+void __cdecl screen_exit( void );
 
 void __cdecl show_mouse( void );
 void __cdecl hide_mouse( void );
