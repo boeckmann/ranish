@@ -380,6 +380,6 @@ IO_SYS:
 	DB 0
 	;
 
-	times 510 - ($ - $$) db 0
+	times 510 - ($ - _FAT_BOOT) db 0
 
 	DB	055h, 0AAh
