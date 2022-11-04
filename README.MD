@@ -13,15 +13,12 @@ I plan to make some small modifications to the source code and have put it
 under Creative Commons CC-0 1.0 license.
 
 ## Building
-Because of the missing binary `ALT_FONT.COM` the creation of the make target
-`zip` fails for the original version. I am not sure for what `ALT_FONT.COM`
-is good, but it seams to have something to do with the russian version.
+While the source may compile with other tools, the Makefile is currently
+targeted at the following tool chain:
 
-## Change Log
+ * Open Watcom 11.9
+ * Netwide Assembler 2.15
+ * Borland TASM 5.1 (MANAGER.ASM still has to be ported to NASM)
 
-### Version 2.99.00
- * Relicense under Creative Commons CC-0 license
- * Recompile with Borland C++ 3.1
- * Remove old links and point to new repository
- * Update makefile to use 7zip instead of PKzip
-
+To build `part.exe`, simply invoke `wmake` in the root directory of the
+repository.
