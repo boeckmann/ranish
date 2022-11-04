@@ -60,7 +60,7 @@ _Packed struct boot_fat32
     unsigned long magic_num3;   /* Ext Boot Record Sign (0xAA550000)	*/
 };
 
-#define BBT_SIZE 12000
+#define BBT_SIZE 128
 
 #define F_NORM  0
 #define F_QUICK 1

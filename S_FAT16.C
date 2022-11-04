@@ -26,7 +26,7 @@ _Packed struct boot_ms_dos
     unsigned short magic_num;  /* Magic number (Must be 0xAA55) 	*/
 };
 
-#define BBT_SIZE 12000
+#define BBT_SIZE 128
 
 #define F_NORM  0
 #define F_QUICK 1
