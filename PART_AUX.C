@@ -525,8 +525,7 @@ int load_from_file(char *filename, void *buf, int len)
 
 void get_base_dir(char *path)
 {
- int i;
- char *p, *q;
+ char *p;
  
  p=path+strlen(path)-1;
  
@@ -612,7 +611,7 @@ OK   1 80  FF 1023  255  63 1023  255  63 12345678 12345678 12345678  1,111,111
 
 int print_embr(struct part_long *p)
 {
- int i, n;
+ int i;
  struct mbr *mbr = (struct mbr*)buf;
  struct part_long *part = malloc(4*sizeof(struct part_long));
 

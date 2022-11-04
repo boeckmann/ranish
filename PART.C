@@ -135,7 +135,7 @@ int setup_mbr(struct part_long *p)
  int data_size;
  struct mbr  *mbr;
  struct adv  *adv;
- struct part_long *part, *q;
+ struct part_long *part;
  
 
  static struct field_desc
@@ -1758,8 +1758,6 @@ void command_line(int argc, char **argv)
 
  if( argv[0][0]=='H' || argv[0][0]=='h' )			/* Hide */
    {
-    int x;
-
     if( view==VIEW_ADV ) return;
     if( argc<2 ) usage();
     i=atoi(argv[1])-1;

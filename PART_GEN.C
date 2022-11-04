@@ -22,7 +22,7 @@ int generic_verify(struct part_long *p, int bbt_size, unsigned long *bbt)
  struct disk_addr daddr;
  unsigned long base_sect=0; 
  int s_sect, e_sect;
- int i, j, cyl, head, sect, num_sect, x, num_bad=0, hd=dinfo.disk;
+ int cyl, head, sect, num_sect, x, num_bad=0, hd=dinfo.disk;
 
  disk_lock(hd);
  
@@ -97,7 +97,7 @@ int generic_format(struct part_long *p, int bbt_size, unsigned long *bbt)
  struct disk_addr daddr;
  unsigned long base_sect=0; 
  static unsigned char ftab[512];
- int i, j, cyl, head, sect, num_sect, x, num_bad=0, hd=dinfo.disk;
+ int cyl, head, sect, num_sect, x, num_bad=0, hd=dinfo.disk;
 
  progress(MESG_FORMATTING);
 
@@ -281,7 +281,7 @@ int generic_clean(struct part_long *p)
  char *z, tmp[90];
  struct disk_addr daddr;
  unsigned long total_done=0;
- int i, j, cyl, head, sect, s_sect, e_sect, num_sect, x, hd=dinfo.disk;
+ int cyl, head, s_sect, e_sect, num_sect, x, hd=dinfo.disk;
 
  if( (z=(char*)malloc(63*SECT_SIZE))==0 )
    {

@@ -48,7 +48,7 @@ int format_fat(struct part_long *p, char **argv)
  struct boot_ms_dos *b;
  unsigned short int *fat;
  int i, j, k, wr_sect, ret_code, fat_size, sys_type, next_bad;
- unsigned long l, num_clust, u_num_sect, x_num_sect, base_sect, base_clust, *bbt;
+ unsigned long l, num_clust, u_num_sect, x_num_sect, base_sect, *bbt;
 
  unsigned int num_bad=0;
  unsigned int clust_size=4;
@@ -345,7 +345,6 @@ int format_embr(struct part_long *p, char **argv)
 
 int print_fat(struct part_long *p )
 {
- int i;
  struct boot_ms_dos *b=(struct boot_ms_dos*)tmp;
  char tmp1[20], tmp2[20];
  
@@ -394,8 +393,8 @@ int print_fat(struct part_long *p )
 int setup_fat(struct part_long *p)
 {
  struct event ev;
- int i, v, syst, act, pos, fatsz;
- char *tmp, *tmp1, *tmp2;
+ int i, syst, act, pos, fatsz;
+ char *tmp, *tmp1;
  unsigned long n, l, lc, max_clust, min_clust, min_num_sect, max_num_sect;
  struct boot_ms_dos *b, *b_orig, *fat_boot_code=(struct boot_ms_dos*)FAT_BOOT;
 

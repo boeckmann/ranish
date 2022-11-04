@@ -25,7 +25,7 @@
 
 void html_view(char *target_name)
 {
- long i, j, k, n, ch, line, len, maxtop, nchars, first_time, enable_timer;
+ long i, j, k, ch, line, len, maxtop, nchars, first_time, enable_timer;
  char *p, *q, *s, *top, *old_top, *bottom, *seek_base, *bs, *bq;
  char *tmp, *col, *str;  /* LEN+1 */
  struct event ev;
