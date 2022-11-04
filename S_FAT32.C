@@ -1,7 +1,7 @@
 #include "part.h"
+#include <time.h>
 
-
-struct boot_fat32
+_Packed struct boot_fat32
     {
      /* Sector 1 */
      
@@ -75,7 +75,7 @@ int format_fat32(struct part_long *p, char **argv)
  struct boot_fat32 *b;
  unsigned long *fat;
  int i, j, k, wr_sect, ret_code, fat_size, next_bad;
- unsigned long l, num_clust, num_sect, base_sect, base_clust, *bbt;
+ unsigned long l, num_clust, num_sect, base_sect, *bbt;
 
  unsigned int num_bad=0;
  unsigned int clust_size=8;
@@ -118,9 +118,9 @@ int format_fat32(struct part_long *p, char **argv)
 
  while(*argv!=0)
     {
-     if( strcmpi(*argv,"/destructive")==0 ) form_type=F_DESTR;
-     else if(  strcmpi(*argv,"/quick")==0 ) form_type=F_QUICK;
-     else if( strncmpi(*argv,"/c:", 3)==0 )
+     if( _stricmp(*argv,"/destructive")==0 ) form_type=F_DESTR;
+     else if(  _stricmp(*argv,"/quick")==0 ) form_type=F_QUICK;
+     else if( _strnicmp(*argv,"/c:", 3)==0 )
        {
         k=atoi((*argv)+3);
         for( i=k/2, j=0 ; i!=0 && j<7 ; j++, i/=2 );
@@ -131,15 +131,15 @@ int format_fat32(struct part_long *p, char **argv)
            goto failed;
           }
        }
-     else if( strncmpi(*argv,"/x:", 3)==0 )
+     else if( _strnicmp(*argv,"/x:", 3)==0 )
        {
-        if( strcmpi(*argv,"/x:disk")==0 )
+        if( _stricmp(*argv,"/x:disk")==0 )
           l=dinfo.total_sects;
         else
           l=atol((*argv)+3);
         if( l>num_sect ) num_sect=l;
        }
-     else if( strncmpi(*argv,"/l:", 3)==0 )
+     else if( _strnicmp(*argv,"/l:", 3)==0 )
        {
         strncpy(tmp,(*argv)+3,11);
         tmp[11]=0;
@@ -299,7 +299,6 @@ failed:
 
 int print_fat32(struct part_long *p )
 {
- int i;
  char tmp1[20], tmp2[20];
  struct boot_fat32 *b=(struct boot_fat32*)tmp;
  
@@ -325,7 +324,7 @@ int print_fat32(struct part_long *p )
  printf("          Total number of sectors:  %-10s  %-10s\n", sprintf_long(tmp1,b->num_sects), sprintf_long(tmp2,p->num_sect) );
  printf("                  Sectors per FAT:  %u\n", b->sfat_size );
  printf("              Big Sectors per FAT:  %lu\n", b->fat_size );
- printf("             FAT Attributes (???):  %02Xh\n", b->fat_attr );
+ printf("               FAT Attributes (?):  %02Xh\n", b->fat_attr );
  printf("            First cluster in root:  %lu\n", b->root_clust );
  printf("                    Free clusters:  %lu\n", b->free_clust );
  printf("                        Next free:  %lu\n", b->next_free );
@@ -369,11 +368,10 @@ int print_fat32(struct part_long *p )
 int setup_fat32(struct part_long *p)
 {
  struct event ev;
- int i, v, act, pos;
- char *tmp, *tmp1, *tmp2;
+ int i, act, pos;
+ char *tmp, *tmp1;
  struct boot_fat32 *b, *b_orig;
  unsigned long n, l, lc, max_clust, min_clust, min_num_sect, max_num_sect, fatsz;
- struct part_long *q;
 
  if( (tmp=malloc(7*SECT_SIZE))==0 )
    {

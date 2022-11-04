@@ -1,7 +1,7 @@
 #include "part.h"
+#include <time.h>
 
-
-struct boot_ms_dos
+_Packed struct boot_ms_dos
     {
      unsigned char  jmp[3];	/* Must be 0xEB, 0x3C, 0x90		*/
      unsigned char  sys_id[8];	/* Probably:   "MSDOS5.0"		*/
@@ -48,7 +48,7 @@ int format_fat(struct part_long *p, char **argv)
  struct boot_ms_dos *b;
  unsigned short int *fat;
  int i, j, k, wr_sect, ret_code, fat_size, sys_type, next_bad;
- unsigned long l, num_clust, u_num_sect, x_num_sect, base_sect, base_clust, *bbt;
+ unsigned long l, num_clust, u_num_sect, x_num_sect, base_sect, *bbt;
 
  unsigned int num_bad=0;
  unsigned int clust_size=4;
@@ -81,9 +81,9 @@ int format_fat(struct part_long *p, char **argv)
 
  while(*argv!=0)
     {
-     if( strcmpi(*argv,"/destructive")==0 ) form_type=F_DESTR;
-     else if(  strcmpi(*argv,"/quick")==0 ) form_type=F_QUICK;
-     else if( strncmpi(*argv,"/c:", 3)==0 )
+     if( _stricmp(*argv,"/destructive")==0 ) form_type=F_DESTR;
+     else if(  _stricmp(*argv,"/quick")==0 ) form_type=F_QUICK;
+     else if( _strnicmp(*argv,"/c:", 3)==0 )
        {
         k=atoi((*argv)+3);
         for( i=k/2, j=0 ; i!=0 && j<7 ; j++, i/=2 );
@@ -94,15 +94,15 @@ int format_fat(struct part_long *p, char **argv)
            goto failed;
           }
        }
-     else if( strncmpi(*argv,"/x:", 3)==0 )
+     else if( _strnicmp(*argv,"/x:", 3)==0 )
        {
-        if( strcmpi(*argv,"/x:disk")==0 )
+        if( _stricmp(*argv,"/x:disk")==0 )
           l=dinfo.total_sects;
         else
           l=atol((*argv)+3);
         if( l>x_num_sect ) x_num_sect=l;
        }
-     else if( strncmpi(*argv,"/l:", 3)==0 )
+     else if( _strnicmp(*argv,"/l:", 3)==0 )
        {
         strncpy(tmp,(*argv)+3,11);
         tmp[11]=0;
@@ -345,7 +345,6 @@ int format_embr(struct part_long *p, char **argv)
 
 int print_fat(struct part_long *p )
 {
- int i;
  struct boot_ms_dos *b=(struct boot_ms_dos*)tmp;
  char tmp1[20], tmp2[20];
  
@@ -394,8 +393,8 @@ int print_fat(struct part_long *p )
 int setup_fat(struct part_long *p)
 {
  struct event ev;
- int i, v, syst, act, pos, fatsz;
- char *tmp, *tmp1, *tmp2;
+ int i, syst, act, pos, fatsz;
+ char *tmp, *tmp1;
  unsigned long n, l, lc, max_clust, min_clust, min_num_sect, max_num_sect;
  struct boot_ms_dos *b, *b_orig, *fat_boot_code=(struct boot_ms_dos*)FAT_BOOT;
 

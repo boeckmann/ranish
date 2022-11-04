@@ -51,14 +51,14 @@ void pack_part_tab(struct part_long *part, struct part_rec *part_rec, int n)
        }
 
      part_rec[i].start_cylL = part[i].start_cyl & 0xFF;
-     part_rec[i].start_cylH = part[i].start_cyl >> 8;
+     part_rec[i].start_sectCylH =
+        (part[i].start_sect & 0x3f) | ((part[i].start_cyl >> 2) & 0xc0);
      part_rec[i].start_head = part[i].start_head;
-     part_rec[i].start_sect = part[i].start_sect;
 
      part_rec[i].end_cylL   = part[i].end_cyl & 0xFF;
-     part_rec[i].end_cylH   = part[i].end_cyl >> 8;
+     part_rec[i].end_sectCylH = 
+        (part[i].end_sect & 0x3f) | ((part[i].end_cyl >> 2) & 0xc0);
      part_rec[i].end_head   = part[i].end_head;
-     part_rec[i].end_sect   = part[i].end_sect;
 
      part_rec[i].rel_sect   = part[i].rel_sect;
      part_rec[i].num_sect   = part[i].num_sect;
@@ -77,13 +77,15 @@ void unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
     {
      part[i].active = (part_rec[i].boot_flag==0)?0:1;
 
-     part[i].start_cyl  = part_rec[i].start_cylL+(part_rec[i].start_cylH<<8);
+     part[i].start_cyl  =
+        part_rec[i].start_cylL | ((part_rec[i].start_sectCylH & 0xc0) << 2);
      part[i].start_head = part_rec[i].start_head;
-     part[i].start_sect = part_rec[i].start_sect;
+     part[i].start_sect = part_rec[i].start_sectCylH & 0x3f;
 
-     part[i].end_cyl    = part_rec[i].end_cylL+(part_rec[i].end_cylH<<8);
+     part[i].end_cyl    = 
+        part_rec[i].end_cylL | ((part_rec[i].end_sectCylH & 0xc0) << 2);
      part[i].end_head   = part_rec[i].end_head;
-     part[i].end_sect   = part_rec[i].end_sect;
+     part[i].end_sect   = part_rec[i].end_sectCylH & 0x3f;
 
      part[i].rel_sect   = part_rec[i].rel_sect;
      part[i].num_sect   = part_rec[i].num_sect;
@@ -523,8 +525,7 @@ int load_from_file(char *filename, void *buf, int len)
 
 void get_base_dir(char *path)
 {
- int i;
- char *p, *q;
+ char *p;
  
  p=path+strlen(path)-1;
  
@@ -610,7 +611,7 @@ OK   1 80  FF 1023  255  63 1023  255  63 12345678 12345678 12345678  1,111,111
 
 int print_embr(struct part_long *p)
 {
- int i, n;
+ int i;
  struct mbr *mbr = (struct mbr*)buf;
  struct part_long *part = malloc(4*sizeof(struct part_long));
 

@@ -2,7 +2,6 @@
 
 #include "part.h"
 
-
 int num_disks;
 
 
@@ -37,7 +36,7 @@ void main(int argc, char **argv)
      else break;
     }
 
- conio_init();
+ screen_init();
  diskio_init();
 
  if( detected_os==SYS_WIN_NT )
@@ -60,7 +59,7 @@ void main(int argc, char **argv)
    }
 
  diskio_exit();
- conio_exit();
+ screen_exit();
  exit(0);
 }/* main */
 
@@ -136,7 +135,7 @@ int setup_mbr(struct part_long *p)
  int data_size;
  struct mbr  *mbr;
  struct adv  *adv;
- struct part_long *part, *q;
+ struct part_long *part;
  
 
  static struct field_desc
@@ -1462,7 +1461,7 @@ void command_line(int argc, char **argv)
  if( argv[0][0]=='-' || argv[0][0]=='/' ) argv[0]++;
                                      else usage();
 
- if( strcmpi(argv[0],"Reboot")==0 )  reboot();
+ if( _stricmp(argv[0],"Reboot")==0 )  reboot();
 
  for( i=0 ; (ch="IiPpCcAaVvFfSsLlHh"[i])!=0 ; i++ )
    if( argv[0][0]==ch ) break;
@@ -1759,8 +1758,6 @@ void command_line(int argc, char **argv)
 
  if( argv[0][0]=='H' || argv[0][0]=='h' )			/* Hide */
    {
-    int x;
-
     if( view==VIEW_ADV ) return;
     if( argc<2 ) usage();
     i=atoi(argv[1])-1;

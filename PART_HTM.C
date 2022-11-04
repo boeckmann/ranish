@@ -25,7 +25,7 @@
 
 void html_view(char *target_name)
 {
- long i, j, k, n, ch, line, len, maxtop, nchars, first_time, enable_timer;
+ long i, j, k, ch, line, len, maxtop, nchars, first_time, enable_timer;
  char *p, *q, *s, *top, *old_top, *bottom, *seek_base, *bs, *bq;
  char *tmp, *col, *str;  /* LEN+1 */
  struct event ev;
@@ -172,10 +172,10 @@ void html_view(char *target_name)
        else
          {
           sprintf(tmp,"%.*s",(unsigned int)k,p);
-          if( strncmpi(tmp,"http://",7)!=0 &&
-              strncmpi(tmp,"ftp://",6)!=0 &&
-              strncmpi(tmp,"news:",5)!=0 &&
-              strncmpi(tmp,"mailto:",7)!=0  )
+          if( strncmp(tmp,"http://",7)!=0 &&
+              strncmp(tmp,"ftp://",6)!=0 &&
+              strncmp(tmp,"news:",5)!=0 &&
+              strncmp(tmp,"mailto:",7)!=0  )
              {
               html_view(tmp);
              }
@@ -309,16 +309,16 @@ void html_view(char *target_name)
             if( *p=='<' && ( p[1]>='A' && p[1]<='Z' || p[1]=='/' ||
                              p[1]>='a' && p[1]<='z' || p[1]=='!' ) )
               {
-               if( link_started==0 && strncmpi(p,"<A HREF=",8)==0 )
+               if( link_started==0 && _strnicmp(p,"<A HREF=",8)==0 )
                  {
                   link_reference=p+8;
                   link_started=1;
                  }
-               else if( link_started==1 && strncmpi(p,"</A>",4)==0 )
+               else if( link_started==1 && _strnicmp(p,"</A>",4)==0 )
                  {
                   link_started=0;
                  }
-               else if( strncmpi(p,"<HR",3)==0 )
+               else if( _strnicmp(p,"<HR",3)==0 )
                  {
                   while( len!=LEN ) 
                      {
@@ -336,10 +336,10 @@ void html_view(char *target_name)
             
             if( *p=='&' )
               {
-                    if( strncmp(p,"&gt;",4)==0 && bq-p>4 ) { ch='>'; p+=3; }
-               else if( strncmp(p,"&lt;",4)==0 && bq-p>4 ) { ch='<'; p+=3; }
-               else if( strncmp(p,"&quot;",6)==0 && bq-p>6 ) {ch='\"';p+=5;}
-               else if( strncmp(p,"&nbsp;",6)==0 && bq-p>6 ) {ch=' '; p+=5;}
+                    if( _strnicmp(p,"&gt;",4)==0 && bq-p>4 ) { ch='>'; p+=3; }
+               else if( _strnicmp(p,"&lt;",4)==0 && bq-p>4 ) { ch='<'; p+=3; }
+               else if( _strnicmp(p,"&quot;",6)==0 && bq-p>6 ) {ch='\"';p+=5;}
+               else if( _strnicmp(p,"&nbsp;",6)==0 && bq-p>6 ) {ch=' '; p+=5;}
               }
 
             tmp[len] = ( ch!='\t' ) ? ch : ' ';

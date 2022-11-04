@@ -39,23 +39,23 @@ extern "C" {
 #endif
 
 
-void diskio_init(void);
-void diskio_exit(void);
+void __cdecl diskio_init(void);
+void __cdecl diskio_exit(void);
 
-void reboot(void);
-int flush_caches(void);
+void __cdecl reboot(void);
+int __cdecl flush_caches(void);
 
-int get_disk_info(int hd, struct disk_info *, char *buf_4096);
+int __cdecl get_disk_info(int hd, struct disk_info *, char *buf_4096);
 
-int disk_lock(int hd);
-int disk_unlock(int hd);
+int __cdecl disk_lock(int hd);
+int __cdecl disk_unlock(int hd);
 
-int dos_drive_reset(int drive);
+int __cdecl dos_drive_reset(int drive);
 
-int disk_read(struct disk_addr *, void *, int num_sect);
-int disk_write(struct disk_addr *, void *, int num_sect);
-int disk_format(struct disk_addr *, void *ftable);
-int disk_verify(struct disk_addr *, int num_sect);
+int __cdecl disk_read(struct disk_addr *, void *, int num_sect);
+int __cdecl disk_write(struct disk_addr *, void *, int num_sect);
+int __cdecl disk_format(struct disk_addr *, void *ftable);
+int __cdecl disk_verify(struct disk_addr *, int num_sect);
 
 
 #ifdef __cplusplus

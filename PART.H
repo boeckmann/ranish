@@ -5,8 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
+#include <io.h>
 
-#include "conio.h"
+#include "screen.h"
 #include "diskio.h"
 
 
@@ -14,17 +15,15 @@
 
 #define EMP_SIZE 44
 
-struct part_rec
+_Packed struct part_rec
     {
      unsigned char boot_flag;
      unsigned char start_head;
-     unsigned      start_sect:6;
-     unsigned      start_cylH:2;
+     unsigned char start_sectCylH;
      unsigned char start_cylL;
      unsigned char os_id;
      unsigned char end_head;
-     unsigned      end_sect:6;
-     unsigned      end_cylH:2;
+     unsigned char end_sectCylH;
      unsigned char end_cylL;
      unsigned long rel_sect;	/* Number os sectors before partition */
      unsigned long num_sect;	/* Number of sectors in the partition */
@@ -65,7 +64,7 @@ struct part_long
 #define ADV_DATA_SIGNATURE   "AdvBootManager\0"
 #define ADV_DATA_VERSION	     3
 
-struct mbr
+_Packed struct mbr
     {
      union
         {
@@ -74,7 +73,7 @@ struct mbr
 /*            unsigned char  code[0x1BE]; */
               unsigned char  code[0x100];
              }std;
-         struct x_ipl
+         _Packed struct x_ipl
              {
               unsigned char  code[0x1B6];
               unsigned short dot_len;
@@ -82,7 +81,7 @@ struct mbr
               unsigned char  def_part;
               unsigned char  fd_params[4];
              }ipl;
-         struct x_adv_old
+         _Packed struct x_adv_old
              {
               unsigned char  code[0x1A0];
               unsigned char  signature[15];    /* AdvBootManager\0 */
@@ -91,7 +90,7 @@ struct mbr
               unsigned char  act_menu;
               unsigned char  reserved[9];
              }adv_old;
-         struct x_adv				/*  0123456789ABCD  */
+         _Packed struct x_adv				/*  0123456789ABCD  */
              {					/*  rrrr____aoABM3  */
              					/*  rrrrffffatABM3  */
               unsigned char  code[0x1B0];
@@ -101,13 +100,13 @@ struct mbr
               unsigned char  boptions;
               unsigned long  adv_mbr_magic;
              }adv;
-        struct x_adv_new
+        _Packed struct x_adv_new
              {
               unsigned char code[0x1BC];
               unsigned short bm_sign; /* 'BM' = 0x4D42 */
              }new;
         }x;
-     struct part_rec part_rec[4];
+     _Packed struct part_rec part_rec[4];
      unsigned short magic_num;	/* Magic number (must be 0xAA55) */
     };
 
@@ -128,14 +127,14 @@ struct mbr
 
 #define MENU_OPT_PASSW   1
 
-struct adv_menu_rec		/* 80 bytes */
+_Packed struct adv_menu_rec		/* 80 bytes */
    {
     unsigned char boot_type;	/* if 0 - empty */
     unsigned char options;
     unsigned char name[30];
     union 
        {
-        struct x_part
+        _Packed struct x_part
             {
              unsigned char  tag;
              unsigned char  show;
@@ -146,7 +145,7 @@ struct adv_menu_rec		/* 80 bytes */
        }x;
    };
 
-struct adv_part_rec		/* 16 bytes */
+_Packed struct adv_part_rec		/* 16 bytes */
     {
      unsigned short os_id;
      unsigned char tag;
@@ -173,7 +172,7 @@ struct adv_part_rec		/* 16 bytes */
 #define ADV_OPT_DEF_MENU   4
 #define ADV_OPT_IGN_UNUSED 8
 
-struct adv					/* 80+1280+512+176=2048 */
+_Packed struct adv					/* 80+1280+512+176=2048 */
     {
      unsigned char signature[15];		/* AdvBootManager\0 */
      unsigned char version;			/* Data structure version */
@@ -231,12 +230,12 @@ struct os_desc
 #define  VERT_BORDER  "บ บบ บบ บ"
 #define  HRZN_BORDER  " ฤ       "
 
-void IPL(void);			/* external assembly code */
-void ADV_IPL(void);
-void EMP_IPL(void);
-void STD_IPL(void);
-void FAT_BOOT(void);
-void ADV_MANAGER(void);
+void __cdecl IPL(void);			/* external assembly code */
+void __cdecl ADV_IPL(void);
+void __cdecl EMP_IPL(void);
+void __cdecl STD_IPL(void);
+void __cdecl FAT_BOOT(void);
+void __cdecl ADV_MANAGER(void);
 
 
 #define ABS_REL_SECT(p) ( (p)->start_cyl*dinfo.sect_per_cyl + \
@@ -315,7 +314,7 @@ void edit_boot_menu(struct adv *adv, int p, int flag);
 void select_system_type(struct part_long *p);
 int  enter_string(int x, int y, char *prompt, int maxlen, char *str, char *help);
 
-unsigned int encrypt_password(char *password);
+unsigned int __cdecl encrypt_password(char *password);
 
 void edit_str_field(struct event *ev, int ev_mask,
                     int attr, int x, int y, int maxlen, char *str, int *pos);

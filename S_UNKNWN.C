@@ -6,7 +6,6 @@ void hex_dump_line(long,unsigned char*);
 int print_unknown(struct part_long *p)
 {
  int i;
- char tmp1[20], tmp2[20];
  
  if( disk_read_rel(p,0,tmp,1)==-1 )
    {

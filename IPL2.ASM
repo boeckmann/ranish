@@ -1,7 +1,6 @@
+cpu 8086
 
-segment data
-
-segment code
+section DUMMY_BOOT class=BOOT align=16
 
 global	_EMP_IPL
 global	_STD_IPL

@@ -29,7 +29,7 @@
 void select_system_type(struct part_long *p)
 {
  struct event ev;
- int i, k, n, top, act, N, barpos;
+ int i, n, top, act, N, barpos;
 
  border_window( Yellow+BakWhite, FsX, FsY, FsW, FsH, Border22f );
  write_string( Black+BakWhite, FsX+2, FsY+1, HEADER_SYSTYPE );
@@ -354,7 +354,7 @@ int get_keys(unsigned short *keys, int num_keys)
 void boot_menu_options(struct adv *adv)
 {
  struct event ev;
- int i, act, pos;
+ int act, pos;
  char password[9];
  unsigned long timeout, def_menu;
  
@@ -521,7 +521,6 @@ void boot_menu_options(struct adv *adv)
 void edit_boot_menu(struct adv *adv, int p, int flag)
 {
  struct event ev;
- unsigned long l;
  int old_col, old_act, redraw;
  int i, k, act, col, pos, n=MAX_MENU_ROWS;
 
@@ -812,7 +811,7 @@ void setup_ipl(struct mbr *mbr)
 {
  struct event ev;
  unsigned long n;
- int i, b, v, d, act;
+ int b, v, d, act;
 
  border_window( Yellow+BakWhite, SiX, SiY, SiW, SiH, Border22f );
 
@@ -1150,7 +1149,7 @@ void progress_bar(char *bar, int percent)
 
 int progress(char *msg)
 {
- int i, t=0;
+ int t=0;
  struct event ev;
  static int prev_bar;
  static char prev_msg[21];

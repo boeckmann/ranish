@@ -1,5 +1,5 @@
-#ifndef _CONIO_H
-#define _CONIO_H
+#ifndef _SCREEN_H
+#define _SCREEN_H
 
 #define  Border11f  "ÚÄ¿³ ³ÀÄÙ"     /* The middle character will be  */
 #define  Border12f  "ÕÍ¸³ ³ÔÍ¾"     /* used to fill the window space */
@@ -42,15 +42,15 @@
 #define  Blink         0x80
 
 
-#define EV_KEY		 1
-#define EV_SHIFT	 2
-#define EV_MOUSE	 4
-#define EV_TIMER	 8
+#define EV_KEY     1
+#define EV_SHIFT   2
+#define EV_MOUSE   4
+#define EV_TIMER   8
 
-#define EV_NONBLOCK	16
+#define EV_NONBLOCK  16
 
-#define CONIO_TICKS_PER_SEC     18.2
-#define CONIO_TIMER(seconds)  ((seconds)*18.2)
+#define SCREEN_TICKS_PER_SEC     18.2
+#define SCREEN_TIMER(seconds)  ((seconds)*18.2)
 
 struct event
     {
@@ -79,52 +79,53 @@ extern unsigned int const MouseInstalled;
 extern "C" {
 #endif
 
-void conio_init( void );
-void conio_exit( void );
+void __cdecl screen_init( void );
+void __cdecl screen_exit( void );
 
-void show_mouse( void );
-void hide_mouse( void );
-void move_mouse( int x, int y );
+void __cdecl show_mouse( void );
+void __cdecl hide_mouse( void );
+void __cdecl move_mouse( int x, int y );
 
-void move_cursor( int x, int y );
-void cursor_size( int top, int bottom );
+void __cdecl move_cursor( int x, int y );
+void __cdecl cursor_size( int top, int bottom );
 
-void get_event( struct event *ev, int flags );
+void __cdecl get_event( struct event *ev, int flags );
 
-void write_char( int attr, int x, int y, int ch );
-void write_string( int attr, int x, int y, char *str );
+void __cdecl write_char( int attr, int x, int y, int ch );
+void __cdecl write_string( int attr, int x, int y, char *str );
 
-void save_window( int x, int y, int w, int h, char *buf );
-void load_window( int x, int y, int w, int h, char *buf );
+void __cdecl save_window( int x, int y, int w, int h, char *buf );
+void __cdecl load_window( int x, int y, int w, int h, char *buf );
 
-void clear_window(  int attr, int x, int y, int w, int h );
-void scroll_window( int attr, int x, int y, int w, int h, int len );
-void border_window( int attr, int x, int y, int w, int h, char *border );
+void __cdecl clear_window(  int attr, int x, int y, int w, int h );
+void __cdecl scroll_window( int attr, int x, int y, int w, int h, int len );
+void __cdecl border_window( int attr, int x, int y, int w, int h, char *border );
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#define SK_R_SHIFT	0x01
-#define SK_L_SHIFT	0x02
-#define SK_SHIFT	0x03
-#define SK_CTRL		0x04
-#define SK_ALT		0x08
+#define SK_R_SHIFT   0x01
+#define SK_L_SHIFT   0x02
+#define SK_SHIFT  0x03
+#define SK_CTRL      0x04
+#define SK_ALT    0x08
 #define SK_SCROLL_LOCKED 0x10
-#define SK_NUM_LOCKED	0x20
-#define SK_CAPS_LOCKED	0x40
-#define SK_INSERT	0x80
+#define SK_NUM_LOCKED   0x20
+#define SK_CAPS_LOCKED  0x40
+#define SK_INSERT 0x80
 
-#define SK_L_CTRL	0x0100
-#define SK_L_ALT	0x0200
-#define SK_R_CTRL	0x0400
-#define SK_R_ALT	0x0800
-#define SK_SCROLL_LOCK	0x1000
-#define SK_NUM_LOCK	0x2000
-#define SK_CAPS_LOCK	0x4000
-#define SK_SYS_REQ	0x8000
+#define SK_L_CTRL 0x0100
+#define SK_L_ALT  0x0200
+#define SK_R_CTRL 0x0400
+#define SK_R_ALT  0x0800
+#define SK_SCROLL_LOCK  0x1000
+#define SK_NUM_LOCK  0x2000
+#define SK_CAPS_LOCK 0x4000
+#define SK_SYS_REQ   0x8000
 
 
 
 #endif
+
