@@ -1,63 +1,62 @@
 #
 # Tools used to compile this project:
 #
-#   MAKE Version 3.6  Copyright (c) 1991 Borland International
-#   Borland C++ Version 3.10 Copyright (c) 1992 Borland International
-#   Turbo Link  Version 5.1 Copyright (c) 1992 Borland International
-#   Turbo Assembler  Version 3.1  Copyright (c) 1992 Borland International
-#
+#   Open Watcom 11.9
+#   Netwide Assembler 2.15
+#   Borland TASM 5.1 (for advanced boot manager)
 
-CC = wcl -q -ml -bcl=dos
-AS = tasm /ml /m3 /t
-NASM = nasm
-LD = wlink
+compiler        = wcl
+compiler_flags  = -q -ml -bcl=dos -w4
+assembler       = nasm
+assembler_flags = -f obj
+linker          = wlink
+linker_flags    =
 
-#INC  = part.h conio.h diskio.h
+tasm       = tasm
+tasm_flags = /ml /m3 /t
 
-OBJ = part.obj part_aux.obj part_gen.obj part_gui.obj part_htm.obj &
-      part_ide.obj part_msg.obj s_fat16.obj s_fat32.obj s_unknwn.obj &
-      screen.obj diskio.obj ipl.obj ipl2.obj fat_boot.obj manager.obj 
+part_c_objects   = part.obj part_aux.obj part_gen.obj part_gui.obj part_htm.obj
+part_c_objects  += part_ide.obj part_msg.obj
+part_c_objects  += s_fat16.obj s_fat32.obj s_unknwn.obj
+part_asm_objects = screen.obj diskio.obj ipl.obj ipl2.obj fat_boot.obj
+manager_objects  = manager.obj
+part_objects     = $(part_c_objects) $(part_asm_objects) $(manager_objects)
 
-all: part.exe
+header_files = part.h diskio.h screen.h
 
-part.exe: $(OBJ)
-	$(LD) @part
-	
-.c.obj:
-   $(CC) -c $<
+all : part.exe
 
-screen.obj: screen.asm
-   $(NASM) -f obj $< -o $@
+part.exe : $(part_objects) part.lnk
+	$(linker) @part
 
-diskio.obj: diskio.asm
-   $(NASM) -f obj $< -o $@
+part.lnk : $(part_objects) MAKEFILE
+   @echo NAME $^& >$^@
+   @echo SYSTEM DOS >>$^@
+   @echo OPTION QUIET >>$^@
+   @echo OPTION MAP >>$^@
+   @for %i in ($(part_objects)) do @echo FILE %i >>$^@
 
-ipl.obj: ipl.asm
-   $(NASM) -f obj $< -o $@
+.c.obj : $(header_files)
+   $(compiler) -c $(compiler_flags) $<
 
-ipl2.obj: ipl2.asm
-   $(NASM) -f obj $< -o $@
+.asm.obj : 
+   $(assembler) $(assembler_flags) $< -o $@
 
-fat_boot.obj: fat_boot.asm
-#   $(AS) $<
-   $(NASM) -f obj $< -o $@
-
-manager.obj: manager.asm
-   $(AS) $<
+manager.obj :: manager.asm colors.inc
+   $(tasm) $(tasm_flags) $^*.asm
    
-#.asm.obj:
-#   $(AS) $<
+mesg.exe :  support\mesg.c
+   $(compiler) $(compiler_flags) $<
 
-mesg:  mesg.c
-   $(CC) mesg.c
-   del mesg.obj
+keycodes.exe : support\keycodes.c screen.obj screen.h
+   $(compiler) $(compiler_flags) support\keycodes.c screen.obj
 
-keys: keycodes.c screen.obj screen.h
-   $(CC) keycodes.c screen.obj
-   del keycodes.obj
+clean :  .SYMBOLIC
+   if exist *.bak @rm *.bak
+   if exist *.err @rm *.err
+   if exist *.lnk @rm *.lnk
+   if exist *.lst @rm *.lst
+   if exist *.map @rm *.map
+   if exist *.obj @rm *.obj
+   if exist *.tmp @rm *.tmp
 
-clean:
-   del *.obj
-   del *.map
-   del *.lst
-   del *.tmp
