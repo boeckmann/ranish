@@ -12,8 +12,14 @@ in the repository. I gave the original version git tag v2.37.11-original.
 I plan to make some small modifications to the source code and have put it
 under Creative Commons CC-0 1.0 license.
 
+## Limitations
+As of now Ranish is not capable of accessing disks via LBA. Therefore the
+maximum supported disk size is 8GB (the disk itself may be larger but only the
+first 8GB can be accessed).
+
 ## Minimum System Requirements
-These are the minimum requirements the trunk version of Ranish is _confirmed_ to run on. It may or may not run on less capable hardware.
+These are the minimum requirements the trunk version of Ranish is _confirmed_
+to run on. It may or may not run on less capable hardware.
 
  * IBM-AT compatible PC
  * minimum 256K RAM
