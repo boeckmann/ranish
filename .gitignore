@@ -3,6 +3,10 @@
 *.exe
 *.zip
 
+; linker files
+*.lnk
+*.map
+
 ; temp files
 *.bak
 
