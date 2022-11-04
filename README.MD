@@ -12,6 +12,15 @@ in the repository. I gave the original version git tag v2.37.11-original.
 I plan to make some small modifications to the source code and have put it
 under Creative Commons CC-0 1.0 license.
 
+## Minimum System Requirements
+These are the minimum requirements the trunk version of Ranish is _confirmed_ to run on. It may or may not run on less capable hardware.
+
+ * IBM-AT compatible PC
+ * minimum 256K RAM
+ * IDE compatible controller supporting INT10 BIOS functions
+ * MS-DOS 3.3 compatible operating system
+ * Color- or monochrome graphics adapter
+
 ## Building
 While the source may compile with other tools, the Makefile is currently
 targeted at the following tool chain:
