@@ -23,7 +23,8 @@ to run on. It may or may not run on less capable hardware.
 
  * IBM-AT compatible PC
  * minimum 256K RAM
- * IDE compatible controller supporting INT10 BIOS functions
+ * IDE compatible controller supporting INT 13h functions 00h-0Ah BIOS
+   functions
  * MS-DOS 3.3 compatible operating system
  * Color- or monochrome graphics adapter
 
