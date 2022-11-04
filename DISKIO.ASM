@@ -1,3 +1,5 @@
+cpu 8086
+
 section DISKIO_DATA class=DATA align=2
 GROUP DGROUP DISKIO_DATA
 

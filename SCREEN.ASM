@@ -1,3 +1,5 @@
+cpu 8086
+
 section SCREEN_DATA class=DATA align=2
 group DGROUP SCREEN_DATA
 

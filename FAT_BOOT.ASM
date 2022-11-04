@@ -3,6 +3,8 @@
 ; Assemble to OMF object with:	nasm fatboot.asm -t -f obj
 ; Or assemble to binary with:	nasm fatboot.asm -t
 
+cpu 8086
+
 %ifidni __OUTPUT_FORMAT__, obj
 	section FAT_BOOT class=BOOT align=16
 	global _FAT_BOOT

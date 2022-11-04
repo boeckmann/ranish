@@ -1,3 +1,4 @@
+cpu 8086
 
 section DUMMY_BOOT class=BOOT align=16
 

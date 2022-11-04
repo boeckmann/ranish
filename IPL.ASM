@@ -1,3 +1,5 @@
+cpu 8086
+
 section IPL_BOOT class=BOOT align=16
 
 global	_IPL
