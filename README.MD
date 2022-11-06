@@ -31,7 +31,7 @@ to run on. It may or may not run on less capable hardware.
 While the source may compile with other tools, the Makefile is currently
 targeted at the following tool chain:
 
- * Open Watcom 11.9
+ * Open Watcom 1.9
  * Netwide Assembler 2.15
  * Borland TASM 5.1 (MANAGER.ASM still has to be ported to NASM)
 
