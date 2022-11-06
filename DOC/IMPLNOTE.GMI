@@ -1,0 +1,76 @@
+# RANISH Implementation Notes
+
+## Advanced Boot Manager
+The Advanced Boot Manager is implemented in MANAGER.ASM and conists of two parts:
+
+* an intermediate loader (IPL)
+* the main boot manager (ADV)
+
+The IPL gets written to the master boot record (MBR) by the partition manager PART.EXE. The ADV lives in its own partition and is also installed by PART.EXE.
+
+When using Advanced Boot Manager the partition information is not stored by the MBR anymore. Instead it is stored in the data area of ADV. The partition table stored in MBR is adjusted by ADV on every boot to reflect the selected boot configuration selected by the user.
+
+### IPL
+At boot, the BIOS loads the MBR and the contained IPL into memory starting at 0000:7C00. BIOS then executes the IPL with entry vector 0000:7C00. IPL then immediately relocates itself and the MBR to address 0000:0600. After that, memory layout is as follows (addresses in hex, sizes in decimal):
+```Memory layout after IPL relocated itself and MBR
++-------------------------------------------------------------+
+|  Address  | Size | Description                              |
+|-----------+------+------------------------------------------|
+| 0000:0600 |  432 | IPL code                                 |
+|-----------+------+------------------------------------------|
+| 0000:07B0 |    4 | LBA disk sector of ADV                   |
+| 0000:07B4 |    4 | reserved (unused)                        |
+| 0000:07B8 |    1 | currently active ADV menu entry          |
+| 0000:07B9 |    1 | ADV boot options (unused)                |
+| 0000:07BA |    4 | ADV magic value "ABM3"                   |
+|-----------+------+------------------------------------------|
+| 0000:07BE |   64 | partition table                          |
+| 0000:07FE |    2 | boot sector magic value 55 AA            |
+|-----------+------+------------------------------------------|
+| 0000:0800 | 8192 | ... ADV code will be loaded here ...     |
+|-----------+------+------------------------------------------|
+| 0000:2800 | 2048 | ... ADV data will be loaded here ...     |
+|-----------+------+------------------------------------------|
+| 0000:3000 |      | shared BSS section IPL / ADV             |
++-------------------------------------------------------------+
+```
+An important value stored in the MBR is the starting LBA disk sector of the ADV. After relocating itself IPL first loads the ADV data to memory address 0000:2800 and then ADV code to memory address 0000:0800. ADV data is stored on disk before ADV code. ADV currently is 20 sectors in size: 4 data sectors followed by 16 code sectors.
+
+IPL and ADV communicate over the BSS area starting at 0000:3000 and the area starting at 0000:07B0. IPL tells ADV some important information such as the disk number the system started from and the active boot menu entry.
+
+### ADV
+The ADV is stored in a "raw" partition in its binary form. Beside the ADV that partition contains no data. Therfore the minimum size of that partition is the size of the ADV itself, currently 20 sectors.
+
+The data ADV stores on disc is 2k in size it has the following content:
+```
++-------------------------------------------------------------+
+|  Address  | Size | Description                              |
+|-----------+------+------------------------------------------|
+|      0000 |   15 | signature "AdvBootManager\0"             |
+|      000F |    1 | version "3"                              |
+|      0010 |    1 | default menu entry                       |
+|      0011 |    1 | timeout (defaults to 0)                  |
+|      0012 |    2 | options                                  |
+|      0014 |    2 | numeric password                         |
+|      0016 |   26 | reserved                                 |
+|      0030 |   32 | menu title (can be set by user)          |
+|-----------+------+------------------------------------------|
+|      0050 | 1280 | 16 menu records, each 80 bytes           |
+|      0550 |  512 | 32 partition records, each 16 bytes      |
+|-----------+------+------------------------------------------|
+|      0750 |  176 | reserved                                 |
++-------------------------------------------------------------+
+```
+Partition records have the following 16 byte structure:
+```
++-------------------------------------------------------------+
+|  Address  | Size | Description                              |
+|-----------+------+------------------------------------------|
+|      0000 |    2 | operating system id                      |
+|      0002 |    1 | menu inclusion tag (used by PART.EXE)    |
+|      0003 |    1 | display row number (used by PART.EXE)    |
+|      0004 |    4 | reserved                                 |
+|      0008 |    4 | LBA sector number                        |
+|      0012 |    4 | number of sectors                        |
++-------------------------------------------------------------+
+```
