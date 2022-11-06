@@ -1,6 +1,7 @@
 # RANISH Implementation Notes
+This notes document my research on the implementation details of Ranish Partition Manager version 2.37.
 
-## Advanced Boot Manager
+# 1 Advanced Boot Manager
 The Advanced Boot Manager is implemented in MANAGER.ASM and conists of two parts:
 
 * an intermediate loader (IPL)
@@ -8,9 +9,20 @@ The Advanced Boot Manager is implemented in MANAGER.ASM and conists of two parts
 
 The IPL gets written to the master boot record (MBR) by the partition manager PART.EXE. The ADV lives in its own partition and is also installed by PART.EXE.
 
-When using Advanced Boot Manager the partition information is not stored by the MBR anymore. Instead it is stored in the data area of ADV. The partition table stored in MBR is adjusted by ADV on every boot to reflect the selected boot configuration selected by the user.
+When using Advanced Boot Manager the partition information is not stored in the MBR anymore. Instead it is stored in the data area of ADV. The partition table stored in MBR is adjusted by ADV on every boot to reflect the boot configuration selected by the user.
 
-### IPL
+Partitions get a "tag" number. That number represents the position in the list of partitions when displayed by the partition manager. It is also used by the advanced boot manager to lookup a partition in the partition record list.
+
+Beside the partition to boot, up to three additional partitions can be made visible by including them in the adjusted MBR. A few options exist:
+* NEXT: make the partition after the boot partition visible
+* PREV: make the partition before the boot partition visible
+* LAST: make the past partition visible
+* LAST3: mathe the three last partitions visible
+
+ADV is capable to simulate keypresses by injecting keys into the keyboard buffer before booting a partition. This is useful e.g. to simulate F8 keypress when booting DOS / Windows.
+
+
+## 1.1 IPL
 At boot, the BIOS loads the MBR and the contained IPL into memory starting at 0000:7C00. BIOS then executes the IPL with entry vector 0000:7C00. IPL then immediately relocates itself and the MBR to address 0000:0600. After that, memory layout is as follows (addresses in hex, sizes in decimal):
 ```Memory layout after IPL relocated itself and MBR
 +-------------------------------------------------------------+
@@ -38,10 +50,10 @@ An important value stored in the MBR is the starting LBA disk sector of the ADV.
 
 IPL and ADV communicate over the BSS area starting at 0000:3000 and the area starting at 0000:07B0. IPL tells ADV some important information such as the disk number the system started from and the active boot menu entry.
 
-### ADV
+## 1.2 ADV
 The ADV is stored in a "raw" partition in its binary form. Beside the ADV that partition contains no data. Therfore the minimum size of that partition is the size of the ADV itself, currently 20 sectors.
 
-The data ADV stores on disc is 2k in size it has the following content:
+The ADV data stored on disc is 2k in size. It contains the following content:
 ```
 +-------------------------------------------------------------+
 |  Address  | Size | Description                              |
@@ -58,9 +70,11 @@ The data ADV stores on disc is 2k in size it has the following content:
 |      0050 | 1280 | 16 menu records, each 80 bytes           |
 |      0550 |  512 | 32 partition records, each 16 bytes      |
 |-----------+------+------------------------------------------|
-|      0750 |  176 | reserved                                 |
+|      0750 |  176 | --- reserved ---                         |
 +-------------------------------------------------------------+
 ```
+
+### Partition Records
 Partition records have the following 16 byte structure:
 ```
 +-------------------------------------------------------------+
@@ -68,9 +82,38 @@ Partition records have the following 16 byte structure:
 |-----------+------+------------------------------------------|
 |      0000 |    2 | operating system id                      |
 |      0002 |    1 | menu inclusion tag (used by PART.EXE)    |
-|      0003 |    1 | display row number (used by PART.EXE)    |
-|      0004 |    4 | reserved                                 |
+|      0003 |    1 | partition tag number                     |
+|      0004 |    4 | --- reserved ---                         |
 |      0008 |    4 | LBA sector number                        |
 |      0012 |    4 | number of sectors                        |
 +-------------------------------------------------------------+
 ```
+
+### Menu Records
+Menu records have the following 80 byte structure:
+```
++-------------------------------------------------------------+
+|  Address  | Size | Description                              |
+|-----------+------+------------------------------------------|
+|      0000 |    1 | boot type                                |
+|           |      |   0 = menu record not used               |
+|           |      |   1 = boot a partition                   |
+|           |      |   2 = chainload MBR from next disk       |
+|           |      |   3 = boot from floppy                   |
+|      0001 |    1 | options                                  |
+|           |      |   0 = do not require passwort to boot    |
+|           |      |   1 = require password to boot           |
+|      0002 |   30 | menu item title                          |
+|      0020 |    1 | associated partition tag number          |
+|      0021 |    1 | additional visible partitions            |
+|           |      |   0 = none                               |
+|           |      |   1 = last                               |
+|           |      |   2 = next                               |
+|           |      |   3 = prev                               |
+|           |      |   4 = last 3                             |
+|      0022 |   14 | --- reserverd ---                        |
+|      0030 |    2 | number of bytes to inject to keyb buf    |
+|      0032 |   30 | key sequence injected to keyboard        |
++-------------------------------------------------------------+
+```
+Because there is only one place where the password gets stored in the ADV data section, all partitions are protected by the same password.
