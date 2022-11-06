@@ -61,11 +61,15 @@ The ADV data stored on disc is 2k in size. It contains the following content:
 |      0000 |   15 | signature "AdvBootManager\0"             |
 |      000F |    1 | version "3"                              |
 |      0010 |    1 | default menu entry                       |
-|      0011 |    1 | timeout (defaults to 0)                  |
-|      0012 |    2 | options                                  |
-|      0014 |    2 | numeric password                         |
-|      0016 |   26 | reserved                                 |
-|      0030 |   32 | menu title (can be set by user)          |
+|      0011 |    1 | menu timeout (defaults to 0)             |
+|      0012 |    2 | option flags                             |
+|           |      |   1 = check for virus                    |
+|           |      |   2 = clear screen                       |
+|           |      |   4 = ignore unused ???                  |
+|           |      |   8 = use default menu entry             |
+|      0014 |    2 | menu password "encrypted"                |
+|      0016 |   26 | --- reserved ---                         |
+|      0030 |   32 | menu title                               |
 |-----------+------+------------------------------------------|
 |      0050 | 1280 | 16 menu records, each 80 bytes           |
 |      0550 |  512 | 32 partition records, each 16 bytes      |
@@ -73,6 +77,14 @@ The ADV data stored on disc is 2k in size. It contains the following content:
 |      0750 |  176 | --- reserved ---                         |
 +-------------------------------------------------------------+
 ```
+The different configurations options can be set with PART.EXE.
+
+ADV "checks for viruses" by inspecting the interrupt vectors 0H-1DH, 4AH and 70H to point to C000:0000. If otherwise it prints a virus warning.
+
+On every boot ADV saves the selected boot entry in the MBR. It is preselected if the option flag "use default menu entry" is NOT set. If it es set always the menu entry given in "default menu entry" is selected.
+
+The password is "encrypted" in a 16-bit hash value. The same password is used for all menu items with password protection flag set.
+
 
 ### Partition Records
 Partition records have the following 16 byte structure:
@@ -112,8 +124,8 @@ Menu records have the following 80 byte structure:
 |           |      |   3 = prev                               |
 |           |      |   4 = last 3                             |
 |      0022 |   14 | --- reserverd ---                        |
-|      0030 |    2 | number of bytes to inject to keyb buf    |
+|      0030 |    2 | number of bytes to inject into keyb buf  |
 |      0032 |   30 | key sequence injected to keyboard        |
 +-------------------------------------------------------------+
 ```
-Because there is only one place where the password gets stored in the ADV data section, all partitions are protected by the same password.
+
