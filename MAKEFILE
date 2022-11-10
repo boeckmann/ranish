@@ -7,7 +7,7 @@
 compiler        = wcl
 compiler_flags  = -q -ml -bcl=dos -w4
 assembler       = nasm
-assembler_flags_obj = -f obj
+assembler_flags_obj = -t -f obj
 assembler_flags_bin = -t -f bin
 linker          = wlink
 linker_flags    =
@@ -16,8 +16,8 @@ part_c_objects   = part.obj part_aux.obj part_gen.obj part_gui.obj part_htm.obj
 part_c_objects  += part_ide.obj part_msg.obj
 part_c_objects  += s_fat16.obj s_fat32.obj s_unknwn.obj
 part_asm_objects = screen.obj diskio.obj ipl.obj ipl2.obj fat_boot.obj
-manager_objects  = manouter.obj
-part_objects     = $(part_c_objects) $(part_asm_objects) $(manager_objects)
+part_asm_objects+= manouter.obj
+part_objects     = $(part_c_objects) $(part_asm_objects)
 
 header_files = part.h diskio.h screen.h
 
@@ -34,15 +34,15 @@ part.lnk : $(part_objects) MAKEFILE
    @for %i in ($(part_objects)) do @echo FILE %i >>$^@
 
 .c.obj : $(header_files)
-   $(compiler) -c $(compiler_flags) $<
+   $(compiler) -c $(compiler_flags) $*.c
 
 .asm.obj : 
-   $(assembler) $(assembler_flags_obj) $< -o $@
+   $(assembler) $(assembler_flags_obj) $*.asm -o $@
 
-manouter.obj :: manouter.asm manage.bin
-   $(assembler) $(assembler_flags_obj) $^*.asm -o $@
+manouter.obj : manage.bin
+#   $(assembler) $(assembler_flags_obj) $^*.asm -o $@
 
-manage.bin :: manage.asm   
+manage.bin : manage.asm   
    $(assembler) $(assembler_flags_bin) $^*.asm -o $@
 
 mesg.exe :  support\mesg.c
