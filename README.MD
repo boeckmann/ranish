@@ -1,5 +1,4 @@
 # Ranish Partition Manager
-
 This is a fork of Ranish Partition Manager 2.37.11 developed until 1998
 by Mikhail Ranish. Version 2.37.11 was the last version of the software with
 source code distributed under public domain.
@@ -11,6 +10,10 @@ in the repository. I gave the original version git tag v2.37.11-original.
 
 I plan to make some small modifications to the source code and have put it
 under Creative Commons CC-0 1.0 license.
+
+The the source in the trunk branch was converted to Watcom C and Netwide
+Assember. The original version was targeted at Turbo C / Turbo Assembler.
+
 
 ## Limitations
 As of now Ranish is not capable of accessing disks via LBA. Therefore the
@@ -33,7 +36,6 @@ targeted at the following tool chain:
 
  * Open Watcom 1.9
  * Netwide Assembler 2.15
- * Borland TASM 5.1 (MANAGER.ASM still has to be ported to NASM)
 
 To build `part.exe`, simply invoke `wmake` in the root directory of the
 repository.
