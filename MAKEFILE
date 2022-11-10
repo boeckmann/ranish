@@ -12,52 +12,59 @@ assembler_flags_bin = -t -f bin
 linker          = wlink
 linker_flags    =
 
-part_c_objects   = part.obj part_aux.obj part_gen.obj part_gui.obj part_htm.obj
-part_c_objects  += part_ide.obj part_msg.obj
-part_c_objects  += s_fat16.obj s_fat32.obj s_unknwn.obj
-part_asm_objects = screen.obj diskio.obj ipl.obj ipl2.obj fat_boot.obj
-part_asm_objects+= manouter.obj
+part_c_objects   = PART.OBJ PART_AUX.OBJ PART_GEN.OBJ PART_GUI.OBJ PART_HTM.OBJ
+part_c_objects  += PART_IDE.OBJ PART_MSG.OBJ
+part_c_objects  += S_FAT16.OBJ S_FAT32.OBJ S_UNKNWN.OBJ
+part_asm_objects = SCREEN.OBJ DISKIO.OBJ IPL.OBJ IPL2.OBJ FAT_BOOT.OBJ
+part_asm_objects+= MANOUTER.OBJ
 part_objects     = $(part_c_objects) $(part_asm_objects)
 
-header_files = part.h diskio.h screen.h
+header_files = PART.H DISKIO.H SCREEN.H
 
-all : part.exe
+all : PART.EXE
 
-part.exe : $(part_objects) part.lnk
+PART.EXE : $(part_objects) PART.LNK
 	$(linker) @part
 
-part.lnk : $(part_objects) MAKEFILE
+PART.LNK : $(part_objects)
    @echo NAME $^& >$^@
    @echo SYSTEM DOS >>$^@
    @echo OPTION QUIET >>$^@
    @echo OPTION MAP >>$^@
    @for %i in ($(part_objects)) do @echo FILE %i >>$^@
 
-.c.obj : $(header_files)
-   $(compiler) -c $(compiler_flags) $*.c
+.C.OBJ : $(header_files)
+   $(compiler) -c $(compiler_flags) $*.C
 
-.asm.obj : 
-   $(assembler) $(assembler_flags_obj) $*.asm -o $@
+.ASM.OBJ : 
+   $(assembler) $(assembler_flags_obj) $*.ASM -o $@
 
-manouter.obj : manage.bin
-#   $(assembler) $(assembler_flags_obj) $^*.asm -o $@
+MANOUTER.OBJ: MANAGE.BIN
 
-manage.bin : manage.asm   
-   $(assembler) $(assembler_flags_bin) $^*.asm -o $@
+MANAGE.BIN : MANAGE.ASM 
+   $(assembler) $(assembler_flags_bin) $^*.ASM -o $@
 
-mesg.exe :  support\mesg.c
+MESG.EXE :  SUPPORT\MESG.C
    $(compiler) $(compiler_flags) $<
 
-keycodes.exe : support\keycodes.c screen.obj screen.h
-   $(compiler) $(compiler_flags) support\keycodes.c screen.obj
+KEYCODES.EXE : SUPPORT\KEYCODES.C SCREEN.OBJ SCREEN.H
+   $(compiler) $(compiler_flags) SUPPORT\KEYCODES.C SCREEN.OBJ
+
+RANISH.ZIP: PART.EXE PART.HTM LICENSE.TXT README.TXT README.MD SOURCES.ZIP
+   zip $@ $< 
+
+SOURCES.ZIP:
+   zip $@ *.C *.H *.ASM MAKEFILE
 
 clean :  .SYMBOLIC
-   if exist *.bak @rm *.bak
-   if exist *.bin @rm *.bin
-   if exist *.err @rm *.err
-   if exist *.lnk @rm *.lnk
-   if exist *.lst @rm *.lst
-   if exist *.map @rm *.map
-   if exist *.obj @rm *.obj
-   if exist *.tmp @rm *.tmp
+   if exist *.BAK @rm *.BAK
+   if exist *.BIN @rm *.BIN
+   if exist *.ERR @rm *.ERR
+   if exist *.EXE @rm *.EXE
+   if exist *.LNK @rm *.LNK
+   if exist *.LST @rm *.LST
+   if exist *.MAP @rm *.MAP
+   if exist *.OBJ @rm *.OBJ
+   if exist *.TMP @rm *.TMP
+   if exist *.ZIP @rm *.ZIP
 
