@@ -1,7 +1,11 @@
-.MODEL LARGE
-ASSUME	CS:ADV_MAN_TEXT, DS:BOOT_DATA, ES:BOOT_DATA, SS:BOOT_DATA
-PUBLIC _ADV_IPL, _ADV_MANAGER, _encrypt_password
-LOCALS
+
+; Source code in the Public Domain
+
+; Assemble to binary with:	nasm manage.asm -t
+;
+; Assembly options:
+; -DUSEABSOLUTE		Use absolute instead of vstart nobits sections
+; -DUSEDEBUG		Include debugging entrypoint (padded to length 600h)
 
 SECT_SIZE	EQU	  512
 
@@ -41,7 +45,7 @@ SHOW_LAST3	EQU	4
 
 M_OPT_PASSW	EQU	1
 
-INCLUDE COLORS.INC
+%include "colors.inc"
 
 	X	EQU	30
 	Y	EQU	2
@@ -69,119 +73,129 @@ BORDER_COLOR	EQU	BrGreen+BakBlack	; Yellow+BakBlue
 DOTBAR_COLOR	EQU	BrWhite+BakBlack
 
 
-BOOT_DATA	SEGMENT	AT 0h
+	struc mbr_part_rec	; 16 bytes
+  b_boot_flag	resb 1
+  b_chs_start	resb 3
+  b_os_id	resb 1
+  b_chs_end	resb 3
+  b_rel_sect	resd 1
+  b_num_sect	resd 1
+	endstruc
 
-		ORG 600h
+	struc adv_menu_rec	; 80 bytes
+  m_type	resb 1
+  m_options	resb 1
+  m_name	resb 30
+  m_tag		resb 1
+  m_show	resb 1
+  m_reserved	resb 14
+  m_num_keys	resw 1
+  m_keys    	resw 15
+	endstruc
 
-MBR_SECT	DB 	512 Dup(?)
+	struc adv_part_rec	; 16 bytes
+  p_os_id	resw 1
+  p_tag		resb 1
+  p_orig_row	resb 1
+  p_reserved	resb 4
+  p_rel_sect	resd 1
+  p_num_sect	resd 1
+	endstruc
 
-		ORG 7B0h
 
-ADV_REL_SECT	DD	?
-ADV_RESERVED	DD	?
-adv_act_menu	DB	?
-adv_boptions	DB	?
-adv_abmmagic	DB	4 Dup(?)
+	absolute 600h
+MBR_SECT:
 
-mbr_part_rec	STRUC		; 16 bytes
-  b_boot_flag	DB	?
-  b_chs_start	DB	3 Dup(?)
-  b_os_id	DB	?
-  b_chs_end	DB	3 Dup(?)
-  b_rel_sect	DD	?
-  b_num_sect	DD	?
-ENDS
+%ifdef USEABSOLUTE
+	absolute 7B0h
+%else
+	section mbr_partition_table_variables nobits vstart=7B0h
+	section mbr_partition_table_variables
+%endif
 
-part_rec	mbr_part_rec 	4 DUP(?)
+ADV_REL_SECT	resd 1
+ADV_RESERVED	resd 1
+adv_act_menu	resb 1
+adv_boptions	resb 1
+adv_abmmagic	resb 4
 
-		ORG	ADV_DATA_ADDR
+part_rec	resb mbr_part_rec_size * 4
+part_rec_size equ $ - part_rec
 
-ADV_SIGNATURE	DB	15 Dup(?) ; "AdvBootManager",0
-ADV_VERSION	DB	?
-adv_def_menu	DB	?
-adv_timeout	DB	?
-adv_options	DB	?
-adv_options2	DB	?
-adv_password	DW	?
-adv_reserved2	DB	26 Dup(?)
-adv_title	DB	32 Dup(?)
+%ifdef USEABSOLUTE
+	absolute ADV_DATA_ADDR
+%else
+	section adv_data_variables nobits vstart=ADV_DATA_ADDR
+	section adv_data_variables
+%endif
 
-adv_menu_rec	STRUC			; 80 bytes
-  m_type	DB	 ?
-  m_options	DB	 ?
-  m_name	DB	30 Dup(?)
-  m_tag		DB	 ?
-  m_show	DB	 ?
-  m_reserved	DB	14 Dup(?)
-  m_num_keys	DW	 ?
-  m_keys    	DW	15 Dup(?)
-ENDS
+ADV_SIGNATURE	resb 15		; "AdvBootManager",0
+ADV_VERSION	resb 1
+adv_def_menu	resb 1
+adv_timeout	resb 1
+adv_options	resb 1
+adv_options2	resb 1
+adv_password	resw 1
+adv_reserved2	resb 26
+adv_title	resb 32
 
-adv_part_rec	STRUC			; 16 bytes
-  p_os_id	DW	?
-  p_tag		DB	?
-  p_orig_row	DB	?
-  p_reserved	DB	4 Dup(?)
-  p_rel_sect	DD	?
-  p_num_sect	DD	?
-ENDS
+menu		resb adv_menu_rec_size * MAX_MENU_ROWS
+part		resb adv_part_rec_size * MAX_PART_ROWS
+part_size equ $ - part
 
-menu		adv_menu_rec	MAX_MENU_ROWS  Dup(?)
-part		adv_part_rec	MAX_PART_ROWS  Dup(?)
 
-		ORG	ADV_DATA_ADDR + ADV_DATA_SIZE
+		absolute ADV_DATA_ADDR + ADV_DATA_SIZE
 
-NUM_DISKS	DB	?
-DISK		DB	?
-DISK_NUM_CYLS	DW	?
-DISK_NUM_HEADS	DW	?
+NUM_DISKS	resb 1
+DISK		resb 1
+DISK_NUM_CYLS	resw 1
+DISK_NUM_HEADS	resw 1
 DISK_NUM_SECTS	EQU	SECT_PER_TRACK
-SECT_PER_CYL	DW	?
-SECT_PER_TRACK	DW	?
+SECT_PER_CYL	resw 1
+SECT_PER_TRACK	resw 1
 
-_ScreenArea	DD   ?	; B800h:0000h
-_ScreenWidth	DB   ?	;  80
-_ScreenHeight	DB   ?	;  25
-_ScreenLength	DW   ?	; 80*25
+_ScreenArea	resd 1	; B800h:0000h
+_ScreenWidth	resb 1	;  80
+_ScreenHeight	resb 1	;  25
+_ScreenLength	resw 1	; 80*25
 
-NUM_MENUS	DW	?
-ACT_MENU	DW	?
-MENU_PTR	DW	MAX_MENU_ROWS Dup(?)
-PART_PTR	DW	MAX_MENU_ROWS Dup(?)
+NUM_MENUS	resw 1
+ACT_MENU	resw 1
+MENU_PTR	resw MAX_MENU_ROWS
+PART_PTR	resw MAX_MENU_ROWS
 
-ACT_MBR_REC	DW	?
-ACT_PART_PTR	DW	?
-PART_TMP	adv_part_rec	4 Dup(?)
-PART_TMP2	adv_part_rec	?
-MBR_SECT_BAK	DB	512 Dup(?) 
+ACT_MBR_REC	resw 1
+ACT_PART_PTR	resw 1
+PART_TMP	resb adv_part_rec_size * 4
+PART_TMP_size equ $ - PART_TMP
+PART_TMP2	resb adv_part_rec_size
+PART_TMP2_size equ $ - PART_TMP2
+MBR_SECT_BAK	resb 512
 
-TMP		DB	  80 Dup(?)
-SAV_BUFFER	DB	4096 Dup(?)
-SAV_BUFFER_ERR	DB	 640 Dup(?)
-CURSOR_SAVE_XY	DW	?
-TICKS_PER_DOT	DW	?
-H		DB	?
-KEYS_Y		DB	?
-PASS_VALIDATED	DW	?
-FILL_KB_BUFFER	DW	?
-ALT_ENTER	DW	?
-LAST_PART	DW	?
-IMPORTED_FLAG	DW	?
-FD_PARAMS	DB	4 Dup(?)
+TMP		resb 80
+SAV_BUFFER	resb 4096
+SAV_BUFFER_ERR	resb 640
+CURSOR_SAVE_XY	resw 1
+TICKS_PER_DOT	resw 1
+H		resb 1
+KEYS_Y		resb 1
+PASS_VALIDATED	resw 1
+FILL_KB_BUFFER	resw 1
+ALT_ENTER	resw 1
+LAST_PART	resw 1
+IMPORTED_FLAG	resw 1
+FD_PARAMS	resb 4
 
 
-STACK_AREA	DB	1024	Dup(?)	; Reserving at list 1k for stack
+STACK_AREA	resb 1024	; Reserving at list 1k for stack
 
-		ORG	7C00h
+		absolute 7C00h
 		
-OS_BOOT_SECT	DB	SECT_SIZE Dup(?)
-
-
-BOOT_DATA	ENDS
+OS_BOOT_SECT	resb SECT_SIZE
 
 
 ;----------------------------------------------------------------------
-PUSH_REGS	MACRO
+%macro PUSH_REGS 0
 		push	ax
 		push	bx
 		push	cx
@@ -190,9 +204,9 @@ PUSH_REGS	MACRO
 		push	si
 		push	ds
 		push	es
-ENDM
+%endmacro
 ;----------------------------------------------------------------
-POP_REGS	MACRO
+%macro POP_REGS 0
 		pop	es
 		pop	ds
 		pop	si
@@ -201,10 +215,17 @@ POP_REGS	MACRO
 		pop	cx
 		pop	bx
 		pop	ax
-ENDM
+%endmacro
 ;----------------------------------------------------------------
 
-ADV_MAN_TEXT	SEGMENT	PARA PRIVATE	'CODE'
+; ADV_MAN_TEXT	SEGMENT	PARA PRIVATE	'CODE'
+%ifidni __OUTPUT_FORMAT__, obj
+ %define PRIVATE private
+%else
+ %define PRIVATE			; empty string
+%endif
+%ifdef USEDEBUG
+	section ADV_MAN_TEXT PRIVATE vstart=0 align=16
 
 		mov	ax, cs
 		mov	ds, ax
@@ -213,13 +234,17 @@ ADV_MAN_TEXT	SEGMENT	PARA PRIVATE	'CODE'
 		mov	sp, 7C00h
 		xor	cx, cx
 		mov	dl, 80h
-		mov	Word Ptr ADV_REL_SECT, 7
-		mov	Word Ptr ADV_REL_SECT+2, 0
+		mov	Word [ADV_REL_SECT], 7
+		mov	Word [ADV_REL_SECT+2], 0
 		jmp	debug_entry
 
-		ORG	600h
+	times 600h - ($ - $$) db 0
+%else
+	section ADV_MAN_TEXT PRIVATE vstart=600h align=16
+%endif
+	section ADV_MAN_TEXT
 
-_ADV_IPL	PROC	NEAR
+_ADV_IPL:
 		;
 		;  BIOS loads MBR at 0000:7C00h
 		;
@@ -237,8 +262,7 @@ _ADV_IPL	PROC	NEAR
 		rep
 		 movsw
 	;	jmp	0000:@@ENTRY
-		DB	0EAh
-		DW	(@@ENTRY-_ADV_IPL+600h), 0000
+		jmp	0000h:(@@ENTRY-_ADV_IPL+600h)
 		;
 		;
 ErrBootMan	EQU	(@@M1-_ADV_IPL+600h)
@@ -251,11 +275,12 @@ MsgNL		EQU	(@@M4-_ADV_IPL+600h)
 @@M3:		DB "Error reading Boot Sector."
 @@M4:		DB 0Dh,0Ah,0
 		;
-ADV_CODE_CHECK_SUM	DW	0
+ADV_CODE_CHECK_SUM: equ $
+		DW	0
 		;
-debug_entry:
+debug_entry: equ $
 @@ENTRY:
-;GET_DISK_INFO	PROC	NEAR
+;GET_DISK_INFO:
 		;
 		;  dl - disk number
 		;
@@ -263,7 +288,7 @@ debug_entry:
 		jae	@@skip
 		mov	dl, 80h
 @@skip:
-		mov	DISK, dl
+		mov	byte [DISK], dl
 		mov	cl, 3
 @@get_again:
 		mov	ah, 08		; Get disk parameters
@@ -274,17 +299,17 @@ debug_entry:
 		loop	@@get_again
 		jmp	@@err1		; Error
 @@eval:
-;		mov	NUM_DISKS, dl
+;		mov	byte [NUM_DISKS], dl
 		xor	ah, ah
 		mov	al, dh
 		inc	ax		; AX - Number of HEADS (SIDES)
-		mov	DISK_NUM_HEADS, ax 
+		mov	word [DISK_NUM_HEADS], ax 
 		xor	bh, bh
 		mov	bl, cl
 		and	bl, 3Fh		; BX - Number of SECTORS / TRACK
 		mul	bx
-		mov	SECT_PER_CYL, ax
-		mov	SECT_PER_TRACK, bx
+		mov	word [SECT_PER_CYL], ax
+		mov	word [SECT_PER_TRACK], bx
 
 		mov	bl, ch
 		shl	cx, 1
@@ -292,20 +317,20 @@ debug_entry:
 		and	ch, 3
 		mov	bh, ch
 		inc	bx
-		mov	DISK_NUM_CYLS, bx
-;GET_DISK_INFO	ENDP
+		mov	word [DISK_NUM_CYLS], bx
+
 		;
 		;	Read Advanced Boot Manager Data and Code
 		;
-		mov	ax, Word Ptr ADV_REL_SECT
-		mov	dx, Word Ptr ADV_REL_SECT+2
+		mov	ax, Word [ADV_REL_SECT]
+		mov	dx, Word [ADV_REL_SECT+2]
 
 		mov	bx, ADV_DATA_ADDR
 		mov	cx, ADV_DATA_SECT
-		
+
 		call	READ_N_SECT
 		jc	@@err1
-		
+
 		add	ax, ADV_DATA_SECT
 		adc	dx, 0
 
@@ -315,7 +340,7 @@ debug_entry:
 		call	READ_N_SECT
 		jc	@@err1
 
-		cmp	[bx], ADV_MAGIC_VALUE
+		cmp	word [bx], ADV_MAGIC_VALUE
 		jne	@@err1
 		;
 		jmp	adv_code_entry_point
@@ -323,7 +348,7 @@ debug_entry:
 	;	DB	0EAh
 	;	DW	0800h,0000h
 		;
-bad_boot_man:
+bad_boot_man: equ $
 @@err1:
 		mov	si, ErrBootMan
 @@err2:
@@ -343,7 +368,7 @@ bad_boot_man:
 		mov	cx, 4
 		mov	di, 7BEh		; Address of the first record
 @@next_part:
-		cmp	Byte Ptr [di], 00
+		cmp	Byte [di], 00
 		jnz	@@read_hd		; Active partition found
 		add	di, 10h
 		loop	@@next_part
@@ -367,19 +392,17 @@ bad_boot_man:
 		;
 @@go_boot:
 		mov	dl, [di]	; Boot sector expects Drive# in DL
-	;	jmp	0000h:7C00h	; Transfer control to loaded BootSector
-		DB	0EAh
-		DW	7C00h,0000h
+		jmp	0000h:7C00h	; Transfer control to loaded BootSector
 		;
 		;
 		;
-REL_SECT_TO_CHS	PROC	NEAR
+REL_SECT_TO_CHS:
 		;
 		;  Input:    DX:AX - relative sector
 		;  Output:   DH,CX - CHS and DL - disk
 		;  Destroys: AX
 		;
-		div	SECT_PER_CYL		; AX=CYL, DX=SECT on CYL
+		div	word [SECT_PER_CYL]	; AX=CYL, DX=SECT on CYL
 		mov	cx, ax
 		shr	cx, 1
 		shr	cx, 1
@@ -387,17 +410,17 @@ REL_SECT_TO_CHS	PROC	NEAR
 		mov	ch, al
 		mov	ax, dx
 		xor	dx, dx
-		div	SECT_PER_TRACK		; AX=HEAD, DX=SECT
+		div	word [SECT_PER_TRACK]	; AX=HEAD, DX=SECT
 		mov	dh, al
 		inc	dl
 		and	dl, 3Fh
 		or	cl, dl
-		mov	dl, DISK
+		mov	dl, byte [DISK]
 		ret
-REL_SECT_TO_CHS	ENDP
+
 		;
 		;
-READ_N_SECT	PROC	NEAR
+READ_N_SECT:
 		;
 		;
 		;	ES:BX - Destination address
@@ -433,11 +456,11 @@ READ_N_SECT	PROC	NEAR
 		pop	bx
 		pop	ax
 		ret
-READ_N_SECT	ENDP
+
 		;
 		;
 		;
-READ_SECT	PROC	NEAR
+READ_SECT:
 		;
 		;   ES:BX - Address
 		;   CX,DX - CHS
@@ -453,7 +476,7 @@ READ_SECT	PROC	NEAR
 					; We get here if there was an error
 		mov	ah, 0		; We will try to reset device
 		int	13h
-	
+
 		dec	si
 		jnz	@@try_again
 		;
@@ -463,10 +486,10 @@ READ_SECT	PROC	NEAR
 	@@end:
 		pop	si
 		ret
-READ_SECT	ENDP
+
 		;
 		;
-PRINT		PROC	NEAR
+PRINT:
 		;
 		;  ds:si - address of null terminated string to print
 		;
@@ -486,24 +509,20 @@ PRINT		PROC	NEAR
 		pop	bx
 		pop	ax
 		ret
-PRINT		ENDP
+
 		;
 		;
-GAP1		PROC
+GAP1:
 GAPLEN1		EQU	(01B0h-(GAP1-_ADV_IPL))
-IF GAPLEN1
-		DB	GAPLEN1 DUP(0)	
-ENDIF
-GAP1		ENDP
+		times GAPLEN1 db 0
 
-ADV_MBR_MISC	DB	14+64+2 Dup(0)
+ADV_MBR_MISC:	times 14+64+2 db 0
 
-_ADV_IPL	ENDP
 		;
 		;
 		;
 		;
-_ADV_MANAGER	PROC	NEAR
+_ADV_MANAGER:
 		;
 		;  IPL loads MANAGER at 0000h:0800h = 0800h
 		;
@@ -515,7 +534,7 @@ adv_code_entry_point:
 		;
 		;  First of all lets check integrity of code
 		;
-CHECK_CODE_INTEGRITY	PROC	NEAR
+CHECK_CODE_INTEGRITY:
 		xor	bx, bx
 		mov	cx, ADV_CODE_SIZE
 		shr	cx, 1
@@ -524,59 +543,59 @@ CHECK_CODE_INTEGRITY	PROC	NEAR
 		lodsw
 		add	bx, ax
 		loop	@@add_next_word
-		cmp	ADV_CODE_CHECK_SUM, 0
+		cmp	word [cs:ADV_CODE_CHECK_SUM], 0
 		je	@@initialize_sum
-		cmp	ADV_CODE_CHECK_SUM, bx
+		cmp	word [cs:ADV_CODE_CHECK_SUM], bx
 		je	@@check_data_header
 		jmp	bad_boot_man
 @@initialize_sum:
-		mov	ADV_CODE_CHECK_SUM, bx
+		mov	word [cs:ADV_CODE_CHECK_SUM], bx
 @@check_data_header:
 		mov	cx, 15
-		lea	si, ADV_SIGNATURE
-		lea	di, ADV_SIGNATURE2
+		mov	si, ADV_SIGNATURE
+		mov	di, ADV_SIGNATURE2
 		repe
 		  cmpsb
 		je	@@data_header_valid
 		jmp	bad_boot_man
 @@data_header_valid:
-CHECK_CODE_INTEGRITY	ENDP
+
 		;
-CHECK_INTERRUPT_VECTORS	PROC
-		test	adv_options, ADV_OPT_VIR_CHECK
+CHECK_INTERRUPT_VECTORS:
+		test	byte [adv_options], ADV_OPT_VIR_CHECK
 		jz	@@ints_okay
 		mov	cx, 1Dh			;  Check interrupts 0h to 1Ch
 		mov	bx, 3
 @@next_int:
-		cmp	byte ptr [bx], 0C0h	;  They must be >= C000:0000h
+		cmp	byte [bx], 0C0h	;  They must be >= C000:0000h
 		jb	@@int_changed
 		add	bx, 4
 		loop	@@next_int
 
 		mov	bx, 4Ah*4-1		; int 4Ah - User Alarm
-		cmp	byte ptr [bx], 0C0h
+		cmp	byte [bx], 0C0h
 		jb	@@int_changed
 
 		mov	bx, 70h*4-1		; int 70h - Real-Time Clock
-		cmp	byte ptr [bx], 0C0h
+		cmp	byte [bx], 0C0h
 		jb	@@int_changed
-		
+
 		jmp	@@ints_okay
 @@int_changed:
-		lea	si, VirusWarning
+		mov	si, VirusWarning
 		call	PRINT
 @@wait_enter:
 		mov	ah, 0
 		int	16h		;  Get a key
 		cmp	al, 0Dh
 		jne	@@wait_enter	;  And loop until ENTER is pressed
-		lea	si, VirusNL
+		mov	si, VirusNL
 		call	PRINT
 @@ints_okay:
-CHECK_INTERRUPT_VECTORS	ENDP
+
 		;
 		;
-		jmp	@@start
+		jmp	start
 		;
 		;   Messages
 		;
@@ -604,7 +623,7 @@ VirusWarning	DB  0Dh, 0Ah
 VirusNL		DB  0Dh, 0Ah, 0
 		;
 		;
-@@start:
+start:
 		call	_conio_init
 		call	CHECK_LAST_CYL
 		call	IMPORT_NEW_PART
@@ -612,22 +631,22 @@ VirusNL		DB  0Dh, 0Ah, 0
 		call	BACKUP_MBR_SECT
 
 	@@menu:
-		mov	ax, NUM_MENUS
+		mov	ax, word [NUM_MENUS]
 		add	ax, 6
-		mov	H, al
+		mov	byte [H], al
 		add	al, Y
 		sub	al, 2
-		mov	KEYS_Y, al
+		mov	byte [KEYS_Y], al
 
-		mov	PASS_VALIDATED, 0
-		
+		mov	word [PASS_VALIDATED], 0
+
 		call	INIT_SCREEN
 		call	MAIN_MENU
 		call	DONE_SCREEN
-		
-		cmp	ALT_ENTER, 1
+
+		cmp	word [ALT_ENTER], 1
 		jne	@@no_need_to_wait
-		
+
 		mov	cx, 24	; If user presses ALT-ENTER we will wait
 	@@L3:			; for about 1.5 seconds before proceding.
 		push	cx
@@ -643,18 +662,16 @@ VirusNL		DB  0Dh, 0Ah, 0
 
 @@no_need_to_wait:
 
-		mov	di, ACT_MBR_REC
+		mov	di, word [ACT_MBR_REC]
 		mov	dl, [di]	; Boot sector expects Drive# in DL
-	;	jmp	0000h:7C00h	; Transfer control to loaded BootSector
-		DB	0EAh
-		DW	7C00h,0000h
-_ADV_MANAGER	ENDP
-		;
-		;
-		;
-INIT_SCREEN	PROC	NEAR
+		jmp	0000h:7C00h	; Transfer control to loaded BootSector
 
-		test	adv_options, ADV_OPT_CLEAR_SCR
+		;
+		;
+		;
+INIT_SCREEN:
+
+		test	byte [adv_options], ADV_OPT_CLEAR_SCR
 		jz	@@skip1
 		mov	ah, White+BakBlack
 		mov	bl, 1
@@ -672,93 +689,93 @@ INIT_SCREEN	PROC	NEAR
 		mov	bl, X
 		mov	bh, Y
 		mov	dl, W
-		mov	dh, H
-		lea	si, SAV_BUFFER
+		mov	dh, byte [H]
+		mov	si, SAV_BUFFER
 		call	_save_window
 
 		mov	ah, BORDER_COLOR
-		lea	si, Border
+		mov	si, Border
 		call	_border_window
-		
+
 		mov	ah, TITLE_COLOR
 		add	bx, 0109h
-		lea	si, adv_title
-		call	_write_string
-		
-		mov	ah, KEYS_TXT_COLOR
-		mov	bl, KEYS_X
-		mov	bh, KEYS_Y
-		lea	si, BottomKeysText2
-		call	_write_string
-		
-		mov	ah, KEYS_KEY_COLOR
-		add	bl, 6
-		lea	si, BottomKeysEnt
+		mov	si, adv_title
 		call	_write_string
 
-		
+		mov	ah, KEYS_TXT_COLOR
+		mov	bl, KEYS_X
+		mov	bh, byte [KEYS_Y]
+		mov	si, BottomKeysText2
+		call	_write_string
+
+		mov	ah, KEYS_KEY_COLOR
+		add	bl, 6
+		mov	si, BottomKeysEnt
+		call	_write_string
+
+
 		ret
-INIT_SCREEN	ENDP
+
 		;
 		;
 		;
-DONE_SCREEN	PROC	NEAR
+DONE_SCREEN:
 		mov	bl, X
 		mov	bh, Y
 		mov	dl, W
-		mov	dh, H
-		lea	si, SAV_BUFFER
+		mov	dh, byte [H]
+		mov	si, SAV_BUFFER
 		call	_load_window
-		
+
 		call	_restore_cursor
 		ret
-DONE_SCREEN	ENDP
+
 		;
 		;
 		;
-PREP_MENU_LIST	PROC	NEAR
-		test	adv_options, ADV_OPT_DEF_MENU
+PREP_MENU_LIST:
+		test	byte [adv_options], ADV_OPT_DEF_MENU
 		jz	@@no_def_menu
-		mov	al, adv_def_menu
-		mov	adv_act_menu, al
+		mov	al, byte [adv_def_menu]
+		mov	byte [adv_act_menu], al
 	@@no_def_menu:
-		mov	ACT_MENU, 0
-		mov	NUM_MENUS, 0
+		mov	word [ACT_MENU], 0
+		mov	word [NUM_MENUS], 0
 		mov	cx, 0
-		lea	si, menu
+		mov	si, menu
 		mov	di, 0
 	@@next:
-		cmp	[si].m_type, M_BOOT_EMPTY
+		cmp	byte [si + m_type], M_BOOT_EMPTY
 		je	@@cont
 
-		mov	MENU_PTR[di], si
-		mov	al, [si].m_tag
+		mov	word [MENU_PTR + di], si
+		mov	al, byte [si + m_tag]
 		call	PART_NUM_BY_TAG
 		jnc	@@part_ok
-		cmp	[si].m_type, M_BOOT_PART
+		cmp	byte [si + m_type], M_BOOT_PART
 		je	@@cont
 		mov	ax, 0
 	@@part_ok:
-		mov	PART_PTR[di], ax
+		mov	word [PART_PTR + di], ax
 
-		cmp	cl, adv_act_menu
+		cmp	cl, byte [adv_act_menu]
 		jne	@@skip
-		mov	ax, NUM_MENUS
-		mov	ACT_MENU, ax
+		mov	ax, word [NUM_MENUS]
+		mov	word [ACT_MENU], ax
 	@@skip:
 		add	di, 2
-		inc	NUM_MENUS
+		inc	word [NUM_MENUS]
 	@@cont:
-		add	si, SIZE adv_menu_rec
+		add	si, adv_menu_rec_size
 		inc	cx
 		cmp	cx, MAX_MENU_ROWS
 		jne	@@next
 		ret
-PREP_MENU_LIST	ENDP
+
 		;
 		;
 		;
-PART_NUM_BY_TAG	PROC	NEAR
+PART_NUM_BY_TAG:
 		;
 		;  Input:  AL - Tag
 		;  Output: AX - Pointer to partition
@@ -770,15 +787,15 @@ PART_NUM_BY_TAG	PROC	NEAR
 		cmp	al, 0
 		je	@@fail
 		xor	cx, cx
-		lea	bx, part
+		mov	bx, part
 	@@next:
-		cmp	[bx].p_tag, al
+		cmp	byte [bx + p_tag], al
 		jne	@@cont
 		clc
 		mov	ax, bx
 		jmp	@@end
 	@@cont:
-		add	bx, SIZE adv_part_rec
+		add	bx, adv_part_rec_size
 		inc	cx
 		cmp	cx, MAX_PART_ROWS
 		jne	@@next
@@ -789,21 +806,21 @@ PART_NUM_BY_TAG	PROC	NEAR
 		pop	cx
 		pop	bx
 		ret
-PART_NUM_BY_TAG	ENDP
+
 		;
 		;
 		;
-MAIN_MENU	PROC	NEAR
+MAIN_MENU:
 		;
-		;	Main loop		
+		;	Main loop
 		;
-		cmp	IMPORTED_FLAG, 10h
+		cmp	word [IMPORTED_FLAG], 10h
 		jb	@@no_import
-		lea	si, MesgImported
+		mov	si, MesgImported
 		call	SHOW_ERROR
 @@no_import:
 		mov	di, 0
-		mov	FILL_KB_BUFFER, 1
+		mov	word [FILL_KB_BUFFER], 1
 @@while1:
 		mov	ax, 0
 		jmp	@@cond1
@@ -813,33 +830,33 @@ MAIN_MENU	PROC	NEAR
 		mov	bl, (X+3)
 		mov	bh, (Y+3)
 		add	bh, al
-		cmp	ax, ACT_MENU
+		cmp	ax, [ACT_MENU]
 		mov	ah, MENU_COLOR
 		jne	@@norm1
 		mov	ah, ACTIVE_COLOR
 	@@norm1:
-		lea	si, TMP
+		mov	si, TMP
 		call	_write_string
 		pop	ax
 		inc	ax
 	@@cond1:
-		cmp	ax, NUM_MENUS
+		cmp	ax, word [NUM_MENUS]
 		jne	@@next1
 
 
-		mov	ALT_ENTER, 0
+		mov	word [ALT_ENTER], 0
 
 		cmp	di, 0
 		jne	@@wait_key
 					; First time here
-		cmp	adv_timeout, 0
+		cmp	byte [adv_timeout], 0
 		je	@@wait_key
 
 		xor	ah, ah
-		mov	al, adv_timeout
+		mov	al, byte [adv_timeout]
 		inc	ax
 		shr	ax, 1
-		mov	TICKS_PER_DOT, ax
+		mov	word [TICKS_PER_DOT], ax
 		call	DOT_BAR
 		jnc	@@no_keys	; no keys was pressed - time run out
 		mov	ah, 10h
@@ -893,30 +910,30 @@ MAIN_MENU	PROC	NEAR
 		je	@@hide_all
 		sub	al, '1'
 		xor	ah, ah
-		cmp	ax, NUM_MENUS
+		cmp	ax, word [NUM_MENUS]
 		jb	@@boot_n_short
 		jmp	@@wait_key
 	@@up:
-		cmp	ACT_MENU, 0
+		cmp	word [ACT_MENU], 0
 		jz	@@cont2short
-		dec	ACT_MENU
+		dec	word [ACT_MENU]
 		jmp	@@cont2
 	@@down:
-		mov	ax, NUM_MENUS
+		mov	ax, word [NUM_MENUS]
 		dec	ax
 		jb	@@cont2short
-		cmp	ACT_MENU, ax
+		cmp	word [ACT_MENU], ax
 		jnb	@@cont2short
-		inc	ACT_MENU
+		inc	word [ACT_MENU]
 		jmp	@@cont2
 	@@home:
-		mov	ACT_MENU, 0
+		mov	word [ACT_MENU], 0
 		jmp	@@cont2
 	@@end:
-		mov	ax, NUM_MENUS
+		mov	ax, word [NUM_MENUS]
 		dec	ax
 		jb	@@cont2short
-		mov	ACT_MENU, ax
+		mov	word [ACT_MENU], ax
 		jmp	@@cont2
 	@@space:
 		call	SETUP_MENU
@@ -940,20 +957,20 @@ MAIN_MENU	PROC	NEAR
 		mov	bx, 0
 		call	CHECK_PASSWORD
 		jc	@@cont2short
-		mov	ax, ACT_MENU
+		mov	ax, word [ACT_MENU]
 		push	ax
 		mov	ax, -1
-		mov	ACT_MENU, ax
+		mov	word [ACT_MENU], ax
 		mov	dl, 0
 		call	PREP_BOOT_SECT_X
 		pop	ax
-		mov	ACT_MENU, ax
+		mov	word [ACT_MENU], ax
 		jnc	@@break_out_short
 		jmp	@@cont2
 	@@break_out_short:
 		jmp	@@break_out
 	@@alt_boot:
-		mov	ALT_ENTER, 1
+		mov	word [ALT_ENTER], 1
 		jmp	@@boot
 	@@boot_a:
 		mov	bx, 0
@@ -967,43 +984,43 @@ MAIN_MENU	PROC	NEAR
 		mov	bx, 0
 		call	CHECK_PASSWORD
 		jc	@@cont2short
-		mov	dl, DISK
+		mov	dl, byte [DISK]
 		inc	dl
 		call	PREP_BOOT_SECT_X
 		jnc	@@break_out
 		jmp	@@cont2
 	@@boot_n:
-		mov	ACT_MENU, ax
+		mov	word [ACT_MENU], ax
 	@@boot:
-		cmp	NUM_MENUS, 0
+		cmp	word [NUM_MENUS], 0
 		je	@@boot_a
-		mov	bx, ACT_MENU
+		mov	bx, word [ACT_MENU]
 		shl	bx, 1
-		mov	ax, MENU_PTR[bx]
-		lea	bx, menu
+		mov	ax, word [MENU_PTR + bx]
+		mov	bx, menu
 		sub	ax, bx
-		mov	bl, SIZE adv_menu_rec
+		mov	bl, adv_menu_rec_size
 		div	bl
-		mov	adv_act_menu, al
+		mov	byte [adv_act_menu], al
 	@@boot_esc:
-		cmp	NUM_MENUS, 0
+		cmp	word [NUM_MENUS], 0
 		je	@@boot_a
-		
 
-		mov	bx, ACT_MENU
+
+		mov	bx, word [ACT_MENU]
 		shl	bx, 1
-		mov	bx, MENU_PTR[bx]
+		mov	bx, word [MENU_PTR + bx]
 
 		push	bx
 		call	CHECK_PASSWORD
 		pop	bx
 		jc	@@cont2
 
-		cmp	[bx].m_type, M_BOOT_PART
+		cmp	byte [bx + m_type], M_BOOT_PART
 		je	@@boot_type_part
-		cmp	[bx].m_type, M_BOOT_NEXT_HD
+		cmp	byte [bx + m_type], M_BOOT_NEXT_HD
 		je	@@boot_type_next_hd
-		cmp	[bx].m_type, M_BOOT_FLOPPY
+		cmp	byte [bx + m_type], M_BOOT_FLOPPY
 		je	@@boot_type_floppy
 		jmp	@@cont2		; We dont know what it is - ingnoring 
 @@boot_type_part:
@@ -1011,7 +1028,7 @@ MAIN_MENU	PROC	NEAR
 		jnc	@@break_out
 		jmp	@@cont2
 @@boot_type_next_hd:
-		mov	dl, DISK
+		mov	dl, byte [DISK]
 		inc	dl
 		call	PREP_BOOT_SECT_X
 		jc	@@cont2
@@ -1028,10 +1045,10 @@ MAIN_MENU	PROC	NEAR
 		jmp	@@while1
 	@@break_out:
 		ret
-MAIN_MENU	ENDP
+
 		;
 		;
-CHECK_PASSWORD	PROC	NEAR
+CHECK_PASSWORD:
 		;
 		; Input:   bx - pointer to ActiveMenu, or 0 if no menu
 		;
@@ -1040,54 +1057,54 @@ CHECK_PASSWORD	PROC	NEAR
 		;
 		PUSH_REGS
 
-		cmp	PASS_VALIDATED, 1
+		cmp	word [PASS_VALIDATED], 1
 		je	@@valid
 
 		cmp	bx, 0
 		jz	@@do_check
 
-		test	[bx].m_options, M_OPT_PASSW
+		test	byte [bx + m_options], M_OPT_PASSW
 		jz	@@valid		; This menu item needs no validation
 @@do_check:
-		cmp	adv_password, 0
+		cmp	word [adv_password], 0
 		je	@@valid		; No master password set
 
 		call	GET_PASSWORD
 
-		cmp	ax, adv_password
+		cmp	ax, word [adv_password]
 		je	@@valid
 @@invalid:
-		lea	si, MesgPasswordInvalid
+		mov	si, MesgPasswordInvalid
 		call	SHOW_ERROR
 		stc
 		jmp	@@end
 @@valid:
-		mov	PASS_VALIDATED, 1
+		mov	word [PASS_VALIDATED], 1
       		clc
 @@end:
 		POP_REGS
 		ret
-CHECK_PASSWORD	ENDP
+
 		;
 		;
 		;
-PREP_BOOT_SECT	PROC	NEAR
+PREP_BOOT_SECT:
 		;
 		;  Output:  CF - set if error
 		;
 		PUSH_REGS
-		
-		call	MAKE_PART_TAB
-		
-		mov	di, ACT_MBR_REC
 
-		mov	bx, Offset OS_BOOT_SECT
+		call	MAKE_PART_TAB
+
+		mov	di, word [ACT_MBR_REC]
+
+		mov	bx, OS_BOOT_SECT
 		mov	dx, [di]
 		mov	cx, [di+2]
 		call	READ_SECT
 		jc	@@err_read
-		
-		mov	di, Offset OS_BOOT_SECT
+
+		mov	di, OS_BOOT_SECT
 		mov	cx, 512
 		mov	al, 0
 		repe
@@ -1097,7 +1114,7 @@ PREP_BOOT_SECT	PROC	NEAR
 		call	COMPARE_MBR_SECT	; did we change boot sector
 		jnc	@@not_changed		; no need to save
 
-		mov	bx, Offset MBR_SECT
+		mov	bx, MBR_SECT
 		xor	dx, dx
 		xor	ax, ax
 		mov	cx, 1
@@ -1108,43 +1125,43 @@ PREP_BOOT_SECT	PROC	NEAR
 		clc
 		jmp	@@end
 @@err_read:
-		lea	si, MesgErrorRead
+		mov	si, MesgErrorRead
 		call	SHOW_ERROR
 		stc
 		jmp	@@end
 @@sect_empty:
-		lea	si, MesgBootInvalid
+		mov	si, MesgBootInvalid
 		call	SHOW_ERROR
 		stc
 		jmp	@@end
 @@err_save:
-		lea	si, MesgErrorSave
+		mov	si, MesgErrorSave
 		call	SHOW_ERROR
 		stc
 @@end:
 		POP_REGS
 		ret
-PREP_BOOT_SECT	ENDP
+
 		;
 		;
-PREP_BOOT_SECT_X PROC	NEAR
+PREP_BOOT_SECT_X:
 		;
 		; Input:   DL - Disk number
 		; Output:  CF - set if error
 		;
 		PUSH_REGS
-		
+
 		push	dx
 		call	MAKE_PART_TAB
 		pop	dx
-		
-		lea	di, FD_PARAMS
+
+		mov	di, FD_PARAMS
 		mov	cx, 1
 		mov	dh, 0
 		mov	[di], dx
 		mov	[di+2],cx
-		mov	ACT_MBR_REC, di
-		mov	bx, Offset OS_BOOT_SECT
+		mov	word [ACT_MBR_REC], di
+		mov	bx, OS_BOOT_SECT
 
 		call	READ_SECT
 		jc	@@err_read
@@ -1152,7 +1169,7 @@ PREP_BOOT_SECT_X PROC	NEAR
 		call	COMPARE_MBR_SECT	; did we change boot sector
 		jnc	@@not_changed		; no need to save
 
-		mov	bx, Offset MBR_SECT
+		mov	bx, MBR_SECT
 		xor	dx, dx
 		xor	ax, ax
 		mov	cx, 1
@@ -1162,30 +1179,30 @@ PREP_BOOT_SECT_X PROC	NEAR
 		clc
 		jmp	@@end
 @@err_read:
-		lea	si, MesgErrorRead
+		mov	si, MesgErrorRead
 		call	SHOW_ERROR
 		stc
 		jmp	@@end
 @@err_save:
-		lea	si, MesgErrorSave
+		mov	si, MesgErrorSave
 		call	SHOW_ERROR
 		clc			; We still want to boot from A: (or D:)
 @@end:
 		POP_REGS
 		ret
-PREP_BOOT_SECT_X ENDP
+
 		;
 		;
 		;
-BACKUP_MBR_SECT PROC	NEAR
+BACKUP_MBR_SECT:
 		push	cx
 		push	si
 		push	di
 
 		mov	cx, 512
-		mov	si, Offset MBR_SECT
-		mov	di, Offset MBR_SECT_BAK
-		
+		mov	si, MBR_SECT
+		mov	di, MBR_SECT_BAK
+
 		rep
 		  movsb
 
@@ -1193,11 +1210,11 @@ BACKUP_MBR_SECT PROC	NEAR
 		pop	si
 		pop	cx
 		ret
-BACKUP_MBR_SECT ENDP
+
 		;
 		;
 		;
-COMPARE_MBR_SECT PROC	NEAR
+COMPARE_MBR_SECT:
 		;
 		; CF - set if boot sector was changed
 		;
@@ -1206,9 +1223,9 @@ COMPARE_MBR_SECT PROC	NEAR
 		push	di
 
 		mov	cx, 512
-		mov	si, Offset MBR_SECT
-		mov	di, Offset MBR_SECT_BAK
-		
+		mov	si, MBR_SECT
+		mov	di, MBR_SECT_BAK
+
 		repe
 		 cmpsb
 
@@ -1222,11 +1239,11 @@ COMPARE_MBR_SECT PROC	NEAR
 		pop	si
 		pop	cx
 		ret
-COMPARE_MBR_SECT ENDP
+
 		;
 		;
 		;
-MAKE_PART_TAB	PROC	NEAR
+MAKE_PART_TAB:
 		;
 		;  Input:  ACT_MENU
 		;
@@ -1234,21 +1251,21 @@ MAKE_PART_TAB	PROC	NEAR
 		;
 		push	bp
 
-		mov	ACT_PART_PTR, 0
+		mov	word [ACT_PART_PTR], 0
 		;
 		;  Clearing PART_TMP and MBR part_rec
 		;
 		xor	ax, ax
-		lea	di, PART_TMP
-		mov	cx, SIZE PART_TMP
+		mov	di, PART_TMP
+		mov	cx, PART_TMP_size
 		rep
 		  stosb
-		lea	di, PART_TMP2
-		mov	cx, SIZE PART_TMP2
+		mov	di, PART_TMP2
+		mov	cx, PART_TMP2_size
 		rep
 		  stosb
-		lea	di, part_rec
-		mov	cx, SIZE part_rec
+		mov	di, part_rec
+		mov	cx, part_rec_size
 		rep
 		  stosb
 		;
@@ -1260,28 +1277,28 @@ MAKE_PART_TAB	PROC	NEAR
 		mov	cx, MAX_PART_ROWS
 		mov	bx, di
 @@next_step:
-		mov	ax, Word Ptr [di].p_num_sect
-		or	ax, Word Ptr [di].p_num_sect+2
+		mov	ax, Word [di + p_num_sect]
+		or	ax, Word [di + p_num_sect+2]
 		jz	@@last_found
-		add	di, SIZE adv_part_rec
+		add	di, adv_part_rec_size
 		loop	@@next_step
 @@last_found:
 		cmp	bx, di
 		je	@@show_one_je_short
-		sub	di, SIZE adv_part_rec
+		sub	di, adv_part_rec_size
 
-		cmp	NUM_MENUS, 0
+		cmp	word [NUM_MENUS], 0
 @@show_one_je_short:
 		je	@@show_one
 
-		mov	bx, ACT_MENU
+		mov	bx, word [ACT_MENU]
 		cmp	bx, -1
 		je	@@show_unused
 		shl	bx, 1
-		mov	si, MENU_PTR[bx]
-		mov	al, [si].m_show
-		mov	si, PART_PTR[bx]
-		mov	ACT_PART_PTR, si
+		mov	si, word [MENU_PTR + bx]
+		mov	al, byte [si + m_show]
+		mov	si, word [PART_PTR + bx]
+		mov	word [ACT_PART_PTR], si
 		cmp	si, 0
 		jne	@@not_zero
 		xor	di, di		; No partition associated with menu
@@ -1303,17 +1320,17 @@ MAKE_PART_TAB	PROC	NEAR
 		je	@@show_last3
 		jmp	@@show_one
 @@show_prev:
-		lea	bx, part
+		mov	bx, part
 		cmp	bx, si
 		je	@@show_one
 		mov	di, si
-		sub	si, SIZE adv_part_rec
+		sub	si, adv_part_rec_size
 		jmp	@@eval_part
 @@show_next:
 		cmp	si, di
 		je	@@show_one
 		mov	di, si
-		add	di, SIZE adv_part_rec
+		add	di, adv_part_rec_size
 		jmp	@@eval_part
 @@show_last:
 		cmp	si, di
@@ -1321,9 +1338,9 @@ MAKE_PART_TAB	PROC	NEAR
 		jmp	@@show_one
 @@show_last3:
 		push	di
-		sub	di, SIZE adv_part_rec
-		sub	di, SIZE adv_part_rec
-		cmp	di, Offset part
+		sub	di, adv_part_rec_size
+		sub	di, adv_part_rec_size
+		cmp	di, part
 		jnb	@@now_check_si
 		pop	di
 		jmp	@@show_last
@@ -1332,26 +1349,26 @@ MAKE_PART_TAB	PROC	NEAR
 		pop	di
 		jb	@@show_last
 		mov	bp, di
-		sub	di, SIZE adv_part_rec
+		sub	di, adv_part_rec_size
 		mov	si, di
-		sub	si, SIZE adv_part_rec
+		sub	si, adv_part_rec_size
 		jmp	@@eval_part
 @@show_one:
 		xor	di, di
 		jmp	@@eval_part
 @@show_unused:					; Show first unused space
 		xor	di, di			; greater than 63 sectors
-		lea	si, part
+		mov	si, part
 		mov	cx, MAX_PART_ROWS
 @@unused_next:
-		cmp	[si].p_os_id, 0
+		cmp	word [si + p_os_id], 0
 		jne	@@unused_cont
-		cmp	Word Ptr [si].p_num_sect+2, 0
+		cmp	Word [si + p_num_sect+2], 0
 		jne	@@eval_part
-		cmp	Word Ptr [si].p_num_sect, 63
+		cmp	Word [si + p_num_sect], 63
 		ja	@@eval_part
 @@unused_cont:
-		add	si, SIZE adv_part_rec
+		add	si, adv_part_rec_size
 		loop	@@unused_next
 		xor	si, si			; didn't find any
 @@eval_part:
@@ -1360,51 +1377,51 @@ MAKE_PART_TAB	PROC	NEAR
 		;  DI -> second partition, or zero
 		;  BP -> third partition, or zero
 		;
-		lea	bx, part
-		mov	ax, Word Ptr [bx].p_rel_sect
-		mov	dx, Word Ptr [bx].p_rel_sect+2
-		
-		lea	bx, PART_TMP
+		mov	bx, part
+		mov	ax, Word [bx + p_rel_sect]
+		mov	dx, Word [bx + p_rel_sect+2]
+
+		mov	bx, PART_TMP
 		mov	cx, 0
 
-		mov	LAST_PART, 0
+		mov	word [LAST_PART], 0
 @@next_row:
 		cmp	si, 0
 		jne	@@check_gap
 		jmp	@@tail
 @@check_gap:
-		cmp	Word Ptr [si].p_rel_sect+2, dx
+		cmp	Word [si + p_rel_sect+2], dx
 		ja	@@fill_gap
-		cmp	Word Ptr [si].p_rel_sect, ax
+		cmp	Word [si + p_rel_sect], ax
 		ja	@@fill_gap
 
-		mov	ax, [si].p_os_id
-		mov	[bx].p_os_id, ax
-		mov	al, [si].p_orig_row
-		mov	[bx].p_orig_row, al
+		mov	ax, word [si + p_os_id]
+		mov	word [bx + p_os_id], ax
+		mov	al, byte [si + p_orig_row]
+		mov	byte [bx + p_orig_row], al
 		mov	al, 0
-		cmp	si, ACT_PART_PTR
+		cmp	si, word [ACT_PART_PTR]
 		jne	@@not_active
-		mov	al, DISK
+		mov	al, byte [DISK]
 @@not_active:
-		mov	[bx].p_tag, al
+		mov	byte [bx + p_tag], al
 
-		mov	ax, Word Ptr [si].p_rel_sect
-		mov	dx, Word Ptr [si].p_rel_sect+2
-		mov	Word Ptr [bx].p_rel_sect, ax
-		mov	Word Ptr [bx].p_rel_sect+2, dx
-		mov	ax, Word Ptr [si].p_num_sect
-		mov	dx, Word Ptr [si].p_num_sect+2
-		mov	Word Ptr [bx].p_num_sect, ax
-		mov	Word Ptr [bx].p_num_sect+2, dx
-		add	ax, Word Ptr [si].p_rel_sect
-		adc	dx, Word Ptr [si].p_rel_sect+2
+		mov	ax, Word [si + p_rel_sect]
+		mov	dx, Word [si + p_rel_sect+2]
+		mov	Word [bx + p_rel_sect], ax
+		mov	Word [bx + p_rel_sect+2], dx
+		mov	ax, Word [si + p_num_sect]
+		mov	dx, Word [si + p_num_sect+2]
+		mov	Word [bx + p_num_sect], ax
+		mov	Word [bx + p_num_sect+2], dx
+		add	ax, Word [si + p_rel_sect]
+		adc	dx, Word [si + p_rel_sect+2]
 
-		mov	LAST_PART, si
+		mov	word [LAST_PART], si
 		mov	si, di
 		mov	di, bp
 		mov	bp, 0
-		add	bx, SIZE adv_part_rec
+		add	bx, adv_part_rec_size
 		inc	cx
 		cmp	cx, 4
 		je	@@table_filled_short
@@ -1412,59 +1429,59 @@ MAKE_PART_TAB	PROC	NEAR
 @@table_filled_short:
 		jmp	@@table_filled
 @@fill_gap:
-		test	adv_options, ADV_OPT_IGN_UNUSED
+		test	byte [adv_options], ADV_OPT_IGN_UNUSED
 		jz	@@go_fill_gap
-		cmp	LAST_PART, 0
+		cmp	word [LAST_PART], 0
 		je	@@go_fill_gap
 		push	si
-		sub	si, SIZE adv_part_rec
-		cmp	si, LAST_PART
+		sub	si, adv_part_rec_size
+		cmp	si, word [LAST_PART]
 		pop	si
 		jne	@@go_fill_gap
-		mov	ax, Word Ptr [si].p_rel_sect
-		mov	dx, Word Ptr [si].p_rel_sect+2
+		mov	ax, Word [si + p_rel_sect]
+		mov	dx, Word [si + p_rel_sect+2]
 		jmp	@@next_row
 @@go_fill_gap:
-		mov	[bx].p_os_id, OS_HIDDEN
-		mov	[bx].p_tag, 0
-		mov	[bx].p_orig_row, 0
-		mov	Word Ptr [bx].p_rel_sect, ax
-		mov	Word Ptr [bx].p_rel_sect+2, dx
-		mov	ax, Word Ptr [si].p_rel_sect
-		mov	dx, Word Ptr [si].p_rel_sect+2
-		sub	ax, Word Ptr [bx].p_rel_sect
-		sbb	dx, Word Ptr [bx].p_rel_sect+2
-		mov	Word Ptr [bx].p_num_sect, ax
-		mov	Word Ptr [bx].p_num_sect+2, dx
-		mov	ax, Word Ptr [si].p_rel_sect
-		mov	dx, Word Ptr [si].p_rel_sect+2
-		
-		add	bx, SIZE adv_part_rec
+		mov	word [bx + p_os_id], OS_HIDDEN
+		mov	byte [bx + p_tag], 0
+		mov	byte [bx + p_orig_row], 0
+		mov	Word [bx + p_rel_sect], ax
+		mov	Word [bx + p_rel_sect+2], dx
+		mov	ax, Word [si + p_rel_sect]
+		mov	dx, Word [si + p_rel_sect+2]
+		sub	ax, Word [bx + p_rel_sect]
+		sbb	dx, Word [bx + p_rel_sect+2]
+		mov	Word [bx + p_num_sect], ax
+		mov	Word [bx + p_num_sect+2], dx
+		mov	ax, Word [si + p_rel_sect]
+		mov	dx, Word [si + p_rel_sect+2]
+
+		add	bx, adv_part_rec_size
 		inc	cx
 		cmp	cx, 4
 		je	@@table_filled
 		jmp	@@next_row
 @@tail:
-		mov	Word Ptr [bx].p_rel_sect, ax
-		mov	Word Ptr [bx].p_rel_sect+2, dx
-		mov	ax, SECT_PER_CYL
-		mov	dx, DISK_NUM_CYLS
+		mov	Word [bx + p_rel_sect], ax
+		mov	Word [bx + p_rel_sect+2], dx
+		mov	ax, word [SECT_PER_CYL]
+		mov	dx, word [DISK_NUM_CYLS]
 		mul	dx
-		sub	ax, Word Ptr [bx].p_rel_sect
-		sbb	dx, Word Ptr [bx].p_rel_sect+2
-		mov	Word Ptr [bx].p_num_sect, ax
-		mov	Word Ptr [bx].p_num_sect+2, dx
+		sub	ax, Word [bx + p_rel_sect]
+		sbb	dx, Word [bx + p_rel_sect+2]
+		mov	Word [bx + p_num_sect], ax
+		mov	Word [bx + p_num_sect+2], dx
 		or	ax, dx				; is part size zero
 		jz	@@table_filled
 
-		mov	[bx].p_os_id, OS_HIDDEN
-		mov	[bx].p_tag, 0
-		mov	[bx].p_orig_row, 0
+		mov	word [bx + p_os_id], OS_HIDDEN
+		mov	byte [bx + p_tag], 0
+		mov	byte [bx + p_orig_row], 0
 
-		cmp	bx, offset PART_TMP
+		cmp	bx, PART_TMP
 		jne	@@table_filled
-		mov	al, DISK
-		mov	[bx].p_tag, al
+		mov	al, byte [DISK]
+		mov	byte [bx + p_tag], al
 @@table_filled:
 		;
 		;	Now lets make sure that active partition occupies
@@ -1472,45 +1489,45 @@ MAKE_PART_TAB	PROC	NEAR
 		;
 @@check_locations:
 		mov	cx, 4
-		lea	si, PART_TMP
+		mov	si, PART_TMP
 @@check_next_part:
 		mov	ah, 0
-		mov	al, [si].p_orig_row
+		mov	al, byte [si + p_orig_row]
 		cmp	al, 0
 		jne	@@row_is_not_0
-		add	si, SIZE adv_part_rec
+		add	si, adv_part_rec_size
 		loop	@@check_next_part
 		jmp	@@nothing_to_move
 @@row_is_not_0:
 		dec	ax
-		mov	bl, SIZE adv_part_rec
+		mov	bl, adv_part_rec_size
 		mul	bl
-		lea	bx, PART_TMP
+		mov	bx, PART_TMP
 		add	bx, ax
 		cmp	bx, si
 		je	@@part_in_place
 
 		push	bx	; that's where partition supposed to be
 		push	si	; that's where it is
-		lea	di, PART_TMP2
-		mov	cx, SIZE adv_part_rec
+		mov	di, PART_TMP2
+		mov	cx, adv_part_rec_size
 		rep		; moving partition to PART_TMP2
 		  movsb
 		pop	di
 		pop	si
 		push	si
-		mov	cx, SIZE adv_part_rec
+		mov	cx, adv_part_rec_size
 		rep		; moving whatever occupies place out
 		  movsb
 		pop	di
 		push	di
-		lea	si, PART_TMP2
-		mov	cx, SIZE adv_part_rec
+		mov	si, PART_TMP2
+		mov	cx, adv_part_rec_size
 		rep		; moving partition to its proper place
 		  movsb
 		pop	si
 @@part_in_place:
-		mov	[si].p_orig_row, 0	; so we won't move it again
+		mov	byte [si + p_orig_row], 0	; so we won't move it again
 		jmp	@@check_locations
 @@nothing_to_move:
 		;
@@ -1518,23 +1535,23 @@ MAKE_PART_TAB	PROC	NEAR
 		;	into records in the partition table
 		;
 		mov	cx, 4
-		lea	si, PART_TMP
-		lea	di, part_rec
+		mov	si, PART_TMP
+		mov	di, part_rec
 @@next_part_rec:
 		push	cx
 		push	si
 		push	di
-		cmp	[si].p_os_id, 0
+		cmp	word [si + p_os_id], 0
 		je	@@cont
-		mov	ax, Word Ptr [si].p_rel_sect
-		mov	dx, Word Ptr [si].p_rel_sect+2
+		mov	ax, Word [si + p_rel_sect]
+		mov	dx, Word [si + p_rel_sect+2]
 		push	dx
 		push	ax
 		call	REL_SECT_TO_CHS
-		mov	dl, [si].p_tag
+		mov	dl, byte [si + p_tag]
 		or	dl, dl
 		jz	@@part_not_active
-		mov	ACT_MBR_REC, di
+		mov	word [ACT_MBR_REC], di
 @@part_not_active:
 		mov	ax, dx
 		stosw
@@ -1542,17 +1559,17 @@ MAKE_PART_TAB	PROC	NEAR
 		stosw
 		pop	ax
 		pop	dx
-		add	ax, Word Ptr [si].p_num_sect
-		adc	dx, Word Ptr [si].p_num_sect+2
+		add	ax, Word [si + p_num_sect]
+		adc	dx, Word [si + p_num_sect+2]
 		sub	ax, 1
 		sbb	dx, 0
 		call	REL_SECT_TO_CHS
-		mov	dl, Byte Ptr [si].p_os_id+1
+		mov	dl, Byte [si + p_os_id+1]
 		mov	ax, dx
 		stosw
 		mov	ax, cx
 		stosw
-		lea	si, [si].p_rel_sect
+		lea	si, [si + p_rel_sect]
 		movsw
 		movsw
 		movsw
@@ -1560,81 +1577,81 @@ MAKE_PART_TAB	PROC	NEAR
 	@@cont:
 		pop	di
 		pop	si
-		add	si, SIZE adv_part_rec
-		add	di, SIZE mbr_part_rec
+		add	si, adv_part_rec_size
+		add	di, mbr_part_rec_size
 		pop	cx
 		loop	@@next_part_rec
 	@@end:
 		pop	bp
-		ret		
-MAKE_PART_TAB	ENDP
+		ret
+
 		;
 		;
 		;
-IMPORT_NEW_PART	PROC	NEAR
+IMPORT_NEW_PART:
 		push	bp
-		mov	IMPORTED_FLAG, 0
+		mov	word [IMPORTED_FLAG], 0
 		mov	cx, 1
-		lea	si, part_rec
+		mov	si, part_rec
 @@next_mbr_part:
 		push	cx
-		cmp	[si].b_os_id, 0		; Unused - ignore it
+		cmp	byte [si + b_os_id], 0		; Unused - ignore it
 		je	@@mbr_cont_short
-		cmp	[si].b_os_id, 0FFh	; Hidden - ignore it
+		cmp	byte [si + b_os_id], 0FFh	; Hidden - ignore it
 		je	@@mbr_cont_short
 		jmp	@@test_part
 @@mbr_cont_short:
 		jmp	@@mbr_cont
      @@test_part:
-		mov	ax, Word Ptr [si].b_rel_sect
-		mov	dx, Word Ptr [si].b_rel_sect+2
+		mov	ax, Word [si + b_rel_sect]
+		mov	dx, Word [si + b_rel_sect+2]
 		push	ax
 		or	ax, dx
 		pop	ax
 		jz	@@mbr_cont		; Empty - ignore it
 		mov	cx, MAX_PART_ROWS
-		lea	di, part
+		mov	di, part
      @@next_part:
-     		cmp	ax, Word Ptr [di].p_rel_sect
+     		cmp	ax, Word [di + p_rel_sect]
      		jne	@@part_cont
-     		cmp	dx, Word Ptr [di].p_rel_sect+2
+     		cmp	dx, Word [di + p_rel_sect+2]
      		jne	@@part_cont
      		; Relative sectors matched
-		mov	ax, Word Ptr [si].b_num_sect
-		mov	dx, Word Ptr [si].b_num_sect+2
+		mov	ax, Word [si + b_num_sect]
+		mov	dx, Word [si + b_num_sect+2]
 
-     		cmp	ax, Word Ptr [di].p_num_sect
+     		cmp	ax, Word [di + p_num_sect]
      		jne	@@import_part
-     		cmp	dx, Word Ptr [di].p_num_sect+2
+     		cmp	dx, Word [di + p_num_sect+2]
      		jne	@@import_part
      		; Number of sectors also same
      		jmp	@@check_id
      @@part_cont:
-     		add	di, SIZE adv_part_rec
+     		add	di, adv_part_rec_size
      		loop	@@next_part
      		jmp	@@import_part
       @@check_id:
-      		mov	ax, [di].p_os_id
+      		mov	ax, word [di + p_os_id]
       		cmp	ax, OS_ADV
       		je	@@import_part
-      		cmp	ah, [si].b_os_id
+      		cmp	ah, byte [si + b_os_id]
       		je	@@mbr_cont
-      		mov	ah, [si].b_os_id
+      		mov	ah, byte [si + b_os_id]
       		mov	al, 0
-      		mov	[di].p_os_id, ax
-      		mov	IMPORTED_FLAG, 1
+      		mov	[di + p_os_id], ax
+      		mov	word [IMPORTED_FLAG], 1
       		jmp	@@mbr_cont
      @@import_part:
      		mov	cx, MAX_PART_ROWS
-     		lea	di, part + SIZE part
+     		mov	di, part + part_size
      @@step_back:
-     		sub	di, SIZE adv_part_rec
-     		cmp	[di].p_os_id, 0
+     		sub	di, adv_part_rec_size
+     		cmp	word [di + p_os_id], 0
      		je	@@copy_part
      		loop	@@step_back
      		jmp	@@mbr_cont
      @@copy_part:
-     		mov	ah, [si].b_os_id
+     		mov	ah, byte [si + b_os_id]
      		mov	al, 0
      		stosw	; p_os_id
      		mov	al, 0
@@ -1652,36 +1669,36 @@ IMPORT_NEW_PART	PROC	NEAR
      		movsw	; num_sect
      		movsw
      		pop	si
-      		mov	IMPORTED_FLAG, 10h
+      		mov	word [IMPORTED_FLAG], 10h
 @@mbr_cont:
-		add	si, SIZE mbr_part_rec
+		add	si, mbr_part_rec_size
 		pop	cx
 		inc	cx
 		cmp	cx, 5
 		je	@@break_out
 		jmp	@@next_mbr_part
 @@break_out:
-		cmp	IMPORTED_FLAG, 0
+		cmp	word [IMPORTED_FLAG], 0
 		je	@@end
 
-		mov	ax, Word Ptr ADV_REL_SECT
-		mov	dx, Word Ptr ADV_REL_SECT+2
+		mov	ax, Word [ADV_REL_SECT]
+		mov	dx, Word [ADV_REL_SECT+2]
 
 		mov	bx, ADV_DATA_ADDR
 		mov	cx, ADV_DATA_SECT
-		
+
 		call	WRITE_N_SECT
 		jnc	@@end
-		lea	si, MesgErrorSaveAdv
+		mov	si, MesgErrorSaveAdv
 		call	SHOW_ERROR
 	@@end:
 		pop	bp
 		ret
-IMPORT_NEW_PART	ENDP
+
 		;
 		;
 		;
-SPRINTF_MENU	PROC	NEAR
+SPRINTF_MENU:
 		;
 		;  Input:  AX - Menu number
 		;  Output: TMP - Filled with menu line
@@ -1689,18 +1706,18 @@ SPRINTF_MENU	PROC	NEAR
 		PUSH_REGS
 		push	ax
 		inc	ax
-		lea	si, TMP
+		mov	si, TMP
 		mov	cx, 3
 		call	SPRINTF_INT
-		lea	di, TMP+3
+		mov	di, TMP+3
 		mov	al, ' '
 		stosb
 		stosb
 		mov	cx, 30
 		pop	bx
 		shl	bx, 1
-		mov	si, MENU_PTR[bx]
-		lea	si, [si].m_name
+		mov	si, word [MENU_PTR + bx]
+		lea	si, [si + m_name]
 	@@char:
 		lodsb
 		or	al, al
@@ -1715,11 +1732,11 @@ SPRINTF_MENU	PROC	NEAR
 		 stosb
 	@@no_spaces:
 		stosb
-		mov	si, PART_PTR[bx]
+		mov	si, word [PART_PTR + bx]
 		cmp	si, 0
 		je	@@no_part
-		mov	ax, Word Ptr [si].p_num_sect
-		mov	dx, Word Ptr [si].p_num_sect+2
+		mov	ax, Word [si + p_num_sect]
+		mov	dx, Word [si + p_num_sect+2]
 		mov	cl, 11
 		shr	ax, cl
 		mov	cl, 5
@@ -1744,11 +1761,11 @@ SPRINTF_MENU	PROC	NEAR
 		stosb
 		POP_REGS
 		ret
-SPRINTF_MENU	ENDP
+
 		;
 		;
 		;
-SPRINTF_INT	PROC	NEAR
+SPRINTF_INT:
 		;
 		;  Input:  AX - Integer to print
 		;          CX - Field len
@@ -1787,16 +1804,16 @@ SPRINTF_INT	PROC	NEAR
 		mov	[si], al
 		POP_REGS
 		ret
-SPRINTF_INT	ENDP
+
 		;
 		;
 		;
-SHOW_ERROR	PROC	NEAR
+SHOW_ERROR:
 		;
 		;  DS:SI - String to print
 		;
 		PUSH_REGS
-		
+
 		push	ds
 		mov	di, si
 		pop	es
@@ -1811,15 +1828,15 @@ SHOW_ERROR	PROC	NEAR
 		mov	bx, cx
 		shr	bx, 1
 		mov	bh, 12
-		
+
 		push	si
-		lea	si, SAV_BUFFER_ERR
+		mov	si, SAV_BUFFER_ERR
 		call	_save_window
 		mov	ah, Yellow+BakRed
-		lea	si, Border
+		mov	si, Border
 		call	_border_window
 		pop	si
-		
+
 		push	bx
 		push	dx
 
@@ -1830,11 +1847,11 @@ SHOW_ERROR	PROC	NEAR
 		sub	cl, 4
 
 		call _write_string
-		
+
 		mov	ah, Black+BakWhite
 		mov	bl, 38
 		inc	bh
-		lea	si, Mesg_OK
+		mov	si, Mesg_OK
 		call	_write_string
 @@again:
 		mov	ah, 0
@@ -1846,29 +1863,29 @@ SHOW_ERROR	PROC	NEAR
 @@end:
 		pop	dx
 		pop	bx
-		lea	si, SAV_BUFFER_ERR
+		mov	si, SAV_BUFFER_ERR
 		call	_load_window
-		
+
 		POP_REGS
 		ret
-SHOW_ERROR	ENDP
+
 		;
 		;
 		;
 
-GET_PASSWORD	PROC	NEAR
+GET_PASSWORD:
 		;
 		;  Input:  none
 		;  Output: AX - encrypted password
 		;
 		mov	bl, 20
-		mov	bh, DOT_Y
+		mov	bh, byte [DOT_Y]
 		mov	dl, 28
 		mov	dh, 3
-		lea	si, SAV_BUFFER_ERR
+		mov	si, SAV_BUFFER_ERR
 		call	_save_window
 		mov	ah, Yellow+BakWhite
-		lea	si, Border
+		mov	si, Border
 		call	_border_window
 
 		push	bx
@@ -1877,16 +1894,16 @@ GET_PASSWORD	PROC	NEAR
 		mov	ah, Black+BakWhite
 		add	bl, 2
 		add	bh, 1
-		lea	si, MesgEnterPassword
+		mov	si, MesgEnterPassword
 		call	_write_string
 
 		add	bl, 16
 		mov	dl, 8
 		mov	dh, 1
-		lea	si, TMP
+		mov	si, TMP
 @@clear_it:
 		mov	cx, 0
-@@next_key:		
+@@next_key:
 		mov	di, si
 		add	di, cx
 		mov	al, 0
@@ -1927,7 +1944,7 @@ GET_PASSWORD	PROC	NEAR
 		cmp	cx, 0
 		je	@@next_key
 		dec	cx
-		
+
 		jmp	@@next_key
 @@break_out:
 		call	_hide_cursor
@@ -1935,53 +1952,54 @@ GET_PASSWORD	PROC	NEAR
 		pop	dx
 		pop	bx
 
-		lea	si, SAV_BUFFER_ERR
+		mov	si, SAV_BUFFER_ERR
 		call	_load_window
 
 		push	ds
-		lea	si, TMP
+		mov	si, TMP
 		push	si
 
+		push	cs		; (emulate far call stack frame)
 		call	_encrypt_password
 		add	sp, 4
-		
+
 		push	ax
 		mov	al, 0
 		mov	cx, 9
-		lea	di, TMP
+		mov	di, TMP
 		rep
 		  stosb
 		pop	ax
 
 		ret
-GET_PASSWORD	ENDP
+
 
 		;
 		;
 		;
 
-SETUP_MENU	PROC	NEAR
+SETUP_MENU:
 		PUSH_REGS
 		mov	bl, 29
 		mov	bh, 12
 		mov	dl, 34
 		mov	dh, 3
-		lea	si, SAV_BUFFER_ERR
+		mov	si, SAV_BUFFER_ERR
 		call	_save_window
 		mov	ah, Yellow+BakWhite
-		lea	si, Border
+		mov	si, Border
 		call	_border_window
 		mov	ah, Black+BakWhite
 		add	bx, 0102h
-		lea	si, MesgSetTimeout
+		mov	si, MesgSetTimeout
 		call	_write_string
 
-		mov	dl, adv_timeout
+		mov	dl, byte [adv_timeout]
 	@@while:
 		xor	ax, ax
 		mov	al, dl
 		mov	cx, 3
-		lea	si, TMP
+		mov	si, TMP
 		call	SPRINTF_INT
 		mov	ah, BrWhite+BakBlack
 		mov	bl, 58
@@ -2008,39 +2026,39 @@ SETUP_MENU	PROC	NEAR
 		inc	dl
 		jmp	@@while
 	@@save:
-		mov	adv_timeout, dl
+		mov	byte [adv_timeout], dl
 	@@break:
 		mov	bl, 29
 		mov	bh, 12
 		mov	dl, 34
 		mov	dh, 3
-		lea	si, SAV_BUFFER_ERR
+		mov	si, SAV_BUFFER_ERR
 		call	_load_window
 
 		POP_REGS
 		ret
-SETUP_MENU	ENDP
+
 
 		;
 		;
 		;
 
-FILL_KEYB_BUFFER	PROC	NEAR
-		cmp	ALT_ENTER, 1
+FILL_KEYB_BUFFER:
+		cmp	word [ALT_ENTER], 1
 		je	@@alt_enter
-		cmp	FILL_KB_BUFFER, 0
+		cmp	word [FILL_KB_BUFFER], 0
 		je	@@end
-		mov	bx, ACT_MENU
+		mov	bx, word [ACT_MENU]
 		shl	bx, 1
-		mov	bx, MENU_PTR[bx]
-		mov	cx, [bx].m_num_keys
+		mov	bx, word [MENU_PTR + bx]
+		mov	cx, word [bx + m_num_keys]
 		cmp	cx, 0
 		je	@@end
 
 		push	es
 		mov	ax, 0
 		mov	es, ax
-		lea	si, [bx].m_keys
+		lea	si, [bx + m_keys]
 		mov	di, 41Ah
 		mov	ax, 01Eh
 		stosw
@@ -2059,13 +2077,13 @@ FILL_KEYB_BUFFER	PROC	NEAR
 		jnz	@@not_yet
 	@@end:
 		ret
-FILL_KEYB_BUFFER	ENDP
+
 
 		;
 		;
 		;
 
-DOT_BAR		PROC	NEAR
+DOT_BAR	:
 		;
 		;  Print dots and check if key is pressed (key in al)
 		;
@@ -2074,14 +2092,14 @@ DOT_BAR		PROC	NEAR
 		PUSH_REGS
 
 		mov	bl, KEYS_X
-		mov	bh, KEYS_Y
+		mov	bh, byte [KEYS_Y]
 		mov	dl, KEYS_W
 		mov	dh, 1
-		lea	si, SAV_BUFFER_ERR
+		mov	si, SAV_BUFFER_ERR
 		call	_save_window
 
 		mov	bl, DOT_X-1
-		mov	bh, DOT_Y
+		mov	bh, byte [DOT_Y]
 		mov	dl, DOT_NUM+2
 		mov	dh, 1
 		mov	ah, DOTBAR_COLOR
@@ -2089,18 +2107,18 @@ DOT_BAR		PROC	NEAR
 
 		mov	ah, KEYS_TXT_COLOR
 		mov	bl, KEYS_X
-		mov	bh, KEYS_Y
-		lea	si, BottomKeysText
+		mov	bh, byte [KEYS_Y]
+		mov	si, BottomKeysText
 		call	_write_string
 		mov	ah, KEYS_KEY_COLOR
-		lea	si, BottomKeysESC
+		mov	si, BottomKeysESC
 		call	_write_string
 
 		mov	cx, DOT_NUM
 		mov	al, DOT1
 		mov	ah, DOTBAR_COLOR
 		mov	bl, DOT_X
-		mov	bh, DOT_Y
+		mov	bh, byte [DOT_Y]
 	@@L1:
 		call	_write_char
 		inc	bl
@@ -2108,7 +2126,7 @@ DOT_BAR		PROC	NEAR
 
 		mov	cx, DOT_NUM
 		mov	bl, DOT_X
-		mov	bh, DOT_Y
+		mov	bh, byte [DOT_Y]
 	@@L2:
 		mov	ah, 11h		; Check if key is pressed
 		int	16h
@@ -2121,7 +2139,7 @@ DOT_BAR		PROC	NEAR
 
 		push	bx
 		push	cx
-		mov	cx, TICKS_PER_DOT
+		mov	cx, word [TICKS_PER_DOT]
 	@@L3:
 		push	cx
 		mov	ah, 0
@@ -2150,21 +2168,21 @@ DOT_BAR		PROC	NEAR
 	@@end:
 		pushf
 		mov	bl, KEYS_X
-		mov	bh, KEYS_Y
+		mov	bh, byte [KEYS_Y]
 		mov	dl, KEYS_W
 		mov	dh, 1
-		lea	si, SAV_BUFFER_ERR
+		mov	si, SAV_BUFFER_ERR
 		call	_load_window
 		popf
 
 		POP_REGS
 		ret
-DOT_BAR		ENDP
+
 
 ;----------------------------------------------------------------
-CHECK_LAST_CYL	PROC	NEAR
-		mov	ax, SECT_PER_TRACK
-		mov	dx, DISK_NUM_CYLS
+CHECK_LAST_CYL:
+		mov	ax, [SECT_PER_TRACK]
+		mov	dx, [DISK_NUM_CYLS]
 		cmp	dx, 1024
 		je	@@end
 		mul	dx
@@ -2172,14 +2190,14 @@ CHECK_LAST_CYL	PROC	NEAR
 		mov	bx, 7C00h
 		call	READ_N_SECT
 		jc	@@end
-		inc	DISK_NUM_CYLS
+		inc	word [DISK_NUM_CYLS]
 	@@end:
 		ret
-CHECK_LAST_CYL	ENDP
+
 
 ;----------------------------------------------------------------
 
-WRITE_N_SECT	PROC	NEAR
+WRITE_N_SECT:
 		;
 		;
 		;	ES:BX - Destination address
@@ -2215,11 +2233,11 @@ WRITE_N_SECT	PROC	NEAR
 		pop	bx
 		pop	ax
 		ret
-WRITE_N_SECT	ENDP
+
 		;
 		;
 		;
-WRITE_SECT	PROC	NEAR
+WRITE_SECT:
 		;
 		;   ES:BX - Address
 		;   CX,DX - CHS
@@ -2235,7 +2253,7 @@ WRITE_SECT	PROC	NEAR
 					; We get here if there was an error
 		mov	ah, 0		; We will try to reset device
 		int	13h
-	
+
 		dec	si
 		jnz	@@try_again
 		;
@@ -2245,10 +2263,10 @@ WRITE_SECT	PROC	NEAR
 	@@end:
 		pop	si
 		ret
-WRITE_SECT	ENDP
+
 ;----------------------------------------------- CONIO ROUTINES -------
 
-_conio_init	PROC	NEAR
+_conio_init:
 		push	ax
 		push	bx
 
@@ -2263,10 +2281,10 @@ _conio_init	PROC	NEAR
 		mov	ax,03		; If unknown set Color 80x25
 		int	10h
     @@Color:  
-		mov	Word Ptr _ScreenArea+2, 0B800h
+		mov	Word [_ScreenArea+2], 0B800h
 		jmp	@@skip1
     @@Mono:
-		mov	Word Ptr _ScreenArea+2, 0B000h
+		mov	Word [_ScreenArea+2], 0B000h
     @@skip1:
 		push	ds
 		mov	ax, 0
@@ -2275,34 +2293,34 @@ _conio_init	PROC	NEAR
 		mov	al, [bx]
 		pop	ds
 		inc	al
-		mov	_ScreenHeight, al
+		mov	byte [_ScreenHeight], al
 		mov	ah,0Fh
 		int	10h
-		mov	_ScreenWidth, ah
-		mov	al, _ScreenHeight
-		mov	ah, _ScreenWidth
+		mov	byte [_ScreenWidth], ah
+		mov	al, byte [_ScreenHeight]
+		mov	ah, byte [_ScreenWidth]
 		mul	ah
-		mov	_ScreenLength, ax
-		mov	Word Ptr _ScreenArea, 0h
+		mov	word [_ScreenLength], ax
+		mov	Word [_ScreenArea], 0h
 
 		pop	bx
 		pop	ax		
 		ret
-_conio_init	ENDP
 
 
-_conio_exit	PROC	NEAR
+
+_conio_exit:
 		ret
-_conio_exit	ENDP
+
 
 
 ;----------------------------------------------------------------
-		
+
 		;
 		;  Cursor position:  BL=X  BH=Y
 		;
-		
-_move_cursor	PROC	NEAR
+
+_move_cursor:
 		PUSH_REGS
 		mov	dx, bx
 		sub	dx, 0101h
@@ -2311,44 +2329,44 @@ _move_cursor	PROC	NEAR
 		int	10h
 		POP_REGS
 		ret
-_move_cursor	ENDP
 
 
-_hide_cursor	PROC	NEAR
+
+_hide_cursor:
 		push	bx
 		mov	bl, 1
 		mov	bh, 26
 		call	_move_cursor
 		pop	bx
 		ret
-_hide_cursor	ENDP
 
 
-_save_cursor	PROC	NEAR
+
+_save_cursor:
 		PUSH_REGS
 		mov	ah, 3
 		mov	bh, 0
 		int	10h
-		mov	CURSOR_SAVE_XY, dx
+		mov	word [CURSOR_SAVE_XY], dx
 		POP_REGS
 		ret
-_save_cursor	ENDP
 
 
-_restore_cursor	PROC	NEAR
+
+_restore_cursor:
 		PUSH_REGS
 		mov	ah, 2
 		mov	bh, 0
-		mov	dx, CURSOR_SAVE_XY
+		mov	dx, word [CURSOR_SAVE_XY]
 		int	10h
 		POP_REGS
 		ret
-_restore_cursor	ENDP
+
 
 ;----------------------------------------------------------------
-WINDOW_XY	MACRO
+%macro WINDOW_XY 0
 		push	ax
-		mov	al, _ScreenWidth
+		mov	al, byte [_ScreenWidth]
 		sub	bx, 0101h
 		mul	bh
 		xor	bh, bh
@@ -2356,28 +2374,28 @@ WINDOW_XY	MACRO
 		shl	ax, 1
 		add	di, ax
 		pop	ax
-ENDM
+%endmacro
 
-WINDOW_WH	MACRO
+%macro WINDOW_WH 0
 		xor	cx, cx
 		xor	bx, bx
 		mov	cl, dl
-		mov	bl, _ScreenWidth
+		mov	bl, byte [_ScreenWidth]
 		sub	bx, cx
 		shl	bx, 1
 		xor	cx, cx
-ENDM
+%endmacro
 ;----------------------------------------------------------------
 
 
-_write_char	PROC	NEAR
+_write_char:
 		;
 		; Input: AL=Char  BL=X
 		;	 AH=Attr  BH=Y
 		;
 		PUSH_REGS
 
-		les	di, _ScreenArea
+		les	di, [_ScreenArea]
 
 		WINDOW_XY
 
@@ -2385,18 +2403,18 @@ _write_char	PROC	NEAR
 
 		POP_REGS
 		ret
-_write_char	ENDP
 
 
 
-_write_string	PROC	NEAR
+
+_write_string:
 		;
 		; Input: DS:SI=Str   BL=X
 		;	    AH=Attr  BH=Y
 		;
 		PUSH_REGS
 
-		les	di, _ScreenArea
+		les	di, [_ScreenArea]
 
 		WINDOW_XY
 
@@ -2410,24 +2428,24 @@ _write_string	PROC	NEAR
 
 		POP_REGS
 		ret
-_write_string	ENDP
+
 
 
 ;----------------------------------------------------------------
 
 
-_save_window	PROC	NEAR
+_save_window:
 		;
 		; Input: DS:SI=Buf  BL=X  DL=W
 		;	            BH=Y  DH=H
 		;
 		PUSH_REGS
-		
-		les	di, _ScreenArea
-		
+
+		les	di, [_ScreenArea]
+
 		WINDOW_XY
 		WINDOW_WH
-		
+
 		push	es
 		push	ds
 		xchg	si, di
@@ -2444,19 +2462,19 @@ _save_window	PROC	NEAR
 
 		POP_REGS
 		ret
-_save_window	ENDP
 
 
 
-_load_window	PROC	NEAR
+
+_load_window:
 		;
 		; Input: DS:SI=Buf  BL=X  DL=W
 		;	            BH=Y  DH=H
 		;
 		PUSH_REGS
 
-		les	di, _ScreenArea
-		
+		les	di, [_ScreenArea]
+
 		WINDOW_XY
 		WINDOW_WH
 
@@ -2470,21 +2488,21 @@ _load_window	PROC	NEAR
 
 		POP_REGS
 		ret
-_load_window ENDP
+
 
 
 ;----------------------------------------------------------------
 
 
-_clear_window	PROC	NEAR
+_clear_window:
 		;
 		; Input: AH=Attr  BL=X  DL=W
 		;	          BH=Y  DH=H
 		;
 		PUSH_REGS
 
-		les	di, _ScreenArea
-		
+		les	di, [_ScreenArea]
+
 		WINDOW_XY
 		WINDOW_WH
 
@@ -2499,24 +2517,24 @@ _clear_window	PROC	NEAR
 
 		POP_REGS
 		ret
-_clear_window	ENDP
 
 
 
-_scroll_window	PROC	NEAR
+
+_scroll_window:
 		;
 		; Input: AL=Len   BL=X  DL=W
 		;	 AH=Attr  BH=Y  DH=H
 		;
 		PUSH_REGS
 
-		les	di, _ScreenArea
-		
+		les	di, [_ScreenArea]
+
 		WINDOW_XY
 		WINDOW_WH
-		
+
 		push	ax
-		imul	Byte Ptr _ScreenWidth
+		imul	Byte [_ScreenWidth]
 		shl	ax, 1
 		mov	si, di
 		add	si, ax
@@ -2527,7 +2545,7 @@ _scroll_window	PROC	NEAR
 		push	ax
 		mov	al, dh
 		dec	al
-		mul	Byte Ptr _ScreenWidth
+		mul	Byte [_ScreenWidth]
 		add	di, ax
 		add	si, ax
 		mov	bl, dl
@@ -2561,19 +2579,19 @@ _scroll_window	PROC	NEAR
 
 		POP_REGS
 		ret
-_scroll_window	ENDP
 
 
 
-_border_window	PROC	NEAR
+
+_border_window:
 		;
 		; Input: DS:SI=Brdr  BL=X  DL=W
 		;	    AH=Attr  BH=Y  DH=H
 		;
 		PUSH_REGS
 
-		les	di, _ScreenArea
-		
+		les	di, [_ScreenArea]
+
 		WINDOW_XY
 		WINDOW_WH
 
@@ -2590,7 +2608,7 @@ _border_window	PROC	NEAR
 		add	di, bx
 		cmp	dh, 00
 		je	@@NoMiddleRows
-	
+
     @@next_row:
 		lodsb			; All rows in the middle
 		stosw
@@ -2625,62 +2643,9 @@ _border_window	PROC	NEAR
 
 		POP_REGS
 		ret
-_border_window	ENDP
+
 
 ;----------------------------------------------------------------------
-_encrypt_password	PROC	FAR
-	push	bp
-	mov	bp,sp
-	push	ds
-	push	si
-	push	di
-
-	lds	si, dword ptr [bp+6]
-	mov	bx, 12345
-	mov	di, 0
-
-	jmp	@@check_cond
-@@next_char:
-
-	mov	ah, 0
-	
-	mov	cx, ax
-	xor	cx, bx
-
-	shl	ax, 2
-	add	ax, 7
-	
-	shr	bx, 1
-	add	bx, 3
-	
-	mul	bx
-	add	ax, cx
-
-	mov	bx, ax
-	mov	di, ax
-
-@@check_cond:
-	lodsb
-	or	al, al
-	jne	@@next_char
-	
-	mov	ax, di
-
-	pop	di
-	pop	si
-	pop	ds
-	pop	bp
-	retf
-_encrypt_password	ENDP
-;----------------------------------------------------------------------
-GAP2		PROC
-GAPLEN2		EQU	(ADV_CODE_SIZE-(GAP2-_ADV_MANAGER))
-IF GAPLEN2
-		DB	GAPLEN2 DUP(0)	
-ENDIF
-GAP2		ENDP
-;----------------------------------------------------------------------
-
-ADV_MAN_TEXT	ENDS
-
-		END
+_encrypt_password:
+	; This function appears in manouter.asm. We call it from
+	;  here assuming that it will be appended behind us.

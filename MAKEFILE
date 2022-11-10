@@ -1,25 +1,22 @@
 #
 # Tools used to compile this project:
 #
-#   Open Watcom 11.9
+#   Open Watcom 1.9
 #   Netwide Assembler 2.15
-#   Borland TASM 5.1 (for advanced boot manager)
 
 compiler        = wcl
 compiler_flags  = -q -ml -bcl=dos -w4
 assembler       = nasm
-assembler_flags = -f obj
+assembler_flags_obj = -f obj
+assembler_flags_bin = -t -f bin
 linker          = wlink
 linker_flags    =
-
-tasm       = tasm
-tasm_flags = /ml /m3 /t
 
 part_c_objects   = part.obj part_aux.obj part_gen.obj part_gui.obj part_htm.obj
 part_c_objects  += part_ide.obj part_msg.obj
 part_c_objects  += s_fat16.obj s_fat32.obj s_unknwn.obj
 part_asm_objects = screen.obj diskio.obj ipl.obj ipl2.obj fat_boot.obj
-manager_objects  = manager.obj
+manager_objects  = manouter.obj
 part_objects     = $(part_c_objects) $(part_asm_objects) $(manager_objects)
 
 header_files = part.h diskio.h screen.h
@@ -40,11 +37,14 @@ part.lnk : $(part_objects) MAKEFILE
    $(compiler) -c $(compiler_flags) $<
 
 .asm.obj : 
-   $(assembler) $(assembler_flags) $< -o $@
+   $(assembler) $(assembler_flags_obj) $< -o $@
 
-manager.obj :: manager.asm colors.inc
-   $(tasm) $(tasm_flags) $^*.asm
-   
+manouter.obj :: manouter.asm manage.bin
+   $(assembler) $(assembler_flags_obj) $^*.asm -o $@
+
+manage.bin :: manage.asm   
+   $(assembler) $(assembler_flags_bin) $^*.asm -o $@
+
 mesg.exe :  support\mesg.c
    $(compiler) $(compiler_flags) $<
 
@@ -53,6 +53,7 @@ keycodes.exe : support\keycodes.c screen.obj screen.h
 
 clean :  .SYMBOLIC
    if exist *.bak @rm *.bak
+   if exist *.bin @rm *.bin
    if exist *.err @rm *.err
    if exist *.lnk @rm *.lnk
    if exist *.lst @rm *.lst
