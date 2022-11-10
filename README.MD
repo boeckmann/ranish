@@ -38,4 +38,5 @@ targeted at the following tool chain:
  * Netwide Assembler 2.15
 
 To build `part.exe`, simply invoke `wmake` in the root directory of the
-repository.
+repository. NASM is expected to be found via PATH. If that is not the case
+you have to adjust the makefile.
