@@ -1023,7 +1023,7 @@ void redraw_menu(int view)
     if (view == VIEW_MBR) {
         write_string(HINT_COLOR, 11, 16, "I)");
         write_string(MENU_COLOR, 13, 16, MENU_INSTALL);
-        write_string(HINT_COLOR, 49, 16, "A");
+        write_string(HINT_COLOR, 47, 16, "A)");
         write_string(HINT_COLOR, 11, 17, "U)");
         write_string(MENU_COLOR, 13, 17, MENU_UNINSTALL);
 

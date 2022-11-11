@@ -30,6 +30,41 @@ to run on. It may or may not run on less capable hardware.
  * MS-DOS 3.3 compatible operating system
  * Color- or monochrome graphics adapter
 
+## Installation
+RANISH comes as a ZIP archive. You may extract it into a directory of your
+choice.
+
+## Makeing a rescue floppy disk
+Before using the software it is HIGHLY recommended to create a bootable
+rescue disk and copy RANISH along with partition recovery information onto
+it.
+
+You may proceed as follows to perform these steps at the DOS command
+prompt.
+
+Format floppy disk in drive A: and install system files:
+
+    format a: /u /s /V:PART_MANAGER
+
+Change into the exctraction directory of RANISH and copy to program
+along with its help file onto the floppy:
+
+    copy part.exe a:\  > nul
+    copy part.htm a:\  > nul
+
+Save the partition information of your disks. If you have only one disk
+only the first line is needed:
+
+    part -q -d 1 -s a:\disk1.mbr
+    part -q -d 2 -s a:\disk2.mbr
+    part -q -d 3 -s a:\disk3.mbr
+    part -q -d 4 -s a:\disk4.mbr
+
+Alternatively, the last step may be performed in interactive mode.
+Start `part.exe` without command line arguments and press `S` to save
+the partition data onto your floppy disk. Make sure the correct 
+hard disk is selected!
+
 ## Building
 While the source may compile with other tools, the Makefile is currently
 targeted at the following tool chain:
@@ -38,7 +73,10 @@ targeted at the following tool chain:
  * Netwide Assembler 2.15
 
 To build `part.exe`, simply invoke `wmake` in the root directory of the
-repository. NASM is expected to be found via PATH. If that is not the case
+repository if you downloaded the source repository. If you downloaded the
+binary release you first have to unpack the `sources.zip` file.
+
+NASM is expected to be found via PATH. If that is not the case
 you have to adjust the makefile.
 
 To build a ZIP archive of the binaries and source run `wmake ranish.zip`.

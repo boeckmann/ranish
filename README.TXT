@@ -1,17 +1,12 @@
 
 !!!NOTE: This is the old README file for versions up to 2.37.11.
-         See README.MD for newer versions.
-         The contact information in this document is outdated.
+         See README.MD and PART.HTM for newer versions.
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 
    Ranish Partition Manager     Version 2.37.11    September 15, 1998
 
-
-   IMPORTANT: First of all run INSTALL.BAT, which will make a bootable
- floppy disk, copy partition manager, and save your current MBR on it.
- Then it will be safe to continue.
 
   IMPORTANT: When you resize FAT partitions you must change its size in
  two (TWO!!!) places: partition entry in MBR (that's the main screen) and
@@ -64,10 +59,3 @@
  If I like the view of your city I will count it as a registration for v2.38
  and all subsequent versions of Partition Manager.
 
- Mikhail Ranish
- P.O.Box 140404
- Brooklyn, NY 11214  USA
-
- ranish@intercom.com
- http://www.users.intercom.com/~ranish/part/
- http://www.ml.brooklyn.cuny.edu/~mranish/part/

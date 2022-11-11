@@ -4,11 +4,12 @@
 ### Fixes
  * Do not overwrite the last 16 bytes of IPL code with old signature.
 
-### Changes
+### Enhancements
  * Use checksum to verify ADV boot sector code integrity.
  * Decrease bad block tracking buffer to 128 entries to reduce memory consumption.
- * Change save menu entry to make it clear that ADV data is saved in advanced mode and NOT the MBR itself.
- 
+ * Clarify messages and menu entries what is saved / loaded.
+
+### Other Changes
  * This is the first version which completely builds with open source tools.
  * Ported to Open Watcom C and Netwide Assembler.
  * Brought the source in a more readable shape.
