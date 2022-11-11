@@ -97,7 +97,8 @@ _Packed struct mbr
         _Packed struct x_adv /*  0123456789ABCD  */
         {                    /*  rrrr____aoABM3  */
             /*  rrrrffffatABM3  */
-            unsigned char code[0x1B0];
+            unsigned char code[0x1AE];
+            unsigned short adv_chk_sum;
             unsigned long rel_sect;
             unsigned long reserved;
             unsigned char act_menu;

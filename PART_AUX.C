@@ -486,6 +486,7 @@ int prepare_adv_mbr_for_save(struct part_long *part, struct mbr *mbr,
 
     memcpy(mbr->x.adv.code, ADV_IPL, sizeof(mbr->x.adv.code));
     mbr->x.adv.rel_sect      = part[i].rel_sect;
+    mbr->x.adv.adv_chk_sum   = 0;
     mbr->x.adv.reserved      = 0;
     mbr->x.adv.act_menu      = 0;
     mbr->x.adv.boptions      = 0;

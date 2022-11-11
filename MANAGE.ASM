@@ -253,6 +253,7 @@ _ADV_IPL:
 		jmp	short .start
 .chksum:	dw	0	; advanced IPL checksum
 				; gets overwritten by part.exe
+
 .start:
 		xor	ax, ax
 		mov	ds, ax
@@ -279,8 +280,6 @@ MsgNL		EQU	(@@M4-_ADV_IPL+600h)
 @@M3:		DB "Error reading Boot Sector."
 @@M4:		DB 0Dh,0Ah,0
 		;
-ADV_CODE_CHECK_SUM: equ $
-		DW	0
 		;
 debug_entry: equ $
 @@ENTRY:
@@ -514,9 +513,14 @@ PRINT:
 		pop	ax
 		ret
 
+
 		;
 		;
-		times 01B0h-($ - _ADV_IPL) db 0
+		times 01AEh-($ - _ADV_IPL) db 0
+
+ADV_CODE_CHECK_SUM: equ $
+		DW	0
+
 
 ADV_MBR_MISC:	times 14+64+2 db 0
 
