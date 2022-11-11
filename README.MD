@@ -74,11 +74,20 @@ created floppy disk.
 
 ## Partition layout recovery
 In case you messed up your partition layout you can restore it from the
-saved data with following command:
+saved data on the rescue disk.
+
+If you installed the Advanced Boot Manager after making the backup you
+have to first uninstall it in interactive mode. Press `U` (uninstall)
+followed by `F2` (save).
+
+To restore the partition data via the command line interface use the
+following command (adjust disk number and file accordingly):
 
     part -d 1 -l a:\disk1.mbr
 
-Again, alternatively you may perform this step in interactive mode.
+You may also restore the partition layout in interactive mode. Press
+`L` to load the data, enter the file name and press `F2` to save
+the changes to disk.
 
 
 ## Building
