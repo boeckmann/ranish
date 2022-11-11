@@ -1115,7 +1115,7 @@ int setup_mbr(struct part_long *p)
             } else if (disk_write_rel(p, 0, mbr, 1) == -1) {
                 warn = ERROR_SAVE_MBR;
             } else {
-                mesg = MESG_MBR_SAVED;
+                mesg = (view == VIEW_ADV) ? MESG_ADV_SAVED : MESG_MBR_SAVED;
                 memmove(data_orig, data, data_size);
             }
 
@@ -1451,7 +1451,7 @@ int setup_mbr(struct part_long *p)
                     save_to_file(file_name, adv, ADV_DATA_SIZE) == -1)
                 warn = ERROR_SAVE_FILE;
             else
-                mesg = MESG_FILE_SAVED;
+                mesg = (view == VIEW_ADV) ? MESG_ADVFILE_SAVED : MESG_FILE_SAVED;
         } else if (ev.key == 'L' || ev.key == 'l' ||
                    CLICK(21, 42, 66)) /* Load */
         {
@@ -1476,7 +1476,7 @@ int setup_mbr(struct part_long *p)
                 if (view == VIEW_ADV && strcmp(zz, ADV_DATA_SIGNATURE) != 0) {
                     show_error(ERROR_ADV_BAD);
                 } else {
-                    mesg = MESG_FILE_LOADD;
+                    mesg = (view == VIEW_ADV) ? MESG_ADVFILE_LOADD : MESG_FILE_LOADD;
                     if (view == VIEW_MBR &&
                         strcmp(zz, ADV_DATA_SIGNATURE) == 0) {
                         load_from_file(file_name, zz, ADV_DATA_SIZE);
@@ -1640,7 +1640,7 @@ void command_line(int argc, char **argv)
         }
 
         disk_unlock(dinfo.disk);
-        printf("%s\n", MESG_MBR_SAVED2);
+        printf("%s\n", (view == VIEW_ADV) ? MESG_ADV_SAVED2 : MESG_MBR_SAVED2);
         return;
     } /* load */
 
@@ -1786,7 +1786,7 @@ void command_line(int argc, char **argv)
             if (save_to_file(argv[1], adv, ADV_DATA_SIZE) == -1)
                 cmd_error(ERROR_SAVE_FILE);
         }
-        printf("%s\n", MESG_FILE_SAVED);
+        printf("%s\n", (view == VIEW_ADV) ? MESG_ADVFILE_SAVED : MESG_FILE_SAVED);
         if (!valid)
             fprintf(stderr, "Warning: %s\n", WARN_INVALID);
         return;
@@ -1818,8 +1818,10 @@ void command_line(int argc, char **argv)
     {
         int x;
 
-        if (view == VIEW_ADV)
+        if (view == VIEW_ADV) {
+            printf("Command has no effect, because Advanced Boot Manager is installed.\n");
             return;
+        }
         if (argc < 2)
             usage();
         i = atoi(argv[1]) - 1;
@@ -1847,8 +1849,10 @@ void command_line(int argc, char **argv)
 
     if (argv[0][0] == 'H' || argv[0][0] == 'h') /* Hide */
     {
-        if (view == VIEW_ADV)
+        if (view == VIEW_ADV) {
+            printf("Command has no effect, because Advanced Boot Manager is installed.\n");
             return;
+        }
         if (argc < 2)
             usage();
         i = atoi(argv[1]) - 1;

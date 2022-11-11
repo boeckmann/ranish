@@ -633,6 +633,16 @@ it( MESG_MBR_SAVED  = "L'MBR ä stato salvato sul disco.")
 nl( MESG_MBR_SAVED  = "MBR is opgeslagen.")
 cs( MESG_MBR_SAVED  = "MBR byl zaps†n na disk.")
 
+en( MESG_ADV_SAVED  = "ADV data and IPL were saved to hard disk.")
+se( MESG_ADV_SAVED  = "ADV data and IPL were saved to hard disk.")
+sp( MESG_ADV_SAVED  = "ADV data and IPL were saved to hard disk.")
+de( MESG_ADV_SAVED  = "ADV data and IPL were saved to hard disk.")
+ru( MESG_ADV_SAVED  = "ADV data and IPL were saved to hard disk.")
+fr( MESG_ADV_SAVED  = "ADV data and IPL were saved to hard disk.")
+it( MESG_ADV_SAVED  = "ADV data and IPL were saved to hard disk.")
+nl( MESG_ADV_SAVED  = "ADV data and IPL were saved to hard disk.")
+cs( MESG_ADV_SAVED  = "ADV data and IPL were saved to hard disk.")
+
 en( MESG_FILE_SAVED = "MBR was saved to file.")
 se( MESG_FILE_SAVED = "MBR Ñr sparad till fil.")
 sp( MESG_FILE_SAVED = "MBR fue guardado al archivo.")
@@ -642,6 +652,16 @@ fr( MESG_FILE_SAVED = "MBR sauvÇ dans un fichier.")
 it( MESG_FILE_SAVED = "L'MBR ä stato salvato su file.")
 nl( MESG_FILE_SAVED = "MBR is naar bestand geschreven.")
 cs( MESG_FILE_SAVED = "MBR byl uschov†n do souboru.")
+
+en( MESG_ADVFILE_SAVED = "ADV data was saved to file.")
+se( MESG_ADVFILE_SAVED = "ADV data was saved to file.")
+sp( MESG_ADVFILE_SAVED = "ADV data was saved to file.")
+de( MESG_ADVFILE_SAVED = "ADV data was saved to file.")
+ru( MESG_ADVFILE_SAVED = "ADV data was saved to file.")
+fr( MESG_ADVFILE_SAVED = "ADV data was saved to file.")
+it( MESG_ADVFILE_SAVED = "ADV data was saved to file.")
+nl( MESG_ADVFILE_SAVED = "ADV data was saved to file.")
+cs( MESG_ADVFILE_SAVED = "ADV data was saved to file.")
 
 en( MESG_FILE_LOADD = "New MBR data was loaded from file. Press F2 to save changes.")
 se( MESG_FILE_LOADD = "Ny MBR data Ñr laddad frÜn fil. Tryck F2 fîr att spara Ñndringen.")
@@ -653,6 +673,16 @@ it( MESG_FILE_LOADD = "I nuovi dati del MBR sono stati caricati dal file. Premer
 nl( MESG_FILE_LOADD = "Nieuwe MBR is geladen. Druk op F2 om de veranderingen op te slaan.")
 cs( MESG_FILE_LOADD = "NovÏ MBR byl zaveden ze souboru. Stisknut°m <F2> jej zap°Áete na disk.")
 
+en( MESG_ADVFILE_LOADD = "New ADV data was loaded from file. Press F2 to save changes.")
+se( MESG_ADVFILE_LOADD = "Ny ADV data Ñr laddad frÜn fil. Tryck F2 fîr att spara Ñndringen.")
+sp( MESG_ADVFILE_LOADD = "Nuevo ADV datos cargado del archivo. Presione F2 para guardar cambios.")
+de( MESG_ADVFILE_LOADD = "Neuer ADV wurde eingeladen. F2 um ihn zu schreiben.")
+ru( MESG_ADVFILE_LOADD = "çÆ¢Î© MBR ß†£‡„¶•≠ ¢ Ø†¨Ô‚Ï. ç†¶¨®‚• F2 Á‚Æ°Î ß†Ø®·†‚Ï ®ß¨•≠•≠®Ô.")
+fr( MESG_ADVFILE_LOADD = "Nouveau ADV chargÇ d'un fichier. Presser F2 pour enregister.")
+it( MESG_ADVFILE_LOADD = "I nuovi dati del ADV sono stati caricati dal file. Premere F2 per salvare le modifiche.")
+nl( MESG_ADVFILE_LOADD = "Nieuwe ADV is geladen. Druk op F2 om de veranderingen op te slaan.")
+cs( MESG_ADVFILE_LOADD = "NovÏ ADV byl zaveden ze souboru. Stisknut°m <F2> jej zap°Áete na disk.")
+
 en( MESG_MBR_SAVED2 = "New MBR data was loaded from file.\nMBR was saved to hard disk.")
 se( MESG_MBR_SAVED2 = "Ny MBR data Ñr laddad frÜn fil.\nMBR Ñr sparad till hÜrd disk.")
 sp( MESG_MBR_SAVED2 = "Nuevo MBR datos cargado del archivo.\nMBR fue guardado en el disco duro.")
@@ -663,6 +693,15 @@ it( MESG_MBR_SAVED2 = "Nuovi dati del MBR caricati da file.\nMBR salvato su disc
 nl( MESG_MBR_SAVED2 = "Nieuwe MBR is geladen.\nMBR is naar vaste schijf geschreven.")
 cs( MESG_MBR_SAVED2 = "NovÏ MBR byl zaveden ze souboru.\nMBR byl zaps†n na disk.")
 
+en( MESG_ADV_SAVED2 = "New ADV data and IPL were loaded from file.\nADV data and IPL were saved to hard disk.")
+se( MESG_ADV_SAVED2 = "New ADV data and IPL were loaded from file.\nADV data and IPL were saved to hard disk.")
+sp( MESG_ADV_SAVED2 = "New ADV data and IPL were loaded from file.\nADV data and IPL were saved to hard disk.")
+de( MESG_ADV_SAVED2 = "New ADV data and IPL were loaded from file.\nADV data and IPL were saved to hard disk.")
+ru( MESG_ADV_SAVED2 = "New ADV data and IPL were loaded from file.\nADV data and IPL were saved to hard disk.")
+fr( MESG_ADV_SAVED2 = "New ADV data and IPL were loaded from file.\nADV data and IPL were saved to hard disk.")
+it( MESG_ADV_SAVED2 = "New ADV data and IPL were loaded from file.\nADV data and IPL were saved to hard disk.")
+nl( MESG_ADV_SAVED2 = "New ADV data and IPL were loaded from file.\nADV data and IPL were saved to hard disk.")
+cs( MESG_ADV_SAVED2 = "New ADV data and IPL were loaded from file.\nADV data and IPL were saved to hard disk.")
 
 en( MESG_INSTALL    = "New IPL code was installed in memory. Press F2 to save changes.")
 se( MESG_INSTALL    = "Ny IPL kod Ñr installerad i minnet. Tryck F2 fîr att spara Ñndringen.")
@@ -1150,9 +1189,9 @@ en( HELP_CMD_LINE =
 " part -h n     - Hide/unhide n-th partition\n"
 " part -v n     - Verify n-th partition\n"
 " part -f n ... - Format n-th partition\n"
-" part -s file  - Save MBR to file\n"
-" part -l file  - Load MBR from file\n"
-" part -c file  - Compare MBR with file\n"
+" part -s file  - Save ADV data to file if ADV is installed, else MBR\n"
+" part -l file  - Load ADV data from file if ADV is installed, else MBR\n"
+" part -c file  - Compare ADV data with file if ADV is installed, else MBR\n"
 " part -Reboot  - Reboot computer\n\n"
 
 "Homepage: "WEBSITE_URL"\n")
