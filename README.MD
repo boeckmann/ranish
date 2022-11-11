@@ -37,7 +37,7 @@ RANISH comes as a ZIP archive. You may extract it into a directory of your
 choice.
 
 
-## Makeing a rescue floppy disk
+## Making a rescue floppy disk
 Before using the software it is HIGHLY recommended to create a bootable
 rescue disk and copy RANISH along with partition layout information onto
 it.
