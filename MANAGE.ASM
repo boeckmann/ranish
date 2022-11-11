@@ -250,6 +250,10 @@ _ADV_IPL:
 		;
 		;  Lets move code to 0000:0600h
 		;
+		jmp	short .start
+.chksum:	dw	0	; advanced IPL checksum
+				; gets overwritten by part.exe
+.start:
 		xor	ax, ax
 		mov	ds, ax
 		mov	es, ax
@@ -512,9 +516,7 @@ PRINT:
 
 		;
 		;
-GAP1:
-GAPLEN1		EQU	(01B0h-(GAP1-_ADV_IPL))
-		times GAPLEN1 db 0
+		times 01B0h-($ - _ADV_IPL) db 0
 
 ADV_MBR_MISC:	times 14+64+2 db 0
 

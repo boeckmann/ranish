@@ -10,6 +10,9 @@
 #include "diskio.h"
 #include "screen.h"
 
+#define WEBSITE_URL "https://codeberg.org/boeckmann/ranish"
+#define REPOSITORY_URL "https://codeberg.org/boeckmann/ranish"
+
 #define SECT_SIZE 512 /* Must not be changed */
 
 #define EMP_SIZE 44
@@ -56,6 +59,9 @@ struct part_long
     struct part_long *container;
     unsigned long container_base;
 };
+
+#define ADV_IPL_CHKSUM_OFFSET 2
+#define ADV_IPL_CHKSUM_MAGIC 0x4711
 
 #define ADV_MBR_MAGIC 0x334D4241L /* "ABM3" */
 
@@ -260,6 +266,8 @@ void __cdecl ADV_MANAGER(void);
 #define HEAD(abs_sect) ((abs_sect) % (dinfo.sect_per_cyl) / (dinfo.num_sects))
 #define SECT(abs_sect)                                                        \
     ((abs_sect) % (dinfo.sect_per_cyl) % (dinfo.num_sects) + 1)
+
+unsigned short calc_chksum(const unsigned short *p, const int len);
 
 void get_base_dir(char *);
 
@@ -549,6 +557,8 @@ mesg(MENU_VERIFY);
 
 mesg(MENU_SAVE_MBR);
 mesg(MENU_LOAD_MBR);
+mesg(MENU_SAVE_ADV);
+mesg(MENU_LOAD_ADV);
 mesg(MENU_INST_IPL);
 
 mesg(MENU_INSTALL);

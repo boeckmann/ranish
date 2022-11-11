@@ -458,11 +458,24 @@ void cmd_error(char *msg)
     exit(1);
 }
 
+unsigned short calc_chksum(const unsigned short *p, const int len)
+{
+    unsigned short sum = 0;
+    const unsigned short *const e = p+len;
+    
+    while (p < e) {
+        sum = sum + *(p++);
+    }
+
+    return sum;
+}
+
 int prepare_adv_mbr_for_save(struct part_long *part, struct mbr *mbr,
                              struct adv *adv)
 {
     int i, j;
     struct part_long h;
+    unsigned short chksum;
 
     for (i = 0; i < MAX_PART_ROWS; i++)
         if (part[i].os_id == OS_ADV)
@@ -471,12 +484,21 @@ int prepare_adv_mbr_for_save(struct part_long *part, struct mbr *mbr,
     if (i == MAX_PART_ROWS || part[i].num_sect < ADV_NUM_SECTS)
         return 0;
 
-    memmove(mbr->x.adv.code, ADV_IPL, sizeof(mbr->x.adv.code));
+    memcpy(mbr->x.adv.code, ADV_IPL, sizeof(mbr->x.adv.code));
     mbr->x.adv.rel_sect      = part[i].rel_sect;
     mbr->x.adv.reserved      = 0;
     mbr->x.adv.act_menu      = 0;
     mbr->x.adv.boptions      = 0;
     mbr->x.adv.adv_mbr_magic = ADV_MBR_MAGIC;
+    
+    /* we calculate the checksum of the IPL code and store its complement
+       into the code. Then if part.exe computes the checksum it must be zero.
+       Otherwise IPL got corrupted or it is the wrong version */
+    chksum = calc_chksum((unsigned short*)mbr->x.adv.code, sizeof(mbr->x.adv.code) / 2);
+    chksum = ADV_IPL_CHKSUM_MAGIC - chksum;
+
+    mbr->x.adv.code[ADV_IPL_CHKSUM_OFFSET+0] = (chksum) & 0xff;
+    mbr->x.adv.code[ADV_IPL_CHKSUM_OFFSET+1] = (chksum >> 8) & 0xff;
 
     memset(mbr->part_rec, 0, sizeof(mbr->part_rec));
     h.active         = 1;
@@ -497,12 +519,14 @@ int prepare_adv_mbr_for_save(struct part_long *part, struct mbr *mbr,
             }
     }
 
-    strcpy(mbr->x.adv_old.signature, ADV_DATA_SIGNATURE);
-    mbr->x.adv_old.version = ADV_DATA_VERSION;
+    /* BUG: this overwrites part of ADV_IPL!!! */
+    /*strcpy(mbr->x.adv_old.signature, ADV_DATA_SIGNATURE);
+    mbr->x.adv_old.version = ADV_DATA_VERSION;*/
 
     strcpy(adv->signature, ADV_DATA_SIGNATURE);
     adv->version = ADV_DATA_VERSION;
 
+    /* add boot menu title only of not customized by user */
     if (strncmp(adv->adv_title, MANAGER_TITLE, sizeof(adv->adv_title) - 8) ==
         0)
         strncpy(adv->adv_title, MANAGER_TITLE, sizeof(adv->adv_title));

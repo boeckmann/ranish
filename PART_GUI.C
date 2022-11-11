@@ -1056,9 +1056,9 @@ void redraw_menu(int view)
     write_string(MENU_COLOR, 13, 21, MENU_VERIFY);
 
     write_string(HINT_COLOR, 42, 20, "S)");
-    write_string(MENU_COLOR, 44, 20, MENU_SAVE_MBR);
+    write_string(MENU_COLOR, 44, 20, (view == VIEW_ADV) ? MENU_SAVE_ADV : MENU_SAVE_MBR);
     write_string(HINT_COLOR, 42, 21, "L)");
-    write_string(MENU_COLOR, 44, 21, MENU_LOAD_MBR);
+    write_string(MENU_COLOR, 44, 21, (view == VIEW_ADV) ? MENU_LOAD_ADV : MENU_LOAD_MBR);
 
     write_string(HINT_COLOR, 4, 24, "F1");
     write_string(MENU_COLOR, 6, 24, " - Help ");

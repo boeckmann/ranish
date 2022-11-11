@@ -40,7 +40,7 @@ void main(int argc, char **argv)
         fprintf(stderr,
                 "This program will not run under Windows NT.\n"
                 "Run it under DOS or Windows 95/98\n"
-                "For more help visit http://www.intercom.com/~ranish\n");
+                "For more help visit " WEBSITE_URL "\n");
         exit(1);
     }
 
@@ -118,6 +118,7 @@ void start_gui(void)
     hide_mouse();
 } /* start_gui */
 
+
 int setup_mbr(struct part_long *p)
 {
     int i, j, n, top, row, field, scr_rows, num_rows;
@@ -128,6 +129,7 @@ int setup_mbr(struct part_long *p)
     int force_edit_menu, act_menu_sav = 0, force_special_copy = 1;
     unsigned long *edit_target, edit_limit, empty_start;
     char *hint = 0, *mesg = 0, *warn = 0, *help = 0, *data, *data_orig;
+    unsigned short ipl_chksum;
 
     int data_size;
     struct mbr *mbr;
@@ -193,8 +195,8 @@ int setup_mbr(struct part_long *p)
     }
 
     if (mbr->x.new.bm_sign == BM_238_SIGN) {
-        show_error("Partition Manager v2.38 or later was found. Please, use a "
-                   "newer version.");
+        show_error("This version is incompatible with non-public "
+            "domain versions 2.38-2.4X.");
     }
 
     memmove(data_orig, data, data_size);
@@ -216,10 +218,13 @@ int setup_mbr(struct part_long *p)
     }
 
     if (view == VIEW_ADV) {
-        unsigned long *lp = (unsigned long *)mbr;
-        if (*lp != 0xD88EC033L)
-            show_error("Advanced Boot Manager code not found in MBR. Use F2 "
-                       "to reinstall the code.");
+        ipl_chksum = calc_chksum((unsigned short*)mbr->x.adv.code, sizeof(mbr->x.adv.code) / 2);
+
+        if (ipl_chksum != ADV_IPL_CHKSUM_MAGIC) {
+            sprintf(tmp3, "ADV IPL code version mismatch or corrupted. "
+                "Press F2 to reinstall!");
+            show_error(tmp3);
+        }
     }
 
     while (1) {

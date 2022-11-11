@@ -1,10 +1,8 @@
 #include "part.h"
 
      /* VERSION_DATE "2.37.05            June 10, 1998" */
-#define VERSION_DATE "2.90.00              Nov 4, 2022"
+#define VERSION_DATE "2.90.00        built " __DATE__
 #define VERSION      "2.90.00"
-
-#define HOME_URL "https://codeberg.org/boeckmann/ranish"
 
 
 #ifdef LANG_de		/* German  */
@@ -204,125 +202,145 @@ it( HEADER_BOOT_MENU = "  # Dev Partizioni PC  Numero                    Tasti")
 nl( HEADER_BOOT_MENU = "  # Sta Partitie   PP  Beschrijving            Toetsen")
 cs( HEADER_BOOT_MENU = "  # za˝ Oblast     PP  JmÇno                     Kl†v.")
 
-en( MENU_HIDE     = " - Hide partition")
-se( MENU_HIDE     = " - Dîlj partition")
-sp( MENU_HIDE     = " - Esconder Partici¢n")
-de( MENU_HIDE     = " - Verstecke Partition")
-ru( MENU_HIDE     = " - ëØ‡Ô‚†‚Ï ‡†ß§•´")
-fr( MENU_HIDE     = " - Cacher partition")
-it( MENU_HIDE     = " - Nascondere Partizione")
-nl( MENU_HIDE     = " - Partitie verbergen")
-cs( MENU_HIDE     = " - Skryt° oblasti")
+en( MENU_HIDE     = " Hide partition")
+se( MENU_HIDE     = " Dîlj partition")
+sp( MENU_HIDE     = " Esconder Partici¢n")
+de( MENU_HIDE     = " Verstecke Partition")
+ru( MENU_HIDE     = " ëØ‡Ô‚†‚Ï ‡†ß§•´")
+fr( MENU_HIDE     = " Cacher partition")
+it( MENU_HIDE     = " Nascondere Partizione")
+nl( MENU_HIDE     = " Partitie verbergen")
+cs( MENU_HIDE     = " Skryt° oblasti")
 
-en( MENU_FORMAT   = " - Format partition")
-se( MENU_FORMAT   = " - Formatera partition")
-sp( MENU_FORMAT   = " - Formatear Partici¢n")
-de( MENU_FORMAT   = " - Formatiere Partition")
-ru( MENU_FORMAT   = " - é‚‰Æ‡¨†‚®‡Æ¢†‚Ï ‡†ß§•´")
-fr( MENU_FORMAT   = " - Formatter partition")
-it( MENU_FORMAT   = " - Formattare Partizione")
-nl( MENU_FORMAT   = " - Partitie formatteren")
-cs( MENU_FORMAT   = " - Form†tov†n° oblasti")
+en( MENU_FORMAT   = " Format partition")
+se( MENU_FORMAT   = " Formatera partition")
+sp( MENU_FORMAT   = " Formatear Partici¢n")
+de( MENU_FORMAT   = " Formatiere Partition")
+ru( MENU_FORMAT   = " é‚‰Æ‡¨†‚®‡Æ¢†‚Ï ‡†ß§•´")
+fr( MENU_FORMAT   = " Formatter partition")
+it( MENU_FORMAT   = " Formattare Partizione")
+nl( MENU_FORMAT   = " Partitie formatteren")
+cs( MENU_FORMAT   = " Form†tov†n° oblasti")
+ 
+en( MENU_VERIFY   = " Verify disk surface")
+se( MENU_VERIFY   = " Verifiera disk yta")
+sp( MENU_VERIFY   = " Verificar Cara de Disco")
+de( MENU_VERIFY   = " OberflÑchentest")
+ru( MENU_VERIFY   = " Ç•‡®‰®™†Ê®Ô ØÆ¢•‡Â≠Æ·‚®")
+fr( MENU_VERIFY   = " VÇrifier partition")
+it( MENU_VERIFY   = " Verifica superficie del disco")
+nl( MENU_VERIFY   = " Oppervlaktecontrole")
+cs( MENU_VERIFY   = " Test povrchu")
+ 
+en( MENU_PREVIEW  = " Preview partition table")
+se( MENU_PREVIEW  = " Titta pÜ partitions tabell")
+sp( MENU_PREVIEW  = " Partici¢n Tabla Previa")
+de( MENU_PREVIEW  = " Partitionstabelle anzeigen")
+ru( MENU_PREVIEW  = " è‡Æ·¨Æ‚‡ ‚†°´®ÊÎ ‡†ß§•´Æ¢")
+fr( MENU_PREVIEW  = " Voir table de partitions")
+it( MENU_PREVIEW  = " Anteprima tabella partizione")
+nl( MENU_PREVIEW  = " Partitietabel bekijken")
+cs( MENU_PREVIEW  = " Zobrazen° tabulky oblast°")
+ 
+en( MENU_INST_IPL = " Load custom IPL")
+se( MENU_INST_IPL = " Ladda egen IPL")
+sp( MENU_INST_IPL = " Cargar adaptado IPL")
+de( MENU_INST_IPL = " Lade eigenen IPL")
+ru( MENU_INST_IPL = " ì·‚†≠Æ¢®‚Ï ·¢Æ© IPL")
+fr( MENU_INST_IPL = " Charger IPL perso")
+it( MENU_INST_IPL = " Caricare IPL personale")
+nl( MENU_INST_IPL = " Eigen IPL laden")
+cs( MENU_INST_IPL = " Zaveden° ußivatelskÇho IPL")
+ 
+en( MENU_SAVE_MBR = " Save MBR to file")
+se( MENU_SAVE_MBR = " Spara MBR till en fil")
+sp( MENU_SAVE_MBR = " Salvar MBR en un Archivo")
+de( MENU_SAVE_MBR = " Speichere MBR in Datei")
+ru( MENU_SAVE_MBR = " ëÆÂ‡†≠®‚Ï MBR ¢ ‰†©´")
+fr( MENU_SAVE_MBR = " Sauver MBR dans un fichier")
+it( MENU_SAVE_MBR = " Salva MBR su file")
+nl( MENU_SAVE_MBR = " MBR naar bestand opslaan")
+cs( MENU_SAVE_MBR = " Èschova MBR do souboru")
 
-en( MENU_VERIFY   = " - Verify disk surface")
-se( MENU_VERIFY   = " - Verifiera disk yta")
-sp( MENU_VERIFY   = " - Verificar Cara de Disco")
-de( MENU_VERIFY   = " - OberflÑchentest")
-ru( MENU_VERIFY   = " - Ç•‡®‰®™†Ê®Ô ØÆ¢•‡Â≠Æ·‚®")
-fr( MENU_VERIFY   = " - VÇrifier partition")
-it( MENU_VERIFY   = " - Verifica superficie del disco")
-nl( MENU_VERIFY   = " - Oppervlaktecontrole")
-cs( MENU_VERIFY   = " - Test povrchu")
+en( MENU_SAVE_ADV = " Save ADV data to file")
+se( MENU_SAVE_ADV = " Save ADV data to file")
+sp( MENU_SAVE_ADV = " Save ADV data to file")
+de( MENU_SAVE_ADV = " Speichere ADV Daten in Datei")
+ru( MENU_SAVE_ADV = " Save ADV data to file")
+fr( MENU_SAVE_ADV = " Save ADV data to file")
+it( MENU_SAVE_ADV = " Save ADV data to file")
+nl( MENU_SAVE_ADV = " Save ADV data to file")
+cs( MENU_SAVE_ADV = " Save ADV data to file")
 
-en( MENU_PREVIEW  = " - Preview partition table")
-se( MENU_PREVIEW  = " - Titta pÜ partitions tabell")
-sp( MENU_PREVIEW  = " - Partici¢n Tabla Previa")
-de( MENU_PREVIEW  = " - Partitionstabelle anzeigen")
-ru( MENU_PREVIEW  = " - è‡Æ·¨Æ‚‡ ‚†°´®ÊÎ ‡†ß§•´Æ¢")
-fr( MENU_PREVIEW  = " - Voir table de partitions")
-it( MENU_PREVIEW  = " - Anteprima tabella partizione")
-nl( MENU_PREVIEW  = " - Partitietabel bekijken")
-cs( MENU_PREVIEW  = " - Zobrazen° tabulky oblast°")
+en( MENU_LOAD_MBR = " Load MBR from file")
+se( MENU_LOAD_MBR = " Ladda MBR frÜn en fil")
+sp( MENU_LOAD_MBR = " Cargar MBR desde Archivo")
+de( MENU_LOAD_MBR = " Lade MBR aus Datei")
+ru( MENU_LOAD_MBR = " á†£‡„ß®‚Ï MBR ®ß ‰†©´†")
+fr( MENU_LOAD_MBR = " Charger MBR d'un fichier")
+it( MENU_LOAD_MBR = " Carica MBR da file")
+nl( MENU_LOAD_MBR = " MBR uit bestand laden")
+cs( MENU_LOAD_MBR = " Obnova MBR ze souboru")
 
-en( MENU_INST_IPL = " - Load custom IPL")
-se( MENU_INST_IPL = " - Ladda egen IPL")
-sp( MENU_INST_IPL = " - Cargar adaptado IPL")
-de( MENU_INST_IPL = " - Lade eigenen IPL")
-ru( MENU_INST_IPL = " - ì·‚†≠Æ¢®‚Ï ·¢Æ© IPL")
-fr( MENU_INST_IPL = " - Charger IPL perso")
-it( MENU_INST_IPL = " - Caricare IPL personale")
-nl( MENU_INST_IPL = " - Eigen IPL laden")
-cs( MENU_INST_IPL = " - Zaveden° ußivatelskÇho IPL")
+en( MENU_LOAD_ADV = " Load ADV data from file")
+se( MENU_LOAD_ADV = " Load ADV data from file")
+sp( MENU_LOAD_ADV = " Load ADV data from file")
+de( MENU_LOAD_ADV = " Lade ADV Daten von Datei")
+ru( MENU_LOAD_ADV = " Load ADV data from file")
+fr( MENU_LOAD_ADV = " Load ADV data from file")
+it( MENU_LOAD_ADV = " Load ADV data from file")
+nl( MENU_LOAD_ADV = " Load ADV data from file")
+cs( MENU_LOAD_ADV = " Load ADV data from file")
 
-en( MENU_SAVE_MBR = " - Save MBR to file")
-se( MENU_SAVE_MBR = " - Spara MBR till en fil")
-sp( MENU_SAVE_MBR = " - Salvar MBR en un Archivo")
-de( MENU_SAVE_MBR = " - Speichere MBR in Datei")
-ru( MENU_SAVE_MBR = " - ëÆÂ‡†≠®‚Ï MBR ¢ ‰†©´")
-fr( MENU_SAVE_MBR = " - Sauver MBR dans un fichier")
-it( MENU_SAVE_MBR = " - Salva MBR su file")
-nl( MENU_SAVE_MBR = " - MBR naar bestand opslaan")
-cs( MENU_SAVE_MBR = " - Èschova MBR do souboru")
+en( MENU_ADV_UNINST = " Uninstall boot manager")
+se( MENU_ADV_UNINST = " Avinstallera boot hanterare")
+sp( MENU_ADV_UNINST = " Desinstalar boot director")
+de( MENU_ADV_UNINST = " Boot Manager deinstallieren")
+ru( MENU_ADV_UNINST = " ì§†´®‚Ï Ì‚Æ‚ ß†£‡„ßÁ®™")
+fr( MENU_ADV_UNINST = " DÇsinstaller le boot manager")
+it( MENU_ADV_UNINST = " Disinstalla Boot Manager")
+nl( MENU_ADV_UNINST = " Boot manager de-installeren")
+cs( MENU_ADV_UNINST = " Odinstalov†n° Boot Manageru")
 
-en( MENU_LOAD_MBR = " - Load MBR from file")
-se( MENU_LOAD_MBR = " - Ladda MBR frÜn en fil")
-sp( MENU_LOAD_MBR = " - Cargar MBR desde Archivo")
-de( MENU_LOAD_MBR = " - Lade MBR aus Datei")
-ru( MENU_LOAD_MBR = " - á†£‡„ß®‚Ï MBR ®ß ‰†©´†")
-fr( MENU_LOAD_MBR = " - Charger MBR d'un fichier")
-it( MENU_LOAD_MBR = " - Carica MBR da file")
-nl( MENU_LOAD_MBR = " - MBR uit bestand laden")
-cs( MENU_LOAD_MBR = " - Obnova MBR ze souboru")
+en( MENU_INSTALL   = " Install compact boot manager, or A - Advanced")
+se( MENU_INSTALL   = " Installera IPL boot hanterare el A - Avancerad")
+sp( MENU_INSTALL   = " Instalar boot Director compacto, A - Avansado")
+de( MENU_INSTALL   = " Installiere Boot Manager,  oder  A - Advanced")
+ru( MENU_INSTALL   = " ì·‚†≠Æ¢®‚Ï ™Æ¨Ø†™‚≠Î© ß†£‡„ßÁ®™, . - Advanced")
+fr( MENU_INSTALL   = " Installer boot manager compact / A - AvancÇ")
+it( MENU_INSTALL   = " Installare BootManager compatto, A - Avanzato")
+nl( MENU_INSTALL   = " Boot manager installeren    /    A - Geavanceerd")
+cs( MENU_INSTALL   = " Instalace Boot Manageru,   nebo  A - rozÁ°˝enÇho")
+ 
+en( MENU_UNINSTALL = " Uninstall boot manager by loading standard IPL")
+se( MENU_UNINSTALL = " Avinstallera genom att installera en standard IPL")
+sp( MENU_UNINSTALL = " Desinstalar boot Director para montar normal IPL")
+de( MENU_UNINSTALL = " Deinstalliere Boot Manager durch Standard IPL")
+ru( MENU_UNINSTALL = " ì§†´®‚Ï ß†£‡„ßÁ®™, „·‚†≠Æ¢®¢ ·‚†§†‡‚≠Î© DOS IPL")
+fr( MENU_UNINSTALL = " Remplacer le boot manager par l'IPL standard")
+it( MENU_UNINSTALL = " Disintalla Boot Manager per caricare IPL standard")
+nl( MENU_UNINSTALL = " Bootmanager de-installeren door standaard IPL te laden")
+cs( MENU_UNINSTALL = " Odstranÿn° Boot Manageru a zaps†n° standardn°ho IPL")
 
-en( MENU_ADV_UNINST = " - Uninstall boot manager")
-se( MENU_ADV_UNINST = " - Avinstallera boot hanterare")
-sp( MENU_ADV_UNINST = " - Desinstalar boot director")
-de( MENU_ADV_UNINST = " - Boot Manager deinstallieren")
-ru( MENU_ADV_UNINST = " - ì§†´®‚Ï Ì‚Æ‚ ß†£‡„ßÁ®™")
-fr( MENU_ADV_UNINST = " - DÇsinstaller le boot manager")
-it( MENU_ADV_UNINST = " - Disinstalla Boot Manager")
-nl( MENU_ADV_UNINST = " - Boot manager de-installeren")
-cs( MENU_ADV_UNINST = " - Odinstalov†n° Boot Manageru")
+en( MENU_INST_EXT = " Install a \"non bootable\" message into EMBR")
+se( MENU_INST_EXT = " Installera ett \"icke bootbar\" meddelande i EMBR")
+sp( MENU_INST_EXT = " Instalar un \"non bootable\" mensage dentro EMBR")
+de( MENU_INST_EXT = " Installiere eine \"kein System\" Meldung im EMBR")
+ru( MENU_INST_EXT = " ì·‚†≠Æ¢®‚Ï Ø„·‚ÎË™„ \"non bootable\" ¢ EMBR")
+fr( MENU_INST_EXT = " Installer un message \"non bootable\" dans l'EMBR")
+it( MENU_INST_EXT = " Installare un \"non bootable\" messaggio nel EMBR")
+nl( MENU_INST_EXT = " Een \"non bootable\" bericht in de EMBR installeren")
+cs( MENU_INST_EXT = " Instalov†n° zpr†vy \"zde nen° systÇm\" do EMBR")
 
-en( MENU_INSTALL   = " - Install compact boot manager, or A - Advanced")
-se( MENU_INSTALL   = " - Installera IPL boot hanterare el A - Avancerad")
-sp( MENU_INSTALL   = " - Instalar boot Director compacto, A - Avansado")
-de( MENU_INSTALL   = " - Installiere Boot Manager,  oder  A - Advanced")
-ru( MENU_INSTALL   = " - ì·‚†≠Æ¢®‚Ï ™Æ¨Ø†™‚≠Î© ß†£‡„ßÁ®™, . - Advanced")
-fr( MENU_INSTALL   = " - Installer boot manager compact / A - AvancÇ")
-it( MENU_INSTALL   = " - Installare BootManager compatto, A - Avanzato")
-nl( MENU_INSTALL   = " - Boot manager installeren    /    A - Geavanceerd")
-cs( MENU_INSTALL   = " - Instalace Boot Manageru,   nebo  A - rozÁ°˝enÇho")
-
-en( MENU_UNINSTALL = " - Uninstall boot manager by loading standard IPL")
-se( MENU_UNINSTALL = " - Avinstallera genom att installera en standard IPL")
-sp( MENU_UNINSTALL = " - Desinstalar boot Director para montar normal IPL")
-de( MENU_UNINSTALL = " - Deinstalliere Boot Manager durch Standard IPL")
-ru( MENU_UNINSTALL = " - ì§†´®‚Ï ß†£‡„ßÁ®™, „·‚†≠Æ¢®¢ ·‚†§†‡‚≠Î© DOS IPL")
-fr( MENU_UNINSTALL = " - Remplacer le boot manager par l'IPL standard")
-it( MENU_UNINSTALL = " - Disintalla Boot Manager per caricare IPL standard")
-nl( MENU_UNINSTALL = " - Bootmanager de-installeren door standaard IPL te laden")
-cs( MENU_UNINSTALL = " - Odstranÿn° Boot Manageru a zaps†n° standardn°ho IPL")
-
-en( MENU_INST_EXT = " - Install a \"non bootable\" message into EMBR")
-se( MENU_INST_EXT = " - Installera ett \"icke bootbar\" meddelande i EMBR")
-sp( MENU_INST_EXT = " - Instalar un \"non bootable\" mensage dentro EMBR")
-de( MENU_INST_EXT = " - Installiere eine \"kein System\" Meldung im EMBR")
-ru( MENU_INST_EXT = " - ì·‚†≠Æ¢®‚Ï Ø„·‚ÎË™„ \"non bootable\" ¢ EMBR")
-fr( MENU_INST_EXT = " - Installer un message \"non bootable\" dans l'EMBR")
-it( MENU_INST_EXT = " - Installare un \"non bootable\" messaggio nel EMBR")
-nl( MENU_INST_EXT = " - Een \"non bootable\" bericht in de EMBR installeren")
-cs( MENU_INST_EXT = " - Instalov†n° zpr†vy \"zde nen° systÇm\" do EMBR")
-
-en( MENU_MAKE_PRI = " - Read help on how to make logical drive bootable")
-se( MENU_MAKE_PRI = " - LÑs hjÑlpen hur man gîr en logisk drive bootbar")
-sp( MENU_MAKE_PRI = " - Leer ayuda sobre como hacer la l¢gica unidad bootable")
-de( MENU_MAKE_PRI = " - Von Logischer Platte booten? - Siehe Hilfetext")
-ru( MENU_MAKE_PRI = " - èÆ¨ÆÈÏ Æ ‚Æ¨ ™†™ ·§•´†‚Ï Ì‚Æ‚ ‡†ß§•´ ß†£‡„ßÆÁ≠Î¨")
-fr( MENU_MAKE_PRI = " - Lire l'aide pour rendre un disque logique bootable")
-it( MENU_MAKE_PRI = " - Leggere l'aiuto per rendere un disco logico bootstrappabile")
-nl( MENU_MAKE_PRI = " - Lees help over hoe een station bootable te maken")
-cs( MENU_MAKE_PRI = " - N†povÿda k zav†dÿn° z logickÇho za˝°zen°")
+en( MENU_MAKE_PRI = " Read help on how to make logical drive bootable")
+se( MENU_MAKE_PRI = " LÑs hjÑlpen hur man gîr en logisk drive bootbar")
+sp( MENU_MAKE_PRI = " Leer ayuda sobre como hacer la l¢gica unidad bootable")
+de( MENU_MAKE_PRI = " Von Logischer Platte booten? - Siehe Hilfetext")
+ru( MENU_MAKE_PRI = " èÆ¨ÆÈÏ Æ ‚Æ¨ ™†™ ·§•´†‚Ï Ì‚Æ‚ ‡†ß§•´ ß†£‡„ßÆÁ≠Î¨")
+fr( MENU_MAKE_PRI = " Lire l'aide pour rendre un disque logique bootable")
+it( MENU_MAKE_PRI = " Leggere l'aiuto per rendere un disco logico bootstrappabile")
+nl( MENU_MAKE_PRI = " Lees help over hoe een station bootable te maken")
+cs( MENU_MAKE_PRI = " N†povÿda k zav†dÿn° z logickÇho za˝°zen°")
 
 
 en( ERROR_MALLOC    = "Cannot allocate more memory.")
@@ -1137,7 +1155,7 @@ en( HELP_CMD_LINE =
 " part -c file  - Compare MBR with file\n"
 " part -Reboot  - Reboot computer\n\n"
 
-"Homepage: "HOME_URL"\n")
+"Homepage: "WEBSITE_URL"\n")
 se( HELP_CMD_LINE      =  
 
 "Ranish Partition Manager    Version "VERSION"\n\n"
@@ -1157,7 +1175,7 @@ se( HELP_CMD_LINE      =
 " part -c file  - JÑmfîr MBR med fil\n"
 " part -Reboot  - Boota om datorn\n\n"
 
-"Produkt hem: "HOME_URL"\n")
+"Produkt hem: "WEBSITE_URL"\n")
 sp( HELP_CMD_LINE = 
 
 "Ranish Partition Manager    Versi¢n "VERSION"\n\n"
@@ -1177,7 +1195,7 @@ sp( HELP_CMD_LINE =
 " part -c file  - Compare MBR con archivo\n"
 " part -Reboot  - Reboot computadora\n\n"
 
-"Homepage: "HOME_URL"\n")
+"Homepage: "WEBSITE_URL"\n")
 de( HELP_CMD_LINE = 
 
 "Ranish Partition Manager    Version "VERSION"\n\n"
@@ -1197,7 +1215,7 @@ de( HELP_CMD_LINE =
 " part -c Datei - Vergleiche MBR mit Datei\n"
 " part -Reboot  - Rechner neu starten\n\n"
 
-"Bezugsquelle: "HOME_URL"\n")
+"Bezugsquelle: "WEBSITE_URL"\n")
 ru( HELP_CMD_LINE = 
 
 "Ranish Partition Manager    Version "VERSION"\n\n"
@@ -1218,7 +1236,7 @@ ru( HELP_CMD_LINE =
 " part -c file  - ë‡†¢≠®‚Ï MBR · ‰†©´Æ¨\n"
 " part -Reboot  - è•‡•£‡„ß®‚Ï ™Æ¨ØÏÓ‚•‡\n\n"
 
-"Homepage: "HOME_URL"\n")
+"Homepage: "WEBSITE_URL"\n")
 fr( HELP_CMD_LINE = 
 
 "Ranish Partition Manager    Version "VERSION"\n\n"
@@ -1238,7 +1256,7 @@ fr( HELP_CMD_LINE =
 " part -c file  - Compare le MBR avec un fichier\n"
 " part -Reboot  - RedÇmarre l'ordinateur\n\n"
 
-"Site du produit: "HOME_URL"\n")
+"Site du produit: "WEBSITE_URL"\n")
 it( HELP_CMD_LINE = 
 
 "Ranish Partition Manager    Version "VERSION"\n\n"
@@ -1258,7 +1276,7 @@ it( HELP_CMD_LINE =
 " part -c file  - Confronta MBR con file\n"
 " part -Reboot  - Riavvia computer\n\n"
 
-"Homepage: "HOME_URL"\n")
+"Homepage: "WEBSITE_URL"\n")
 nl( HELP_CMD_LINE = 
 
 "Ranish Partition Manager    Versie "VERSION"\n\n"
@@ -1278,7 +1296,7 @@ nl( HELP_CMD_LINE =
 " part -c file  - Vergelijk de MBR met een bestand\n"
 " part -Reboot  - Herstart de computer\n\n"
 
-"Homepage: "HOME_URL"\n")
+"Homepage: "WEBSITE_URL"\n")
 cs( HELP_CMD_LINE = 
 
 "Ranish Partition Manager    Verze "VERSION"\n\n"
@@ -1298,7 +1316,7 @@ cs( HELP_CMD_LINE =
 " part -c soubor - Porovnat MBR se souborem\n"
 " part -Reboot   - Restartovat poü°taü\n\n"
 
-"Dom†c° adresa: "HOME_URL"\n")
+"Dom†c° adresa: "WEBSITE_URL"\n")
 
  i=0;
  os_desc[i].name = NAME_OS_UNUSED;
