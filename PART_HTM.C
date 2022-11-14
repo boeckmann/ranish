@@ -25,16 +25,18 @@
 
 void html_view(char *target_name)
 {
-    long i, j, k, ch, line, len, maxtop, nchars, first_time, enable_timer;
-    char *p, *q, *s, *top, *old_top, *bottom, *seek_base, *bs, *bq;
+    int i, j, k, seek_cnt;
+    unsigned ch, line, len, maxtop, nchars, first_time, enable_timer;
+    char *p, *q, *s, *top, *old_top, *bottom;
+    char *seek_base, *bs, *bq;
     char *tmp, *col, *str; /* LEN+1 */
     struct event ev;
-    long force_redraw, link_started, seek_cnt;
-    long check_mouse, mline, mpos, left_was_pressed;
+    unsigned force_redraw, link_started;
+    unsigned check_mouse, mline, mpos, left_was_pressed;
     char *link_reference, *link_under_mouse;
     char *link_back[MAX_BACKS];
-    long num_backs;
-    long barpos, old_barpos, forced_barpos, bar_hooked;
+    unsigned num_backs;
+    unsigned barpos, old_barpos, forced_barpos, bar_hooked;
     char *mesg, *buf;
     char *text, *text_buf = 0;
     static char err_msg[80];
@@ -77,7 +79,7 @@ void html_view(char *target_name)
     text    = text_buf;
     text[l] = 0;
 
-    if ((buf = malloc(4000 + 3 * LEN + 3 + 16)) == 0) {
+    if ((buf = malloc(4000 + 4 * (LEN + 1) + 16)) == 0) {
         show_error(ERROR_MALLOC);
         if (text_buf != 0)
             free(text_buf);
@@ -220,7 +222,7 @@ void html_view(char *target_name)
         } /* seek */
 
         if (maxtop != 0)
-            barpos = ((top - bs) * (BARLEN)) / maxtop;
+            barpos = ((unsigned long)(top - bs) * (BARLEN)) / maxtop;
         else
             barpos = BARLEN - 1;
 
