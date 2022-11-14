@@ -93,8 +93,8 @@ Partition records have the following 16 byte structure:
 |  Address  | Size | Description                              |
 |-----------+------+------------------------------------------|
 |      0000 |    2 | operating system id                      |
-|      0002 |    1 | menu inclusion tag (used by PART.EXE)    |
-|      0003 |    1 | partition tag number                     |
+|      0002 |    1 | partition tag number                     |
+|      0003 |    1 | row number in MBR in partition list      |
 |      0004 |    4 | --- reserved ---                         |
 |      0008 |    4 | LBA sector number                        |
 |      0012 |    4 | number of sectors                        |

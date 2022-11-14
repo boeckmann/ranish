@@ -492,9 +492,10 @@ int prepare_adv_mbr_for_save(struct part_long *part, struct mbr *mbr,
     mbr->x.adv.boptions      = 0;
     mbr->x.adv.adv_mbr_magic = ADV_MBR_MAGIC;
     
-    /* we calculate the checksum of the IPL code and store its complement
-       into the code. Then if part.exe computes the checksum it must be zero.
-       Otherwise IPL got corrupted or it is the wrong version */
+    /* we calculate the checksum of the IPL code and store it
+       into the code. Then if part.exe computes the checksum it must be equal to
+       ADV_IPL_CHECKSUM_MAGIC.
+       Otherwise IPL got corrupted or it is the wrong version. */
     chksum = calc_chksum((unsigned short*)mbr->x.adv.code, sizeof(mbr->x.adv.code) / 2);
     chksum = ADV_IPL_CHKSUM_MAGIC - chksum;
 
