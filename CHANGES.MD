@@ -1,6 +1,15 @@
 # Change Log
 
-## Version 2.90.00
+## Version 2.90.02 alpha
+### Fixes
+ * Fix freeze / crash when help is opened a second time, caused by a memory invalidation.
+ * Fix a bug that causes the scroll bar of help window to stay at the topmost position.
+
+## Version 2.90.01 alpha
+### Fixes
+ * prevent IPL check sum corruption by advanced boot loader
+
+## Version 2.90.00 alpha
 ### Fixes
  * Do not overwrite the last 16 bytes of IPL code with old signature.
 
