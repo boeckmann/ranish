@@ -4,8 +4,8 @@
 #   Open Watcom 1.9
 #   Netwide Assembler 2.15
 
-compiler        = wcl
-compiler_flags  = -q -ml -bcl=dos -w4
+compiler        = wcc
+compiler_flags  = -q -ml -bc -w4
 assembler       = nasm
 assembler_flags_obj = -t -f obj
 assembler_flags_bin = -t -f bin
@@ -21,6 +21,10 @@ part_objects     = $(part_c_objects) $(part_asm_objects)
 
 header_files = PART.H DISKIO.H SCREEN.H
 
+!ifdef DEBUG
+compiler_flags += -d2
+!endif
+
 all : PART.EXE
 
 PART.EXE : $(part_objects) PART.LNK
@@ -31,10 +35,13 @@ PART.LNK : $(part_objects)
    @echo SYSTEM DOS >>$^@
    @echo OPTION QUIET >>$^@
    @echo OPTION MAP >>$^@
+!ifdef DEBUG
+   @echo DEBUG ALL>>$^@
+!endif
    @for %i in ($(part_objects)) do @echo FILE %i >>$^@
 
 .C.OBJ : $(header_files)
-   $(compiler) -c $(compiler_flags) $*.C
+   $(compiler) $(compiler_flags) $*.C
 
 .ASM.OBJ : 
    $(assembler) $(assembler_flags_obj) $*.ASM -o $@
