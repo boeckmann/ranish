@@ -37,6 +37,8 @@ _Packed struct boot_ms_dos
 #define MAX_CLUST12 (4084)  /* Maximum number of clusters in FAT12 system */
 #define MAX_CLUST16 (65524) /* Maximum number of clusters in FAT16 system */
 
+#define FAT12_MAX_SIZE 6144   /* 4096 12-bit entries */
+
 /*   0x01, "DOS FAT-12"			*/
 /*   0x04, "DOS FAT-16 (<=32Mb)"	*/
 /*   0x06, "BIGDOS FAT-16 (>=32Mb)"	*/
@@ -53,7 +55,7 @@ int format_fat(struct part_long *p, char **argv)
     unsigned int clust_size = 4;
     unsigned int form_type  = F_NORM;
 
-    if ((data_pool = malloc(SECT_SIZE + 6144 + BBT_SIZE * sizeof(long))) ==
+    if ((data_pool = malloc(SECT_SIZE + FAT12_MAX_SIZE + BBT_SIZE * sizeof(long))) ==
         0) {
         show_error(ERROR_MALLOC);
         return FAILED;
@@ -61,7 +63,7 @@ int format_fat(struct part_long *p, char **argv)
 
     b   = (struct boot_ms_dos *)(data_pool);
     fat = (unsigned short *)(data_pool + SECT_SIZE);
-    bbt = (unsigned long *)(data_pool + SECT_SIZE + 6144);
+    bbt = (unsigned long *)(data_pool + SECT_SIZE + FAT12_MAX_SIZE);
 
     memmove(b, FAT_BOOT, SECT_SIZE);
     memmove(b->sys_id, "MSDOS5.0", 8);

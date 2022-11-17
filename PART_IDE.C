@@ -40,9 +40,7 @@ void print_ide_info(void)
                    sprintf_long(tmp, dinfo.total_sects));
 
             daddr.disk = hd;
-            daddr.cyl  = 0;
-            daddr.head = 0;
-            daddr.sect = 1;
+            daddr.sect = 0;
 
             disk_read(&daddr, buf, 1); /* Wake up if disk is sleeping */
         }
@@ -125,18 +123,19 @@ void print_ide_info(void)
                ((long)dd[1] * (long)dd[3] * (long)dd[6]) / 2048,
                sprintf_long(tmp, ((long)dd[1] * (long)dd[3] * (long)dd[6])));
 
-        printf("\n          Hard Disk Model: %s\n\n", getascii(dd, 27, 46));
-        /*
-         printf("Model Number ---------------------> %s\n", getascii(dd, 27,
-         46)); printf("Serial Number --------------------> %s\n", getascii(dd,
-         10, 19)); printf("Controller Revision Number -------> %s\n",
-         getascii(dd, 23, 26)); printf("Able to do Double Word Transfer -->
-         %6s\n", (dd[48] == 0 ? "No" : "Yes")); printf("Controller type
-         ------------------>   %04X\n", dd[20]); printf("Controller buffer size
-         (bytes) ---> %6u\n", dd[21] * 512); printf("Number of ECC bytes
-         transferred --> %6u\n", dd[22]); printf("Number of sectors per
-         interrupt --> %6u\n", dd[47]);
-        */
+        if (dd[27]) {
+            printf("          Hard Disk Model: %s\n", getascii(dd, 27, 46));
+        }
+
+        if (dd[10]) {
+            printf("          Hard Disk Serial : %s\n", getascii(dd, 10, 19));
+        }
+
+        l = ((unsigned long)dd[60] | (unsigned long)dd[61] << 16);
+        if ((dd[49] & 0x200) && l) {
+            printf("          LBA sector count: %s\n", sprintf_long(tmp, l+1));
+        }
+        printf("\n");
     }
 }
 

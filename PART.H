@@ -263,10 +263,6 @@ void __cdecl ADV_MANAGER(void);
          ? ((p)->num_sect)                                                    \
          : (ABS_END_SECT(p) - ABS_REL_SECT(p) + 1))
 
-#define CYL(abs_sect)  ((abs_sect) / (dinfo.sect_per_cyl))
-#define HEAD(abs_sect) ((abs_sect) % (dinfo.sect_per_cyl) / (dinfo.num_sects))
-#define SECT(abs_sect)                                                        \
-    ((abs_sect) % (dinfo.sect_per_cyl) % (dinfo.num_sects) + 1)
 
 unsigned short calc_chksum(const unsigned short *p, const int len);
 
@@ -369,7 +365,6 @@ int interactive;
 char buf[25 * 80 * 2];
 char base_dir[256];
 char tmp[SECT_SIZE * 3];
-struct disk_info dinfo;
 struct os_desc os_desc[] = {
 
     /*   os_id,  "123456789 123456789 123",	flags, 	setup,		format,

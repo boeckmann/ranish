@@ -26,6 +26,7 @@ int generic_verify(struct part_long *p, int bbt_size, unsigned long *bbt)
 
     progress(MESG_VERIFYING);
 
+    /* TODO: convert to LBA
     for (cyl = p->start_cyl; cyl <= p->end_cyl; cyl++) {
         for (head = ((cyl == p->start_cyl) ? p->start_head : 0);
              head < ((cyl == p->end_cyl) ? p->end_head + 1 : dinfo.num_heads);
@@ -69,8 +70,9 @@ int generic_verify(struct part_long *p, int bbt_size, unsigned long *bbt)
                 disk_unlock(hd);
                 return CANCEL;
             }
-        } /* head */
-    }     /* cyl */
+        }
+    }
+    */
 
     disk_unlock(hd);
     return num_bad;
@@ -112,6 +114,9 @@ int generic_format(struct part_long *p, int bbt_size, unsigned long *bbt)
     /* -----> now we handle special case for the first side */
 
     daddr.disk = hd;
+    daddr.sect = QUICK_BASE(p);
+    /* TODO convert to LBA
+    daddr.disk = hd;
     daddr.cyl  = p->start_cyl;
     daddr.head = p->start_head;
     daddr.sect = 0;
@@ -131,16 +136,16 @@ int generic_format(struct part_long *p, int bbt_size, unsigned long *bbt)
             num_bad++;
         }
         base_sect++;
-    } /* sect */
+    }
 
     for (sect = 0; sect < num_sect; sect++) {
         daddr.sect = sect + 1;
         disk_write(&daddr, ftab, 1);
-    } /* sect */
+    } */
 
     /* -----> end special case */
 
-    for (cyl = p->start_cyl; cyl <= p->end_cyl; cyl++) {
+    /*for (cyl = p->start_cyl; cyl <= p->end_cyl; cyl++) {
         for (head = ((cyl == p->start_cyl) ? p->start_head + 1 : 0);
              head < ((cyl == p->end_cyl) ? p->end_head : dinfo.num_heads);
              head++) {
@@ -160,8 +165,8 @@ int generic_format(struct part_long *p, int bbt_size, unsigned long *bbt)
             }
 
             for (sect = 0; sect < num_sect; sect++)
-                if (ftab[sect * 2] != 0) /* is it a bad sector? */
-                {
+                if (ftab[sect * 2] != 0)*/ /* is it a bad sector? */
+              /*  {
                     if (bbt_size != -1) {
                         if (num_bad == bbt_size) {
                             disk_unlock(hd);
@@ -181,12 +186,12 @@ int generic_format(struct part_long *p, int bbt_size, unsigned long *bbt)
                 disk_unlock(hd);
                 return CANCEL;
             }
-        } /* head */
-    }     /* cyl */
+        }
+    } */
 
     /* -----> now we handle special case for the last side */
 
-    daddr.disk = hd;
+    /*daddr.disk = hd;
     daddr.cyl  = p->end_cyl;
     daddr.head = p->end_head;
 
@@ -204,15 +209,15 @@ int generic_format(struct part_long *p, int bbt_size, unsigned long *bbt)
             }
             num_bad++;
         }
-    } /* sect */
+    } 
 
     for (sect = 0; sect < num_sect; sect++) {
         daddr.sect = sect + 1;
         disk_write(&daddr, ftab, 1);
-    } /* sect */
+    } 
 
     sprintf(tmp, "%% 100%%  Cylinder: %3d", p->end_cyl);
-    progress(tmp);
+    progress(tmp);*/
 
     /* -----> end special case */
 
@@ -266,6 +271,7 @@ int generic_clean(struct part_long *p)
 
     disk_lock(hd);
 
+    /* TODO: convert to LBA
     for (cyl = p->start_cyl; cyl <= p->end_cyl; cyl++) {
         for (head = ((cyl == p->start_cyl) ? p->start_head : 0);
              head < ((cyl == p->end_cyl) ? p->end_head + 1 : dinfo.num_heads);
@@ -296,9 +302,9 @@ int generic_clean(struct part_long *p)
                 free(z);
                 return CANCEL;
             }
-        } /* head */
-    }     /* cyl */
-
+        }
+    }
+    */
     disk_unlock(hd);
     free(z);
     return OK;

@@ -8,9 +8,7 @@ void part_to_disk_addr(struct part_long *p, unsigned long rel_sect,
     abs_sect = QUICK_BASE(p) + rel_sect;
 
     daddr->disk = dinfo.disk;
-    daddr->cyl  = CYL(abs_sect);
-    daddr->head = HEAD(abs_sect);
-    daddr->sect = SECT(abs_sect);
+    daddr->sect = abs_sect;
 } /* part_to_disk_addr */
 
 int disk_read_rel(struct part_long *p, unsigned long rel_sect, void *buf,

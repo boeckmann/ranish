@@ -33,10 +33,10 @@ global _disk_unlock
 
 global _dos_drive_reset
 
-global _disk_read
-global _disk_write
-global _disk_format
-global _disk_verify
+global _disk_read_chs
+global _disk_write_chs
+global _disk_format_chs
+global _disk_verify_chs
 
 ;----------------------------------------------------------------
 
@@ -372,7 +372,7 @@ _dos_drive_reset:
 
 ;----------------------------------------------------------------
 
-_disk_read:
+_disk_read_chs:
 
   .num		equ	0Eh
   .buf_ptr	equ	0Ah
@@ -406,7 +406,7 @@ _disk_read:
 ;----------------------------------------------------------------
 
 
-_disk_write:
+_disk_write_chs:
 
   .num		equ	0Eh
   .buf_ptr	equ	0Ah
@@ -440,7 +440,7 @@ _disk_write:
 ;----------------------------------------------------------------
 
 
-_disk_verify:
+_disk_verify_chs:
 
   .num_sect	equ	0Ah
   .disk_addr	equ	06h
@@ -470,7 +470,7 @@ _disk_verify:
 
 ;----------------------------------------------------------------
 
-_disk_format:
+_disk_format_chs:
 
   .ftable	equ	0Ah
   .disk_addr	equ	06h
