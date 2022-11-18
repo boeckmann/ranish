@@ -6,6 +6,8 @@ GROUP DGROUP DISKIO_DATA
 SECT_SIZE	equ	512	; If not we will eventually crash
 
 global	_detected_os
+global _lba_enabled
+global _lba_bios
 
 SYS_DOS		equ	0	; MS-DOS v1.00 - v4.xx
 SYS_DOS5	equ	1	; MS-DOS v5.00 - v6.xx
@@ -16,7 +18,19 @@ SYS_WIN_NT	equ	5	; Windows NT
 
 _detected_os	dw	0
 
+_lba_enabled	dw	1
+_lba_bios	dw	0
+
 _reboot_addr	dd	0FFFF0000h
+
+drive_parameters:
+dp_bufsize	dw	1Ah
+dp_flags	dw	0
+dp_cyl		dd	0
+dp_heads	dd	0
+dp_sect_trk	dd	0
+dp_num_sect	dq	0
+dp_sect_size	dw	0
 
 section DISKIO_TEXT class=CODE align=16
 
@@ -170,15 +184,67 @@ _get_disk_info:
 	.sect_per_track	equ	14
 	.sect_size	equ	16
 	.bios_num_cyls	equ	18
+	.lba		equ	20
 
 		push	bp
 		mov	bp, sp
 		push	es
 		push	si
 		push	di
+
+		; check if LBA is disabled
+		mov	ax,[_lba_enabled]
+		test	ax,ax
+		jz	.nolba
+
+		; check if INT 13h LBA functions are present
+.test_for_lba_bios:
+		mov	di, [bp+.disk_info]
+		mov	ax, 4100h
+		mov	bx, 55AAh
+		mov	dl, [bp+.hd]
+		int	13h
+		jc	.nolba
+		cmp	bx, 0AA55h
+		jne	.nolba
+		mov	word [di+.lba], 1
+
+		; use extended INT 13h functions to query disk parameters
+		mov	ax, 4800h
+		mov	dl, [bp+.hd]
+		mov	[di+.disk], dl
+		mov	si, drive_parameters
+		int	13h
+		jc	.nolba
+
+		; fill struct
+		mov	ax, [dp_sect_size]
+		mov	[di+.sect_size], ax
+
+		mov	ax, [dp_cyl]
+		mov	[di+.num_cyls], ax
+		mov	[di+.bios_num_cyls], ax
+
+		mov	ax, [dp_sect_trk]
+		mov	[di+.num_sects], ax
+		mov	[di+.sect_per_track], ax
+
+		mov	bx, [dp_heads]
+		mov	[di+.num_heads], bx
+		mul	bx
+		mov	[di+.sect_per_cyl], ax
+
+		mov	ax, [dp_num_sect]
+		mov	[di+.total_sects0], ax
+		mov	ax, [dp_num_sect+2]
+		mov	[di+.total_sects1], ax
+
+		jmp	.end
+
+		; use "old" INT 13h function to query disk parameters
+.nolba:
 		les	si, [bp+.disk_info]
-
-
+		mov	word [es:si+.lba],0
 		mov	ah, 08h
 		mov	dl, [bp+.hd]
 		int	13h

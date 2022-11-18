@@ -25,11 +25,17 @@ void main(int argc, char **argv)
             argc -= 2;
             argv += 2;
         }
-        if (argv[0][1] == 'Q' || argv[0][1] == 'q') {
+        else if (argv[0][1] == 'Q' || argv[0][1] == 'q') {
             quiet = 1;
             argc--;
             argv++;
-        } else
+        } 
+        else if (argv[0][1] == 'N' || argv[0][1] == 'n') {
+            lba_enabled = 0;
+            argc--;
+            argv++;
+        }
+        else
             break;
     }
 

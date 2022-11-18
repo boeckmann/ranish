@@ -31,6 +31,8 @@ struct disk_info
 
 extern struct disk_info dinfo;
 
+extern int lba_enabled; /* on=1 by default, set 0 th disable lba access */
+
 extern unsigned short int const detected_os;
 
 #define SYS_DOS    0 /* MS-DOS v1.00 - v4.xx 	*/

@@ -1113,6 +1113,9 @@ void redraw_header(int view, int mode, struct part_long *p)
         write_string(HEADER_COLOR, 4, 6, HEADER_LBA2);
         write_string(HEADER_COLOR, 4, 7, HEADER_LBA3);
     }
+    if (dinfo.lba) {
+        write_string(TABLE_COLOR, 3, 25, "LBA");
+    }
 } /* redraw_header */
 
 void progress_bar(char *bar, int percent)
