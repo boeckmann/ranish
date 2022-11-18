@@ -71,6 +71,8 @@ extern unsigned short int const detected_os;
          : (ABS_END_SECT(p) - ABS_REL_SECT(p) + 1))
 
 
+#define INT13_READ_EXT  0x4200
+#define INT13_WRITE_EXT 0x4300
 #ifdef __cplusplus
 extern "C"
 {
@@ -89,9 +91,10 @@ extern "C"
 
     int __cdecl dos_drive_reset(int drive);
 
+    int __cdecl disk_op_lba(struct disk_addr *, void *, int num_sect, int operation);
+
     int __cdecl disk_read_chs(struct disk_addr_chs *, void *, int num_sect);
     int __cdecl disk_write_chs(struct disk_addr_chs *, void *, int num_sect);
-
     int __cdecl disk_format_chs(struct disk_addr_chs *, void *ftable);
     int __cdecl disk_verify_chs(struct disk_addr_chs *, int num_sect);
 

@@ -13,20 +13,31 @@ static void lba_to_chs(struct disk_addr *laddr, struct disk_addr_chs *chs)
 int disk_read(struct disk_addr *daddr, void *buf, int num_sect)
 {
 	struct disk_addr_chs chs;
-	
-    lba_to_chs(daddr, &chs);
+	int result;
 
-    return disk_read_chs(&chs, buf, num_sect);
+    if (dinfo.lba) {
+    	result = disk_op_lba(daddr, buf, num_sect, INT13_READ_EXT);
+    } else {
+	    lba_to_chs(daddr, &chs);
+	    result = disk_read_chs(&chs, buf, num_sect);
+    }
+
+    return result;
 }
 
 int disk_write(struct disk_addr *daddr, void *buf, int num_sect)
 {
 	struct disk_addr_chs chs;
-	
-    lba_to_chs(daddr, &chs);
+	int result;
 
-    return disk_write_chs(&chs, buf, num_sect);
+    if (dinfo.lba) {
+    	result = disk_op_lba(daddr, buf, num_sect, INT13_WRITE_EXT);
+    } else {
+	    lba_to_chs(daddr, &chs);
+	    result = disk_write_chs(&chs, buf, num_sect);
+    }
 
+    return result;
 }
 
 int disk_format(struct disk_addr *daddr, void *ftable)

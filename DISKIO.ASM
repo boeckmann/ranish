@@ -23,14 +23,23 @@ _lba_bios	dw	0
 
 _reboot_addr	dd	0FFFF0000h
 
+		align	2
 drive_parameters:
-dp_bufsize	dw	1Ah
+dp_size		dw	1Ah
 dp_flags	dw	0
 dp_cyl		dd	0
 dp_heads	dd	0
 dp_sect_trk	dd	0
 dp_num_sect	dq	0
 dp_sect_size	dw	0
+
+		align	2
+disk_address_packet:
+ap_size		db	10h
+ap_reserved	db	0
+ap_num_sect	dw	0
+ap_buf_ptr	dd	0
+ap_start_sect	dq	0
 
 section DISKIO_TEXT class=CODE align=16
 
@@ -47,6 +56,7 @@ global _disk_unlock
 
 global _dos_drive_reset
 
+global _disk_op_lba
 global _disk_read_chs
 global _disk_write_chs
 global _disk_format_chs
@@ -199,7 +209,6 @@ _get_disk_info:
 
 		; check if INT 13h LBA functions are present
 .test_for_lba_bios:
-		mov	di, [bp+.disk_info]
 		mov	ax, 4100h
 		mov	bx, 55AAh
 		mov	dl, [bp+.hd]
@@ -207,37 +216,41 @@ _get_disk_info:
 		jc	.nolba
 		cmp	bx, 0AA55h
 		jne	.nolba
-		mov	word [di+.lba], 1
 
 		; use extended INT 13h functions to query disk parameters
 		mov	ax, 4800h
 		mov	dl, [bp+.hd]
-		mov	[di+.disk], dl
+		mov	word [dp_flags], 0
 		mov	si, drive_parameters
 		int	13h
 		jc	.nolba
 
 		; fill struct
+		les	si, [bp+.disk_info]
+		mov	word [es:si+.lba], 1
+
+		mov	dl, [bp+.hd]
+		mov	[es:si+.disk], dl
 		mov	ax, [dp_sect_size]
-		mov	[di+.sect_size], ax
+		mov	[es:si+.sect_size], ax
 
 		mov	ax, [dp_cyl]
-		mov	[di+.num_cyls], ax
-		mov	[di+.bios_num_cyls], ax
+		mov	[es:si+.num_cyls], ax
+		mov	[es:si+.bios_num_cyls], ax
 
 		mov	ax, [dp_sect_trk]
-		mov	[di+.num_sects], ax
-		mov	[di+.sect_per_track], ax
+		mov	[es:si+.num_sects], ax
+		mov	[es:si+.sect_per_track], ax
 
 		mov	bx, [dp_heads]
-		mov	[di+.num_heads], bx
+		mov	[es:si+.num_heads], bx
 		mul	bx
-		mov	[di+.sect_per_cyl], ax
+		mov	[es:si+.sect_per_cyl], ax
 
 		mov	ax, [dp_num_sect]
-		mov	[di+.total_sects0], ax
+		mov	[es:si+.total_sects0], ax
 		mov	ax, [dp_num_sect+2]
-		mov	[di+.total_sects1], ax
+		mov	[es:si+.total_sects1], ax
 
 		jmp	.end
 
@@ -413,6 +426,53 @@ _dos_drive_reset:
 		pop	bp
 		retf
 
+
+;----------------------------------------------------------------
+
+_disk_op_lba:
+  .operation	equ	10h
+  .num		equ	0Eh
+  .buf_ptr	equ	0Ah
+  .disk_addr	equ	06h
+
+  .da_disk	equ	0
+  .da_sect	equ	2
+
+		push	bp
+		mov	bp, sp
+		push	es
+		push	si
+		push	di
+
+		mov	ax, [bp+.num]
+		mov	[ap_num_sect], ax
+		mov	ax, [bp+.buf_ptr]
+		mov	[ap_buf_ptr], ax
+		mov	ax, [bp+.buf_ptr+2]
+		mov	[ap_buf_ptr+2], ax
+
+		les	si, [bp+.disk_addr]
+		mov	dl, [es:si+.da_disk]
+		mov	ax, [es:si+.da_sect]
+		mov	[ap_start_sect], ax
+		mov	ax, [es:si+.da_sect+2]
+		mov	[ap_start_sect+2], ax
+		xor	ax, ax
+		mov	[ap_start_sect+4], ax
+		mov	[ap_start_sect+6], ax
+		mov	si, disk_address_packet
+
+		mov	ax, [bp+.operation]
+		int	13h
+		mov	ax, -1
+		jc	.end
+		mov	ax, 0		
+
+  .end:		pop	di
+		pop	si
+		pop	es
+		pop	bp
+		retf
 
 ;----------------------------------------------------------------
 
