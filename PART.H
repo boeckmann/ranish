@@ -15,6 +15,8 @@
 
 #define SECT_SIZE 512 /* Must not be changed */
 
+#define CHS_MAX_SECT 1024ul * 255ul * 63ul
+
 #define EMP_SIZE 44
 
 _Packed struct part_rec

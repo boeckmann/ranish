@@ -1096,7 +1096,7 @@ void redraw_header(int view, int mode, struct part_long *p)
         write_string(HEADER_COLOR, 4, 4, HEADER_CHS);
         write_int(TABLE_COLOR, 9, 4, 2, dinfo.disk - 0x80 + 1);
         write_int(TABLE_COLOR, 13, 4, 8, dinfo.total_sects / 2048);
-        write_int(TABLE_COLOR, 31, 4, 5, dinfo.num_cyls);
+        write_int(TABLE_COLOR, 31, 4, 7, dinfo.num_cyls);
         write_int(TABLE_COLOR, 52, 4, 3, dinfo.num_heads);
         write_int(TABLE_COLOR, 65, 4, 3, dinfo.num_sects);
         write_string(HEADER_COLOR, 4, 6, HEADER_CHS2);

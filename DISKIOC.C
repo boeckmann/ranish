@@ -37,7 +37,8 @@ int get_disk_info(int hd, struct disk_info *di, char *buf_4096)
 	if ((result = _get_disk_info(hd, di, buf_4096)) == -1) return result;
 
 	if (di->lba) {
-		di->total_sects = 0xffffffff;
+		/* comment out to force disk to 2TB size for testing */
+		/* di->total_sects = 0xffffffff; */
 		di->num_cyls = di->total_sects / di->sect_per_cyl;
 	}
 

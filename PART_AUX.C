@@ -34,6 +34,10 @@ int disk_write_rel(struct part_long *p, unsigned long rel_sect, void *buf,
 void pack_part_tab(struct part_long *part, struct part_rec *part_rec, int n)
 {
     int i;
+    unsigned long rel_sect;
+    unsigned long start_sect;
+    unsigned long num_sect;
+    unsigned long end_sect;
 
     for (i = 0; i < n; i++) {
         if (part[i].active == 0) {
@@ -44,45 +48,110 @@ void pack_part_tab(struct part_long *part, struct part_rec *part_rec, int n)
                 part_rec[i].boot_flag = 0x80;
         }
 
-        part_rec[i].start_cylL = part[i].start_cyl & 0xFF;
-        part_rec[i].start_sectCylH =
-            (part[i].start_sect & 0x3f) | ((part[i].start_cyl >> 2) & 0xc0);
-        part_rec[i].start_head = part[i].start_head;
-
-        part_rec[i].end_cylL = part[i].end_cyl & 0xFF;
-        part_rec[i].end_sectCylH =
-            (part[i].end_sect & 0x3f) | ((part[i].end_cyl >> 2) & 0xc0);
-        part_rec[i].end_head = part[i].end_head;
+        rel_sect = part[i].rel_sect;
+        start_sect = rel_sect + part[i].container_base;
+        num_sect = part[i].num_sect;
+        end_sect = start_sect + num_sect - 1;
 
         part_rec[i].rel_sect = part[i].rel_sect;
         part_rec[i].num_sect = part[i].num_sect;
 
         part_rec[i].os_id = part[i].os_id >> 8;
+
+
+        /* check if partition is out of 1024/255/63 bounds */
+        /* if that is the case adjust CHS values */
+        if ((num_sect > 0) && (start_sect >= CHS_MAX_SECT)) {
+            part_rec[i].start_cylL = 0xFF;
+            part_rec[i].start_sectCylH = 0xFF;
+            part_rec[i].start_head = 0xFE;
+        }
+        else {
+            part_rec[i].start_cylL = part[i].start_cyl & 0xFF;
+            part_rec[i].start_sectCylH =
+                (part[i].start_sect & 0x3f) | ((part[i].start_cyl >> 2) & 0xc0);
+            part_rec[i].start_head = part[i].start_head;            
+        }
+
+        if ((num_sect > 0) && (end_sect >= CHS_MAX_SECT)) {
+            part_rec[i].end_cylL = 0xFF;
+            part_rec[i].end_sectCylH = 0xFF;
+            part_rec[i].end_head = 0xFE;
+        }
+        else {
+            part_rec[i].end_cylL = part[i].end_cyl & 0xFF;
+            part_rec[i].end_sectCylH =
+                (part[i].end_sect & 0x3f) | ((part[i].end_cyl >> 2) & 0xc0);
+            part_rec[i].end_head = part[i].end_head;            
+        }
     }
 } /* pack_part_tab */
+
 
 void unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
                      struct part_long *container)
 {
     int i;
+    unsigned long rel_sect;
+    unsigned long start_sect;
+    unsigned long num_sect;
+    unsigned long end_sect;
 
     for (i = 0; i < n; i++) {
-        part[i].active = (part_rec[i].boot_flag == 0) ? 0 : 1;
+        part[i].level = container->level + 1;
 
-        part[i].start_cyl = part_rec[i].start_cylL |
-                            ((part_rec[i].start_sectCylH & 0xc0) << 2);
-        part[i].start_head = part_rec[i].start_head;
-        part[i].start_sect = part_rec[i].start_sectCylH & 0x3f;
+        if (part[i].level > 2 && part[i].os_id == OS_EXT)
+            part[i].container = container->container;
+        else
+            part[i].container = container;
 
-        part[i].end_cyl =
-            part_rec[i].end_cylL | ((part_rec[i].end_sectCylH & 0xc0) << 2);
-        part[i].end_head = part_rec[i].end_head;
-        part[i].end_sect = part_rec[i].end_sectCylH & 0x3f;
+        part[i].container_base = QUICK_BASE(part[i].container);
 
-        part[i].rel_sect = part_rec[i].rel_sect;
+        rel_sect = part_rec[i].rel_sect;
+        start_sect = rel_sect + part[i].container_base;
+        num_sect = part_rec[i].num_sect;
+        end_sect = start_sect + num_sect - 1;
+
+        part[i].rel_sect = rel_sect;
         part[i].num_sect = part_rec[i].num_sect;
 
+        part[i].active = (part_rec[i].boot_flag == 0) ? 0 : 1;
         part[i].os_id = part_rec[i].os_id << 8;
+
+        if (num_sect > 0) {
+            /* start is out of CHS bounds */
+            if (start_sect >= CHS_MAX_SECT) {
+                part[i].start_cyl = CYL(start_sect);
+                part[i].start_head = HEAD(start_sect);
+                part[i].start_sect = SECT(start_sect);
+
+            } else {
+                part[i].start_cyl = part_rec[i].start_cylL |
+                                    ((part_rec[i].start_sectCylH & 0xc0) << 2);
+                part[i].start_head = part_rec[i].start_head;
+                part[i].start_sect = part_rec[i].start_sectCylH & 0x3f;            
+            }
+
+            if (end_sect >= CHS_MAX_SECT) {
+                part[i].end_cyl = CYL(end_sect);
+                part[i].end_head = HEAD(end_sect);
+                part[i].end_sect = SECT(end_sect);
+            }
+            else {
+                part[i].end_cyl =
+                    part_rec[i].end_cylL | ((part_rec[i].end_sectCylH & 0xc0) << 2);
+                part[i].end_head = part_rec[i].end_head;
+                part[i].end_sect = part_rec[i].end_sectCylH & 0x3f;            
+            }
+        }
+        else {
+            part[i].start_cyl = 0;
+            part[i].start_head = 0;
+            part[i].start_sect = 0;
+            part[i].end_cyl = 0;
+            part[i].end_head = 0;
+            part[i].end_sect = 0;
+        }
 
         if (i > 0 &&
             (part[i - 1].os_id == 0x8100 || /* Linix */
@@ -93,14 +162,6 @@ void unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
 
         determine_os_num(&part[i]);
 
-        part[i].level = container->level + 1;
-
-        if (part[i].level > 2 && part[i].os_id == OS_EXT)
-            part[i].container = container->container;
-        else
-            part[i].container = container;
-
-        part[i].container_base = QUICK_BASE(part[i].container);
     }
 } /* unpack_part_tab */
 
@@ -418,11 +479,11 @@ char *format_size(unsigned long num_sect, char *tmp2)
 {
     char *tmp3;
 
-    if (num_sect >= 2048ul*1024ul) {
+    if (num_sect >=  20480000ul) {
         tmp3 = sprintf_long(tmp2, num_sect / (2048ul*1024ul));
         tmp2[14]='G';
     }
-    else if (num_sect >= 2048ul) {
+    else if (num_sect >= 20000ul) {
         tmp3 = sprintf_long(tmp2, num_sect / (2048ul));
         tmp2[14]='M';            
     }
@@ -431,8 +492,9 @@ char *format_size(unsigned long num_sect, char *tmp2)
         tmp2[14]='K';                        
     }
     else {
-        tmp3 = tmp2;
-        tmp2[0]='\0';
+        memset(tmp2, ' ', 16);
+        tmp2[16]='\0';
+        return tmp2;
     }
     tmp2[13] = ' ';
     tmp2[15] = 'i';
@@ -447,7 +509,7 @@ char *sprintf_partrec(char *tmp, struct part_long *p, int num, int view)
 
 
     if (mode == MODE_CHS) {
-        tmp3 = format_size(QUICK_SIZE(p) / 2, tmp2);
+        tmp3 = format_size(p->num_sect, tmp2);
         sprintf(tmp,
                 "%2d %-4s %s%7lu %3lu %3lu %7lu %3lu %3lu %12s ",
                 num,
