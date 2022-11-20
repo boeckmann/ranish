@@ -1,5 +1,19 @@
 cpu 8086
 
+struc disk_info
+    	.disk:		resw	1
+	.num_cyls:	resd	1
+	.num_heads:	resw	1
+	.num_sects:	resw	1
+	.total_sects0:	resw	1
+	.total_sects1:	resw	1
+	.sect_per_cyl:	resw	1
+	.sect_per_track:resw	1
+	.sect_size:	resw	1
+	.bios_num_cyls:	resw	1
+	.lba:		resw	1
+endstruc
+
 section DISKIO_DATA class=DATA align=2
 GROUP DGROUP DISKIO_DATA
 
@@ -18,7 +32,7 @@ SYS_WIN_NT	equ	5	; Windows NT
 
 _detected_os	dw	0
 
-_lba_enabled	dw	1
+_lba_enabled	dw	0
 _lba_bios	dw	0
 
 _reboot_addr	dd	0FFFF0000h
@@ -49,7 +63,7 @@ global _diskio_exit
 global _reboot
 global _flush_caches
 
-global _get_disk_info
+global __get_disk_info
 
 global _disk_lock
 global _disk_unlock
@@ -178,29 +192,104 @@ _flush_caches:
 
 ;----------------------------------------------------------------
 
-_get_disk_info:
+
+__get_disk_info:
 
 	.buf_ptr	equ	0Ch
 	.disk_info	equ	08h
 	.hd		equ	06h
 
-	.disk		equ	0
-	.num_cyls	equ	2
-	.num_heads	equ	4
-	.num_sects	equ	6
-	.total_sects0	equ	8
-	.total_sects1	equ	10
-	.sect_per_cyl	equ	12
-	.sect_per_track	equ	14
-	.sect_size	equ	16
-	.bios_num_cyls	equ	18
-	.lba		equ	20
 
 		push	bp
 		mov	bp, sp
 		push	es
 		push	si
 		push	di
+
+		; use "old" INT 13h function to query disk parameters
+		les	si, [bp + .disk_info]
+		mov	word [es:si + disk_info.lba],0
+		mov	ah, 08h
+		mov	dl, [bp + .hd]
+		int	13h
+
+		mov	ax, -1
+		jnc	.fill_struct
+		jmp	.end
+
+.fill_struct:
+		mov	ax, SECT_SIZE
+		mov	[es:si + disk_info.sect_size], ax
+
+		mov	ah, 0
+		mov	al, dl
+		push	ax	; num_disks
+
+		mov	ah, 0
+		mov	al, cl
+		and	al, 3Fh
+		mov	[es:si + disk_info.num_sects], ax
+		mov	[es:si + disk_info.sect_per_track], ax
+
+		mov	al, dh
+		inc	ax
+		mov	[es:si+disk_info.num_heads], ax
+
+		mov	al, ch
+		shl	cx, 1
+		shl	cx, 1
+		and	ch, 3
+		mov	ah, ch
+		inc	ax
+		mov	[es:si + disk_info.num_cyls], ax
+		mov	word [es:si + disk_info.num_cyls+2], 0
+		mov	[es:si + disk_info.bios_num_cyls], ax
+
+		mov	ax, [bp + .hd]
+		mov	[es:si + disk_info.disk], ax
+		
+		
+		push	es			; Lets check if BIOS hides last cyl
+
+		mov	dx, [es:si + disk_info.disk]	; read last sector from last + 1 cyl
+		mov	ax, [es:si + disk_info.num_heads]
+		dec	ax
+		mov	dh, al 	; head
+		mov	ax, [es:si + disk_info.num_sects]
+		mov	cl, al	; sect
+		mov	bx, [es:si + disk_info.bios_num_cyls]
+		cmp	bx, 1024
+		jz	.nomore
+		mov	ch, bl
+		mov	bl, 0
+		shr	bx, 1
+		shr	bx, 1
+		or	cl, bl
+
+		les	bx, [bp + .buf_ptr]
+		mov	ax, es
+		or	ax, bx
+		jz	.nomore
+		mov	ah, 02h	; Read 1
+		mov	al, 1	; sector
+		int	13h
+		jc	.nomore
+		mov	bx, [es:si + disk_info.bios_num_cyls]
+		inc	bx
+		mov	[es:si + disk_info.num_cyls], bx
+
+	.nomore:
+		pop	es
+
+		mov	ax, [es:si + disk_info.num_sects]
+		mov	bx, [es:si + disk_info.num_heads]
+		mul	bx
+		mov	[es:si + disk_info.sect_per_cyl], ax
+		mov	bx, [es:si + disk_info.num_cyls]
+		mul	bx
+		mov	[es:si + disk_info.total_sects0], ax
+		mov	[es:si + disk_info.total_sects1], dx
+
 
 		; check if LBA is disabled
 		mov	ax,[_lba_enabled]
@@ -211,7 +300,7 @@ _get_disk_info:
 .test_for_lba_bios:
 		mov	ax, 4100h
 		mov	bx, 55AAh
-		mov	dl, [bp+.hd]
+		mov	dl, [bp + .hd]
 		int	13h
 		jc	.nolba
 		cmp	bx, 0AA55h
@@ -219,127 +308,29 @@ _get_disk_info:
 
 		; use extended INT 13h functions to query disk parameters
 		mov	ax, 4800h
-		mov	dl, [bp+.hd]
+		mov	dl, [bp + .hd]
 		mov	word [dp_flags], 0
 		mov	si, drive_parameters
 		int	13h
 		jc	.nolba
 
 		; fill struct
-		les	si, [bp+.disk_info]
-		mov	word [es:si+.lba], 1
+		les	si, [bp + .disk_info]
+		mov	word [es:si + disk_info.lba], 1
 
-		mov	dl, [bp+.hd]
-		mov	[es:si+.disk], dl
+		mov	dl, [bp + .hd]
+		mov	[es:si + disk_info.disk], dl
 		mov	ax, [dp_sect_size]
-		mov	[es:si+.sect_size], ax
-
-		mov	ax, [dp_cyl]
-		mov	[es:si+.num_cyls], ax
-		mov	[es:si+.bios_num_cyls], ax
-
-		mov	ax, [dp_sect_trk]
-		mov	[es:si+.num_sects], ax
-		mov	[es:si+.sect_per_track], ax
-
-		mov	bx, [dp_heads]
-		mov	[es:si+.num_heads], bx
-		mul	bx
-		mov	[es:si+.sect_per_cyl], ax
+		mov	[es:si + disk_info.sect_size], ax
 
 		mov	ax, [dp_num_sect]
-		mov	[es:si+.total_sects0], ax
-		mov	ax, [dp_num_sect+2]
-		mov	[es:si+.total_sects1], ax
+		mov	[es:si + disk_info.total_sects0], ax
+		mov	dx, [dp_num_sect+2]
+		mov	[es:si + disk_info.total_sects1], dx
 
-		jmp	.end
-
-		; use "old" INT 13h function to query disk parameters
-.nolba:
-		les	si, [bp+.disk_info]
-		mov	word [es:si+.lba],0
-		mov	ah, 08h
-		mov	dl, [bp+.hd]
-		int	13h
-
-		mov	ax, -1
-		jnc	.fill_struct
-		jmp	.end
-
-.fill_struct:
-		mov	ax, SECT_SIZE
-		mov	[es:si+.sect_size], ax
-
-		mov	ah, 0
-		mov	al, dl
-		push	ax	; num_disks
-
-		mov	ah, 0
-		mov	al, cl
-		and	al, 3Fh
-		mov	[es:si+.num_sects], ax
-		mov	[es:si+.sect_per_track], ax
-
-		mov	al, dh
-		inc	ax
-		mov	[es:si+.num_heads], ax
-
-		mov	al, ch
-		shl	cx, 1
-		shl	cx, 1
-		and	ch, 3
-		mov	ah, ch
-		inc	ax
-		mov	[es:si+.num_cyls], ax
-		mov	[es:si+.bios_num_cyls], ax
-
-		mov	ax, [bp+.hd]
-		mov	[es:si+.disk], ax
-		
-		
-		push	es			; Lets check if BIOS hides last cyl
-
-		mov	dx, [es:si+.disk]	; read last sector from last + 1 cyl
-		mov	ax, [es:si+.num_heads]
-		dec	ax
-		mov	dh, al 	; head
-		mov	ax, [es:si+.num_sects]
-		mov	cl, al	; sect
-		mov	bx, [es:si+.bios_num_cyls]
-		cmp	bx, 1024
-		jz	.nomore
-		mov	ch, bl
-		mov	bl, 0
-		shr	bx, 1
-		shr	bx, 1
-		or	cl, bl
-
-		les	bx, [bp+.buf_ptr]
-		mov	ax, es
-		or	ax, bx
-		jz	.nomore
-		mov	ah, 02h	; Read 1
-		mov	al, 1	; sector
-		int	13h
-		jc	.nomore
-		mov	bx, [es:si+.bios_num_cyls]
-		inc	bx
-		mov	[es:si+.num_cyls], bx
-	.nomore:
-		pop	es
-
-		mov	ax, [es:si+.num_sects]
-		mov	bx, [es:si+.num_heads]
-		mul	bx
-		mov	[es:si+.sect_per_cyl], ax
-		mov	bx, [es:si+.num_cyls]
-		mul	bx
-		mov	[es:si+.total_sects0], ax
-		mov	[es:si+.total_sects1], dx
-
+.nolba:		
 		pop	ax	; num_disks
-
-	.end:
+.end:		
 		pop	di
 		pop	si
 		pop	es
@@ -444,25 +435,25 @@ _disk_op_lba:
 		push	si
 		push	di
 
-		mov	ax, [bp+.num]
+		mov	ax, [bp + .num]
 		mov	[ap_num_sect], ax
-		mov	ax, [bp+.buf_ptr]
+		mov	ax, [bp + .buf_ptr]
 		mov	[ap_buf_ptr], ax
-		mov	ax, [bp+.buf_ptr+2]
+		mov	ax, [bp + .buf_ptr+2]
 		mov	[ap_buf_ptr+2], ax
 
-		les	si, [bp+.disk_addr]
-		mov	dl, [es:si+.da_disk]
-		mov	ax, [es:si+.da_sect]
+		les	si, [bp + .disk_addr]
+		mov	dl, [es:si + .da_disk]
+		mov	ax, [es:si + .da_sect]
 		mov	[ap_start_sect], ax
-		mov	ax, [es:si+.da_sect+2]
+		mov	ax, [es:si + .da_sect+2]
 		mov	[ap_start_sect+2], ax
 		xor	ax, ax
 		mov	[ap_start_sect+4], ax
 		mov	[ap_start_sect+6], ax
 		mov	si, disk_address_packet
 
-		mov	ax, [bp+.operation]
+		mov	ax, [bp + .operation]
 		int	13h
 		mov	ax, -1
 		jc	.end

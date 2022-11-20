@@ -18,7 +18,7 @@ struct disk_addr
 struct disk_info
 {
     unsigned short disk;
-    unsigned short num_cyls;
+    unsigned long num_cyls;
     unsigned short num_heads;
     unsigned short num_sects;
     unsigned long total_sects;
@@ -73,6 +73,7 @@ extern unsigned short int const detected_os;
 
 #define INT13_READ_EXT  0x4200
 #define INT13_WRITE_EXT 0x4300
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -84,28 +85,21 @@ extern "C"
     void __cdecl reboot(void);
     int __cdecl flush_caches(void);
 
-    int __cdecl get_disk_info(int hd, struct disk_info *, char *buf_4096);
 
     int __cdecl disk_lock(int hd);
     int __cdecl disk_unlock(int hd);
 
     int __cdecl dos_drive_reset(int drive);
 
-    int __cdecl disk_op_lba(struct disk_addr *, void *, int num_sect, int operation);
-
-    int __cdecl disk_read_chs(struct disk_addr_chs *, void *, int num_sect);
-    int __cdecl disk_write_chs(struct disk_addr_chs *, void *, int num_sect);
-    int __cdecl disk_format_chs(struct disk_addr_chs *, void *ftable);
-    int __cdecl disk_verify_chs(struct disk_addr_chs *, int num_sect);
-
-    int disk_read(struct disk_addr *, void *, int num_sect);
-    int disk_write(struct disk_addr *, void *, int num_sect);
-    int disk_format(struct disk_addr *, void *ftable);
-    int disk_verify(struct disk_addr *, int num_sect);
-
-
 #ifdef __cplusplus
 }
 #endif
+
+int get_disk_info(int hd, struct disk_info *, char *buf_4096);
+int disk_read(struct disk_addr *, void *, int num_sect);
+int disk_write(struct disk_addr *, void *, int num_sect);
+int disk_format(struct disk_addr *, void *ftable);
+int disk_verify(struct disk_addr *, int num_sect);
+
 
 #endif

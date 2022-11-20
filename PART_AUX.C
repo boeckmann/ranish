@@ -367,7 +367,7 @@ int write_int(int attr, int x, int y, int w, unsigned long xx)
 {
     char tmp[30];
 
-    sprintf(tmp, "%*ld", w, xx);
+    sprintf(tmp, "%*lu", w, xx);
     write_string(attr, x, y, tmp);
 
     return 0;
@@ -377,6 +377,10 @@ char *sprintf_long(char *tmp, unsigned long num)
 {
     int i    = 13; /* 1,111,111,111 */
     tmp[i--] = 0;  /* 0 234 678 012 */
+
+    if (num == 0) {
+        tmp[i--] = '0';
+    }
 
     while (num != 0) {
         if (i == 9 || i == 5 || i == 1)
@@ -410,13 +414,42 @@ char *sprintf_os_name(char *tmp, struct part_long *p)
     return tmp;
 } /* sprintf_os_name */
 
+char *format_size(unsigned long num_sect, char *tmp2)
+{
+    char *tmp3;
+
+    if (num_sect >= 2048ul*1024ul) {
+        tmp3 = sprintf_long(tmp2, num_sect / (2048ul*1024ul));
+        tmp2[14]='G';
+    }
+    else if (num_sect >= 2048ul) {
+        tmp3 = sprintf_long(tmp2, num_sect / (2048ul));
+        tmp2[14]='M';            
+    }
+    else if (num_sect > 0) {
+        tmp3 = sprintf_long(tmp2, num_sect / (2ul));
+        tmp2[14]='K';                        
+    }
+    else {
+        tmp3 = tmp2;
+        tmp2[0]='\0';
+    }
+    tmp2[13] = ' ';
+    tmp2[15] = 'i';
+    tmp2[16] = '\0';
+
+    return tmp3;
+}
+
 char *sprintf_partrec(char *tmp, struct part_long *p, int num, int view)
 {
-    char tmp1[30], tmp2[30];
+    char tmp1[30], tmp2[30], *tmp3;
+
 
     if (mode == MODE_CHS) {
+        tmp3 = format_size(QUICK_SIZE(p) / 2, tmp2);
         sprintf(tmp,
-                "%2d  %-4s  %s %4ld %4ld %4ld  %4ld %4ld %4ld %10s ",
+                "%2d %-4s %s%7lu %3lu %3lu %7lu %3lu %3lu %12s ",
                 num,
                 p->active ? (view == VIEW_ADV ? "Menu" : " Yes") : " No",
                 sprintf_os_name(tmp1, p),
@@ -426,18 +459,20 @@ char *sprintf_partrec(char *tmp, struct part_long *p, int num, int view)
                 p->end_cyl,
                 p->end_head,
                 p->end_sect,
-                sprintf_long(tmp2, QUICK_SIZE(p) / 2));
+                tmp3);
     } else /* MODE_LBA */
     {
+        tmp3 = format_size(p->num_sect, tmp2);
+
         sprintf(tmp,
-                "%2d  %-4s  %s%9lu %10lu %10lu %10s ",
+                "%2d %-4s %s%10lu %10lu %10lu%12s ",
                 num,
                 p->active ? (view == VIEW_ADV ? "Menu" : " Yes") : " No",
                 sprintf_os_name(tmp1, p),
                 p->rel_sect,
                 p->num_sect,
                 (p->num_sect == 0) ? (0) : (p->rel_sect + p->num_sect - 1),
-                sprintf_long(tmp2, p->num_sect / 2));
+                tmp3);
     }
 
     return tmp;

@@ -124,11 +124,11 @@ void print_ide_info(void)
                sprintf_long(tmp, ((long)dd[1] * (long)dd[3] * (long)dd[6])));
 
         if (dd[27]) {
-            printf("          Hard Disk Model: %s\n", getascii(dd, 27, 46));
+            printf("          Hard Disk Model : %s\n", getascii(dd, 27, 46));
         }
 
         if (dd[10]) {
-            printf("          Hard Disk Serial : %s\n", getascii(dd, 10, 19));
+            printf("          Hard Disk Serial: %s\n", getascii(dd, 10, 19));
         }
 
         l = ((unsigned long)dd[60] | (unsigned long)dd[61] << 16);
@@ -153,5 +153,9 @@ char *getascii(unsigned int in_data[], int off_start, int off_end)
     }
     *pnt = '\0'; /* Make sure it ends in a NULL character */
 
-    return (ret_val);
+    /* skip leading spaces */
+    pnt = ret_val;
+    while(*pnt == ' ') pnt++;
+
+    return pnt;
 } /* --- end of the subroutine "getascii" --- */

@@ -3,11 +3,14 @@
 #include "part.h"
 
 int num_disks;
+int hd, select_target, mode, quiet;
 
 void main(int argc, char **argv)
 {
     int i;
     hd = 0x80;
+
+    printf("sizeof disk_addr: %d\n", sizeof(struct disk_addr));
 
     set_messages();
 
@@ -30,8 +33,8 @@ void main(int argc, char **argv)
             argc--;
             argv++;
         } 
-        else if (argv[0][1] == 'N' || argv[0][1] == 'n') {
-            lba_enabled = 0;
+        else if (argv[0][1] == 'X' || argv[0][1] == 'x') {
+            lba_enabled = 1;
             argc--;
             argv++;
         }
@@ -85,6 +88,11 @@ void start_gui(void)
                 hd = 0x80;
                 continue;
             }
+            break;
+        }
+
+        if (dinfo.sect_size != SECT_SIZE) {
+            show_error("This drive has no 512 bytes per sector! Quitting...");
             break;
         }
 
@@ -150,18 +158,22 @@ int setup_mbr(struct part_long *p)
     } *fd,
         fd_chs[8] = {{0, 4, 8},
                      {0, 13, 23},
-                     {1023, 37, 4},
-                     {255, 42, 4},
-                     {63, 47, 4},
-                     {1023, 53, 4},
-                     {255, 58, 4},
-                     {63, 63, 4}},
+                     {1023, 34, 7},
+                     {255, 42, 3},
+                     {63, 46, 3},
+                     {1023, 50, 7},
+                     {255, 58, 3},
+                     {63, 62, 3}},
         fd_lba[4] = {
-            {0, 4, 8}, {0, 13, 23}, {16777215, 36, 9}, {16777215, 46, 10}};
+            {0, 4, 8}, {0, 13, 23}, {4294967295, 34, 10}, {4294967295, 45, 10}};
 
     view      = (p->level == 0) ? VIEW_MBR : VIEW_EMBR;
     num_rows  = (p->level == 0) ? MAX_PART_ROWS : 4;
     data_size = (p->level == 0) ? SECT_SIZE + ADV_DATA_SIZE : SECT_SIZE;
+
+    if (dinfo.lba) {
+        mode = MODE_LBA;
+    }
 
     if ((data = malloc(2 * data_size)) == 0) {
         show_error(ERROR_MALLOC);
@@ -478,26 +490,26 @@ int setup_mbr(struct part_long *p)
         {
             if (view == VIEW_ADV) {
                 write_string(ACTIVE_COLOR,
-                             6,
+                             5,
                              row - top + 9,
                              (part[row].active) ? " Menu " : "  No  ");
-                move_cursor((part[row].active) ? 7 : 8, row - top + 9);
+                move_cursor((part[row].active) ? 6 : 7, row - top + 9);
                 hint = HINT_ADV;
             } else {
                 write_string(ACTIVE_COLOR,
-                             7,
+                             5,
                              row - top + 9,
-                             (part[row].active) ? " Yes " : " No  ");
-                move_cursor(8, row - top + 9);
+                             (part[row].active) ? "  Yes " : "  No  ");
+                move_cursor(7, row - top + 9);
                 hint = HINT_INS;
             }
         } else if (field == 1) /* Partition Type */
         {
             write_string(ACTIVE_COLOR,
-                         13,
+                         11,
                          row - top + 9,
                          sprintf_os_name(tmp, &part[row]));
-            move_cursor(13, row - top + 9);
+            move_cursor(11, row - top + 9);
             hint = (view == VIEW_ADV) ? HINT_ADV : HINT_INS;
         } else if (mode == MODE_CHS && field == 2)
             edit_target = &part[row].start_cyl;
@@ -551,7 +563,7 @@ int setup_mbr(struct part_long *p)
         else if (mesg != 0)
             write_string(MESG_COLOR, 7, hint_y, mesg);
         else if (hint != 0)
-            write_string(HINT_COLOR, 7, hint_y, hint);
+            write_string(HINT_COLOR, 4, hint_y, hint);
 
         if (view == VIEW_EMBR)
             help = "#extended";
@@ -1045,20 +1057,14 @@ int setup_mbr(struct part_long *p)
             }
             continue;
         } else if (mode == MODE_LBA && ev.key == '+') {
-            unsigned long x =
-                *edit_target - *edit_target % dinfo.sect_per_track;
-
-            if (edit_limit > dinfo.sect_per_track &&
-                edit_limit - dinfo.sect_per_track > x) {
-                *edit_target      = x + dinfo.sect_per_track;
+            if (*edit_target < edit_limit) {
+                (*edit_target)++;
                 force_recalculate = 1;
             }
-
             continue;
         } else if (mode == MODE_LBA && ev.key == '-') {
             if (*edit_target > 0) {
                 (*edit_target)--;
-                *edit_target -= *edit_target % dinfo.sect_per_track;
                 force_recalculate = 1;
             }
             continue;
@@ -1557,6 +1563,11 @@ void command_line(int argc, char **argv)
 
     if (get_disk_info(hd, &dinfo, buf) == -1)
         cmd_error(ERROR_DISK_INFO);
+
+    if (dinfo.sect_size != SECT_SIZE) {
+        printf("This drive has no 512 bytes per sector! Quitting...\n");
+        return;
+    }
 
     if ((data = malloc(SECT_SIZE + ADV_DATA_SIZE)) == 0) {
         cmd_error(ERROR_MALLOC);

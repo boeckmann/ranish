@@ -95,7 +95,7 @@ it( HEADER_GET  = "Disco rig...    Acquisizione parametri disco ...")
 nl( HEADER_GET  = "Harde sch...    Ophalen van vaste schijf parameters ...")
 cs( HEADER_GET  = "Pevnì disk..    Z¡sk v n¡ parametr… disku ...")
 
-en( HEADER_EMBR = "EMBR Level..  ..... Mbytes")
+en( HEADER_EMBR = "EMBR Level..  ........ MiB")
 se( HEADER_EMBR = "EMBR Level..  ..... Mbytes")
 sp( HEADER_EMBR = "EMBR Nivel..  ..... Mbytes")
 de( HEADER_EMBR = "EMBR Stufe..  ..... Mbytes")
@@ -105,7 +105,7 @@ it( HEADER_EMBR = "EMBR Level..  ..... Mbytes")
 nl( HEADER_EMBR = "EMBR Level..  ..... Mbyte ")
 cs( HEADER_EMBR = "éroveå EMBR.  ..... MByt… ")
 
-en( HEADER_CHS  = "Hard Disk ..  ..... Mbytes  [ .... cylinders  x ... heads  x ... sectors ]")
+en( HEADER_CHS  = "Disk ..  ........ MiB    [ ....... cylinders  x ... heads  x ... sectors ]")
 se( HEADER_CHS  = "H†rd Disk ..  ..... Mbytes  [ .... cylinders  x ... heads  x ... sectors ]")
 sp( HEADER_CHS  = "Disco Duro..  ..... Mbytes  [ .... cilindros  x ... lados  x ... sectores]")
 de( HEADER_CHS  = "Festplatte..  ..... Mbytes  [ .... Zylinder   x ... K”pfe  x ... Sektoren]")
@@ -125,7 +125,7 @@ it( HEADER_CHS2 = "                  File               Inizio           Fine   
 nl( HEADER_CHS2 = "              Type bestands-          Begin           Eind        Partitie")
 cs( HEADER_CHS2 = "           Typ souborov‚ho          PoŸ teŸn¡       Koncovì      Velikost ")
 
-en( HEADER_CHS3 = "#  Active      System Type        Cyl Side Sect   Cyl Side Sect  Size [KB]")
+en( HEADER_CHS3 = "#  Active      System Type        Cyl Side Sect   Cyl Side Sect   Size [B]")
 se( HEADER_CHS3 = "#  Aktiv       System Typ         Cyl Sida Sekt   Cyl Sida Sekt  Strlk [K]")
 sp( HEADER_CHS3 = "#  Activo    Tipo de Sistema      Cil Lado Secc   Cil Lado Secc  tama¤o[K]")
 de( HEADER_CHS3 = "# Startbar     system Typ         Zyl Kopf Sekt   Zyl Kopf Sekt  Gr”áe[KB]")
@@ -138,7 +138,7 @@ cs( HEADER_CHS3 = "# Aktivn¡       syst‚mu          cyl hlava sekt  cyl hlava se
               /*  "1   Yes  123456789_123456789_123 9999 9999 9999  9999 9999 9999 11,111,111"  */
 
 
-en( HEADER_LBA  = "Hard Disk ..  ..... Mbytes  [ Base 11,111,111  Total 11,111,111  sectors ]")
+en( HEADER_LBA  = "Disk ..  ........ MiB  [ Base 1,111,111,111  Total 1,111,111,111 sectors ]")
 se( HEADER_LBA  = "H†rd Disk ..  ..... Mbytes  [ Base 11,111,111  Total 11,111,111  sectors ]")
 sp( HEADER_LBA  = "Disco Duro..  ..... Mbytes  [ Base 11,111,111  Total 11,111,111 sectores ]")
 de( HEADER_LBA  = "Festplatte..  ..... Mbytes  [Start 11,111,111  Total 11,111,111 Sektoren ]")
@@ -148,7 +148,7 @@ it( HEADER_LBA  = "Disco rig...  ..... Mbytes  [ Base 11,111,111 Totale 11,111,1
 nl( HEADER_LBA  = "Vaste sch...  ..... Mbyte   [ Base 11,111,111 Totaal 11,111,111 sectoren ]")
 cs( HEADER_LBA  = "Pevnì disk..  ..... MByt…   [Z kl. 11,111,111  Celk. 11,111,111 sektor…  ]")
 
-en( HEADER_LBA2 = "                  File           Starting  Number of     Ending  Partition")
+en( HEADER_LBA2 = "                  File          Starting  Number of     Ending   Partition")
 se( HEADER_LBA2 = "                  Fil             Startar      Antal     Slutar  Partition")
 sp( HEADER_LBA2 = "                 Archivo       Comenzando  N£mero de Finalizando Partici¢n")
 de( HEADER_LBA2 = "                 Datei-           Start    Anzahl der    Ende   Partitions")
@@ -158,7 +158,7 @@ it( HEADER_LBA2 = "                  File            Inizio   Numero di     Fine
 nl( HEADER_LBA2 = "              Type bestands-       Begin    Aantal       Eind     Partitie")  
 cs( HEADER_LBA2 = "            Typ souborov‚ho     PoŸ teŸn¡      PoŸet    Koncovì   Velikost")
 
-en( HEADER_LBA3 = "#  Active      System Type         sector    sectors     sector  Size [KB]")
+en( HEADER_LBA3 = "#  Active      System Type        sector    sectors     sector    Size [B]")
 se( HEADER_LBA3 = "#  Aktiv       System Typ          sektor   sektorer     sektor  Strlk [K]")
 sp( HEADER_LBA3 = "#  Activo    Tipo de Sistema       sector   sectores     sector  Tama¤o[K]")
 de( HEADER_LBA3 = "# Startbar     system Typ          Sektor   Sektoren     Sektor  Gr”áe[KB]")
@@ -172,7 +172,7 @@ cs( HEADER_LBA3 = "# Aktivn¡        syst‚mu           sektor    sektor…     sekt
 
 
                 /*  Hard Disk 1  12345 MB  [ 1023 cyl x 255 heads x 63 sects = 11,111,111 sects ] */
-en( HEADER_CMD = "  Hard Disk %d  %5lu MB  [ %4d cyl x %3d heads x %2d sects = %s sects ]\n\n")
+en( HEADER_CMD = "  Hard Disk %d  %5lu MB  [ %6ul cyl x %3u heads x %2u sects = %s sects ]\n\n")
 se( HEADER_CMD = "H†rd Disk %d  %5lu MB  [ %4d cyl x %3d huvuden x %2d sekts = %s sekts ]\n\n")
 sp( HEADER_CMD = " Disco Duro %d  %5lu MB  [ %4d cil x %3d lados x %2d sects = %s sects ]\n\n")
 de( HEADER_CMD = " Festplatte %d  %5lu MB  [ %4d Zyl x %3d K”pfe x %2d Sekt. = %s Sekt. ]\n\n")

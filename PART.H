@@ -240,29 +240,6 @@ void __cdecl STD_IPL(void);
 void __cdecl FAT_BOOT(void);
 void __cdecl ADV_MANAGER(void);
 
-#define ABS_REL_SECT(p)                                                       \
-    ((p)->start_cyl * dinfo.sect_per_cyl +                                    \
-     (p)->start_head * dinfo.sect_per_track + (p)->start_sect - 1)
-
-#define ABS_END_SECT(p)                                                       \
-    ((p)->end_cyl * dinfo.sect_per_cyl +                                      \
-     (p)->end_head * dinfo.sect_per_track + (p)->end_sect - 1)
-
-#define REL_SECT(p) (ABS_REL_SECT(p) - (p)->container_base)
-#define NUM_SECT(p) (ABS_END_SECT(p) - ABS_REL_SECT(p) + 1)
-
-#define NUM_SECT_RA(p, r) (ABS_END_SECT(p) - (r) + 1)
-#define NUM_SECT_RR(p, r) (ABS_END_SECT(p) - (r) + 1 - (p)->container_base)
-
-#define QUICK_BASE(p)                                                         \
-    ((mode == MODE_LBA || (p)->valid) ? ((p)->container_base + (p)->rel_sect) \
-                                      : (ABS_REL_SECT(p)))
-
-#define QUICK_SIZE(p)                                                         \
-    ((mode == MODE_LBA || (p)->valid)                                         \
-         ? ((p)->num_sect)                                                    \
-         : (ABS_END_SECT(p) - ABS_REL_SECT(p) + 1))
-
 
 unsigned short calc_chksum(const unsigned short *p, const int len);
 
@@ -356,7 +333,6 @@ void set_messages(void);
 #ifdef _PART_C
 
 struct event ev;
-int hd, select_target, mode, quiet;
 char tmp2[80];
 char tmp3[80];
 char file_name[80];

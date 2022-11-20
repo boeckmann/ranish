@@ -1089,14 +1089,14 @@ void redraw_header(int view, int mode, struct part_long *p)
     if (view == VIEW_EMBR) {
         write_string(HEADER_COLOR, 4, 5, HEADER_EMBR);
         write_int(TABLE_COLOR, 14, 5, 2, p->level);
-        write_int(TABLE_COLOR, 18, 5, 5, QUICK_SIZE(p) / 2048);
+        write_int(TABLE_COLOR, 18, 5, 8, QUICK_SIZE(p) / 2048);
     }
 
     if (mode == MODE_CHS) {
         write_string(HEADER_COLOR, 4, 4, HEADER_CHS);
-        write_int(TABLE_COLOR, 14, 4, 2, dinfo.disk - 0x80 + 1);
-        write_int(TABLE_COLOR, 18, 4, 5, dinfo.total_sects / 2048);
-        write_int(TABLE_COLOR, 33, 4, 5, dinfo.num_cyls);
+        write_int(TABLE_COLOR, 9, 4, 2, dinfo.disk - 0x80 + 1);
+        write_int(TABLE_COLOR, 13, 4, 8, dinfo.total_sects / 2048);
+        write_int(TABLE_COLOR, 31, 4, 5, dinfo.num_cyls);
         write_int(TABLE_COLOR, 52, 4, 3, dinfo.num_heads);
         write_int(TABLE_COLOR, 65, 4, 3, dinfo.num_sects);
         write_string(HEADER_COLOR, 4, 6, HEADER_CHS2);
@@ -1104,12 +1104,12 @@ void redraw_header(int view, int mode, struct part_long *p)
     } else /* mode==MODE_LBA */
     {
         write_string(HEADER_COLOR, 4, 4, HEADER_LBA);
-        write_int(TABLE_COLOR, 14, 4, 2, dinfo.disk - 0x80 + 1);
-        write_int(TABLE_COLOR, 18, 4, 5, dinfo.total_sects / 2048);
-        sprintf(tmp, "%10s", sprintf_long(tmp + 100, QUICK_BASE(p)));
-        write_string(TABLE_COLOR, 39, 4, tmp);
-        sprintf(tmp, "%10s", sprintf_long(tmp + 100, QUICK_SIZE(p)));
-        write_string(TABLE_COLOR, 57, 4, tmp);
+        write_int(TABLE_COLOR, 9, 4, 2, dinfo.disk - 0x80 + 1);
+        write_int(TABLE_COLOR, 13, 4, 8, dinfo.total_sects / 2048ul);
+        sprintf(tmp, "%13s", sprintf_long(tmp + 100, QUICK_BASE(p)));
+        write_string(TABLE_COLOR, 34, 4, tmp);
+        sprintf(tmp, "%13s", sprintf_long(tmp + 100, QUICK_SIZE(p)));
+        write_string(TABLE_COLOR, 55, 4, tmp);
         write_string(HEADER_COLOR, 4, 6, HEADER_LBA2);
         write_string(HEADER_COLOR, 4, 7, HEADER_LBA3);
     }
