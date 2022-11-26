@@ -40,6 +40,25 @@ int get_disk_info(int hd, struct disk_info *di, char *buf_4096)
 		/* comment out to force disk to 2TB size for testing */
 		/* di->total_sects = 0xffffffff; */
 
+		/* calculate virtual CHS value */
+		if (di->total_sects > 63ul * 128ul * 1024ul) {
+			di->num_heads = 255;
+		}
+		else if (di->total_sects > 63ul * 128ul * 1024ul) {
+			di->num_heads = 128;
+		}
+		else if (di->total_sects > 63ul * 32ul * 1024ul) {
+			di->num_heads = 64;
+		}
+		else if (di->total_sects > 63ul * 16ul * 1024ul) {
+			di->num_heads = 32;
+		}
+		else {
+			di->num_heads = 16;			
+		}
+
+		di->sect_per_cyl = di->num_heads * di->num_sects;
+
 		di->num_cyls = di->total_sects / di->sect_per_cyl;
 		if (di->total_sects % di->sect_per_cyl) {
 			di->num_cyls++;

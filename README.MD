@@ -25,6 +25,18 @@ run the partition manager with `-x` as an command line argument.
 
 The compact and advanced boot managers are not yet adapted to use LBA.
 
+The following virtual CHS table is used when in LBA mode. It is analog
+to what BIOS uses when performing assisted LBA. The virtual cylinder in
+LBA mode may be larger than 1023. 
+
+```
+         Size             Sect Heads
+           X <=  504 MiB   63  16 
+ 504 MiB < X <= 1008 MiB   63  32
+1008 MiB < X <= 2016 MiB   63  64
+2016 MiB < X <= 4032 MiB   63  128
+4032 MiB < X               63  255
+```
 
 ## Minimum System Requirements
 These are the minimum requirements for the trunk version of Ranish. It may

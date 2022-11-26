@@ -1,10 +1,13 @@
 # Change Log
 
 ## Version 2.90.04 alpha
+### Enhancements
+ * Implement virtual CHS geometry in accordance to BIOS assisted LBA instead of relying on info given by BIOS INT13,2 when in LBA mode.
+ * Add partition type 0xEE, the GPT guard partition
+
 ### Fixes
  * Fix value wrap-around if disk is larger than 2TiB. Set instead to 2TiB.
  * Fix sprintf format specifier error
- * Fix CHS<->LBA mapping correction for head count != 255
 
 ## Version 2.90.03 alpha
 ### Enhancements
