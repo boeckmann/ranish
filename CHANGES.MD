@@ -7,6 +7,7 @@
  * part.exe: Allow editing type 0x0F Extended Partitions (LBA)
 
 ### Fixes
+ * verify could lead to memory corruption on very old BIOS (<1985)
 
 ## Version 2.90.02 alpha
 ### Fixes
