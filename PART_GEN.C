@@ -16,66 +16,77 @@ genric_clean
 
 int generic_verify(struct part_long *p, int bbt_size, unsigned long *bbt)
 {
-    char tmp[90];
+    char *z, tmp[90];
     struct disk_addr daddr;
-    unsigned long base_sect = 0;
-    int s_sect, e_sect;
-    int cyl, head, sect, num_sect, x, num_bad = 0, hd = dinfo.disk;
+    unsigned short percent;
+    unsigned long total_done = 0;
+    unsigned long curr_sect, end_sect, sect_count;
+    unsigned long sect;
+    unsigned num_bad = 0;
 
-    disk_lock(hd);
+    if ((z = (char *)malloc(63 * SECT_SIZE)) == 0) {
+        show_error(ERROR_MALLOC);
+        return FAILED;
+    }
+    memset(z, 0, 63 * SECT_SIZE);
 
     progress(MESG_VERIFYING);
 
-    /* TODO: convert to LBA
-    for (cyl = p->start_cyl; cyl <= p->end_cyl; cyl++) {
-        for (head = ((cyl == p->start_cyl) ? p->start_head : 0);
-             head < ((cyl == p->end_cyl) ? p->end_head + 1 : dinfo.num_heads);
-             head++) {
-            daddr.disk = hd;
-            daddr.cyl  = cyl;
-            daddr.head = head;
+    disk_lock(hd);
 
-            s_sect = (cyl == p->start_cyl && head == p->start_head)
-                         ? p->start_sect
-                         : 1;
-            e_sect = (cyl == p->end_cyl && head == p->end_head)
-                         ? p->end_sect
-                         : dinfo.num_sects;
+    daddr.disk = dinfo.disk;
+    curr_sect = QUICK_BASE(p);
+    end_sect = curr_sect + p->num_sect - 1;
 
-            daddr.sect = s_sect;
-            num_sect   = e_sect - s_sect + 1;
+    /* we do not write across track boundaries, one track at a time */
+    sect_count = dinfo.num_sects - (curr_sect % dinfo.num_sects);
+    while (curr_sect <= end_sect) {
 
-            if (disk_verify(&daddr, num_sect) == -1) {
-                for (sect = s_sect; sect <= e_sect; sect++) {
-                    daddr.sect = sect;
-                    if (disk_verify(&daddr, 1) == -1) {
-                        if (bbt_size != -1) {
-                            if (num_bad == bbt_size) {
-                                disk_unlock(hd);
-                                return FAILED;
-                            }
-                            bbt[num_bad] = base_sect + sect;
+        /* we do not want to go beyond end of partition */
+        if (end_sect - curr_sect + 1 < sect_count) {
+            sect_count = end_sect - curr_sect + 1;
+        }
+
+        daddr.sect = curr_sect;
+        if (disk_verify(&daddr, z, sect_count) < 0) {
+
+            /* if bad sectors detected inside track test which exactly
+               are bad */
+            for (sect = curr_sect; sect <= end_sect; sect++) {
+                daddr.sect = sect;
+
+                if (disk_verify(&daddr, z, sect_count) < 0) {
+                    if (bbt_size != -1) {
+                        if (num_bad == bbt_size) {
+                            disk_unlock(hd);
+                            free(z);
+                            return FAILED;
                         }
-                        num_bad++;
+                        bbt[num_bad] = sect;
                     }
+                    num_bad++;
                 }
             }
-
-            base_sect += num_sect;
-
-            x = base_sect * 100 / p->num_sect;
-
-            sprintf(tmp, "%% %3d%%  Cylinder: %3d", x, cyl);
-            if (progress(tmp) == CANCEL) {
-                disk_unlock(hd);
-                return CANCEL;
-            }
         }
+
+        curr_sect += sect_count;
+        total_done += sect_count;
+        percent = total_done * 100ull / p->num_sect;
+
+        sprintf(tmp, "%% %3d%% verified", percent);
+        if (progress(tmp) == CANCEL) {
+            disk_unlock(hd);
+            free(z);
+            return CANCEL;
+        }
+
+        sect_count = dinfo.num_sects; /* next track */
     }
-    */
 
     disk_unlock(hd);
+    free(z);
     return num_bad;
+
 } /* generic_verify */
 
 /*
@@ -265,7 +276,6 @@ int generic_clean(struct part_long *p)
         show_error(ERROR_MALLOC);
         return FAILED;
     }
-
     memset(z, 0, 63 * SECT_SIZE);
 
     progress(MESG_CLEANING);
@@ -278,10 +288,11 @@ int generic_clean(struct part_long *p)
 
     /* we do not write across track boundaries, one track at a time */
     sect_count = dinfo.num_sects - (curr_sect % dinfo.num_sects);
-    while (curr_sect < end_sect) {
+    while (curr_sect <= end_sect) {
 
-        if (end_sect - curr_sect < sect_count) {
-            sect_count = end_sect - curr_sect;
+        /* we do not want to go beyond end of partition */
+        if (end_sect - curr_sect + 1 < sect_count) {
+            sect_count = end_sect - curr_sect + 1;
         }
 
         daddr.sect = curr_sect;
@@ -303,7 +314,7 @@ int generic_clean(struct part_long *p)
             return CANCEL;
         }
 
-        sect_count = dinfo.num_sects;
+        sect_count = dinfo.num_sects; /* next track */
     }
 
     disk_unlock(hd);

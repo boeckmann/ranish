@@ -559,7 +559,8 @@ _disk_write_chs:
 
 _disk_verify_chs:
 
-  .num_sect	equ	0Ah
+  .num_sect	equ	0Eh
+  .buf_ptr	equ	0Ah
   .disk_addr	equ	06h
 
 		push	bp
@@ -572,6 +573,7 @@ _disk_verify_chs:
 		mov	ah, 04h			; Verify
 		mov	al, [bp+.num_sect]	; How many sectors
 		Get_Disk_Params
+		les	bx, [bp+.buf_ptr]
 		int	13h
 		
 		mov	ax, -1

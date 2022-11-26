@@ -73,6 +73,7 @@ extern unsigned short int const detected_os;
 
 #define INT13_READ_EXT  0x4200
 #define INT13_WRITE_EXT 0x4300
+#define INT13_VERIFY_EXT 0x4300
 
 #ifdef __cplusplus
 extern "C"
@@ -101,7 +102,7 @@ int get_disk_info(int hd, struct disk_info *, char *buf_4096);
 int disk_read(struct disk_addr *, void *, int num_sect);
 int disk_write(struct disk_addr *, void *, int num_sect);
 int disk_format(struct disk_addr *, void *ftable);
-int disk_verify(struct disk_addr *, int num_sect);
+int disk_verify(struct disk_addr *, void *, int num_sect);
 
 
 #endif

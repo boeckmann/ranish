@@ -14,7 +14,7 @@ extern "C"
     int __cdecl disk_read_chs(struct disk_addr_chs *, void *, int num_sect);
     int __cdecl disk_write_chs(struct disk_addr_chs *, void *, int num_sect);
     int __cdecl disk_format_chs(struct disk_addr_chs *, void *ftable);
-    int __cdecl disk_verify_chs(struct disk_addr_chs *, int num_sect);
+    int __cdecl disk_verify_chs(struct disk_addr_chs *, void *, int num_sect);
 
 
 #ifdef __cplusplus
@@ -89,12 +89,18 @@ int disk_format(struct disk_addr *daddr, void *ftable)
 
 }
 
-int disk_verify(struct disk_addr *daddr, int num_sect)
+int disk_verify(struct disk_addr *daddr, void *buf, int num_sect)
 {
 	struct disk_addr_chs chs;
-	
-    lba_to_chs(daddr, &chs);
+	int result;
 
-    return disk_verify_chs(&chs, num_sect);
+    if (dinfo.lba) {
+    	result = disk_op_lba(daddr, buf, num_sect, INT13_VERIFY_EXT);
+    } else {
+	    lba_to_chs(daddr, &chs);
+	    result = disk_verify_chs(&chs, buf, num_sect);
+    }
+
+    return result;
 }
 
