@@ -34,7 +34,7 @@ void main(int argc, char **argv)
             argv++;
         } 
         else if (argv[0][1] == 'X' || argv[0][1] == 'x') {
-            lba_enabled = 1;
+            lba_enabled = 0;
             argc--;
             argv++;
         }
@@ -897,8 +897,11 @@ int setup_mbr(struct part_long *p)
                 mesg = MESG_VERIFY_OK;
             else if (fstatus == CANCEL)
                 mesg = WARN_VERIFY_CANCEL;
-            else if (fstatus == FAILED)
+            else if (fstatus == FAILED) {
                 show_error(ERROR_VERIFY_FAILED);
+                sprintf(tmp, "BIOS error code %02X", (unsigned int)diskio_errno);
+                show_error(tmp);
+            }
 
             force_redraw_header = 1;
             force_redraw_table  = 1;

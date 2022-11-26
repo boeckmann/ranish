@@ -96,6 +96,8 @@ extern "C"
 }
 #endif
 
+extern unsigned char diskio_errno;
+
 int get_disk_info(int hd, struct disk_info *, char *buf_4096);
 
 /* result < 0 if error occured */

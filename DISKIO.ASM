@@ -22,6 +22,7 @@ SECT_SIZE	equ	512	; If not we will eventually crash
 global	_detected_os
 global _lba_enabled
 global _lba_bios
+global _diskio_errno
 
 SYS_DOS		equ	0	; MS-DOS v1.00 - v4.xx
 SYS_DOS5	equ	1	; MS-DOS v5.00 - v6.xx
@@ -32,8 +33,9 @@ SYS_WIN_NT	equ	5	; Windows NT
 
 _detected_os	dw	0
 
-_lba_enabled	dw	0
+_lba_enabled	dw	1
 _lba_bios	dw	0
+_diskio_errno	db	0
 
 _reboot_addr	dd	0FFFF0000h
 
@@ -455,6 +457,7 @@ _disk_op_lba:
 
 		mov	ax, [bp + .operation]
 		int	13h
+		mov	[_diskio_errno], ah
 		mov	ax, -1
 		jc	.end
 		mov	ax, 0		

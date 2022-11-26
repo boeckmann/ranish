@@ -15,18 +15,24 @@ The the source in the trunk branch was converted to Watcom C and Netwide
 Assember. The original version was targeted at Turbo C / Turbo Assembler.
 
 
-## Limitations
-As of now Ranish is not capable of accessing disks via LBA. Therefore the
-maximum supported disk size is 8GB (the disk itself may be larger but only the
-first 8GB can be accessed).
+## Large disk support
+In contrast to version 2.27.99 the trunk version of Ranish supports LBA
+disk access and disks larger than 8 GiB. However, that feature is EXPERIMENTAL.
+However, it is the standard mode now so I can get feedback if something is not
+working right. If you encounter an issue please file a bug report.
+
+To disable large disk support and revert to standard INT13 BIOS functions
+run the partition manager with `-x` as an command line argument.
+
+The compact and advanced boot managers are not yet adapted to use LBA.
 
 
 ## Minimum System Requirements
-These are the minimum requirements the trunk version of Ranish is _confirmed_
-to run on. It may or may not run on less capable hardware.
+These are the minimum requirements for the trunk version of Ranish. It may
+or may not run on less capable hardware.
 
  * IBM-AT compatible PC
- * minimum 256K RAM
+ * minimum 512K RAM
  * IDE compatible controller supporting INT 13h BIOS functions 00h-0Ah
  * MS-DOS 3.3 compatible operating system
  * Color- or monochrome graphics adapter
