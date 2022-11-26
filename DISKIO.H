@@ -73,7 +73,7 @@ extern unsigned short int const detected_os;
 
 #define INT13_READ_EXT  0x4200
 #define INT13_WRITE_EXT 0x4300
-#define INT13_VERIFY_EXT 0x4300
+#define INT13_VERIFY_EXT 0x4400
 
 #ifdef __cplusplus
 extern "C"
