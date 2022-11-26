@@ -475,6 +475,7 @@ struct os_desc os_desc[] = {
     {0xE500, "-- reserved --", 0, 0, 0, 0},
     {0xE600, "-- reserved --", 0, 0, 0, 0},
     {0xEB00, "BeOS", 1, 0, 0, 0},
+    {0xEE00, "GPT guard partition", 0, 0, 0, 0},
     {0xF100, "Storage Dimensions", 0, 0, 0, 0},
     {0xF200, "DOS 3.3+ secondary", 0, 0, 0, 0},
     {0xF300, "-- reserved --", 0, 0, 0, 0},
