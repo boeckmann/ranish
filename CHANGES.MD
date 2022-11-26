@@ -2,12 +2,15 @@
 
 ## Version 2.90.03 alpha
 ### Enhancements
- * part.exe: Implement logical block access (LBA)
- * part.exe: Support drives >8GB
- * part.exe: Allow editing type 0x0F Extended Partitions (LBA)
+ * Implement LBA disk access - part.exe for now
+ * Support drives >8GB - part.exe for now
+ * Allow editing type 0x0F Extended Partitions (LBA)
 
 ### Fixes
- * verify could lead to memory corruption on very old BIOS (<1985)
+ * disk_verify could lead to memory corruption on very old BIOS (<1985)
+
+### Changes
+ * Do not use INT13,5 for partition formatting any more. It has no LBA equivalent.
 
 ## Version 2.90.02 alpha
 ### Fixes
