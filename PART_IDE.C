@@ -32,7 +32,7 @@ void print_ide_info(void)
         if ((n = get_disk_info(hd, &dinfo, buf)) == -1)
             printf("Error!\n");
         else {
-            printf("%5d cyl x %3d heads x %2d sects = %4ldM = %10s sectors\n",
+            printf("%9lu cyl x %3u heads x %2u sects = %9luM = %13s sectors\n",
                    dinfo.num_cyls,
                    dinfo.num_heads,
                    dinfo.num_sects,
