@@ -325,10 +325,23 @@ __get_disk_info:
 		mov	ax, [dp_sect_size]
 		mov	[es:si + disk_info.sect_size], ax
 
+		mov	ax, [dp_num_sect+4]
+		test	ax, ax
+		jnz	.limitsize
+		mov	ax, [dp_num_sect+6]
+		test	ax, ax
+		jnz	.limitsize
+
 		mov	ax, [dp_num_sect]
 		mov	[es:si + disk_info.total_sects0], ax
 		mov	dx, [dp_num_sect+2]
 		mov	[es:si + disk_info.total_sects1], dx
+		jmp	.nolba
+
+.limitsize:
+		mov	ax, 0ffffh
+		mov	[es:si + disk_info.total_sects0], ax
+		mov	[es:si + disk_info.total_sects1], ax
 
 .nolba:		
 		pop	ax	; num_disks
