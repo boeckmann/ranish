@@ -1,5 +1,13 @@
 # Change Log
 
+## Version 2.90.03 alpha
+### Enhancements
+ * part.exe: Implement logical block access (LBA)
+ * part.exe: Support drives >8GB
+ * part.exe: Allow editing type 0x0F Extended Partitions (LBA)
+
+### Fixes
+
 ## Version 2.90.02 alpha
 ### Fixes
  * Fix freeze / crash when help is opened a second time, caused by a memory invalidation.
