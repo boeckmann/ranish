@@ -158,10 +158,10 @@ int setup_mbr(struct part_long *p)
     } *fd,
         fd_chs[8] = {{0, 4, 8},
                      {0, 13, 23},
-                     {1023, 34, 7},
+                     {8555167, 34, 7},
                      {255, 42, 3},
                      {63, 46, 3},
-                     {1023, 50, 7},
+                     {8555167, 50, 7},
                      {255, 58, 3},
                      {63, 62, 3}},
         fd_lba[4] = {
@@ -533,6 +533,7 @@ int setup_mbr(struct part_long *p)
         if (field > 1) {
             fd         = (mode == MODE_CHS) ? &fd_chs[field] : &fd_lba[field];
             edit_limit = fd->edit_limit;
+
             write_int(
                 ACTIVE_COLOR, fd->pos, row - top + 9, fd->len, *edit_target);
             move_cursor(fd->pos + fd->len - 1, row - top + 9);
@@ -942,7 +943,8 @@ int setup_mbr(struct part_long *p)
             continue;
         }
 
-        if (ev.scan == 0x52E0 || ev.scan == 0x5200) /* Insert */
+        if (ev.scan == 0x52E0 || ev.scan == 0x5200 ||
+            ev.key == 'T' || ev.key == 't')                 /* Insert */
         {
             int prev_os_id = part[row].os_id;
 
