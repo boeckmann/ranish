@@ -16,10 +16,9 @@ Assember. The original version was targeted at Turbo C / Turbo Assembler.
 
 
 ## Large disk support
-In contrast to version 2.27.99 the trunk version of Ranish supports LBA
-disk access and disks larger than 8 GiB. However, that feature is EXPERIMENTAL.
-However, it is the standard mode now so I can get feedback if something is not
-working right. If you encounter an issue please file a bug report.
+In contrast to version 2.37.99 the trunk version of Ranish contains
+experimental support for LBA and disks larger than 8 GiB, which is enabled
+by default. If you encounter issues please file a bug report.
 
 To disable large disk support and revert to standard INT13 BIOS functions
 run the partition manager with `-x` as an command line argument.
