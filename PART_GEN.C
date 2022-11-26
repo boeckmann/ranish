@@ -73,7 +73,7 @@ int generic_verify(struct part_long *p, int bbt_size, unsigned long *bbt)
         total_done += sect_count;
         percent = total_done * 100ull / p->num_sect;
 
-        sprintf(tmp, "%% %3d%% verified", percent);
+        sprintf(tmp, TEXT("%% %3d%% verified"), percent);
         if (progress(tmp) == CANCEL) {
             disk_unlock(hd);
             free(z);
@@ -100,15 +100,17 @@ of the partition, but will verify it and clear with zeros.
 
 int generic_format(struct part_long *p, int bbt_size, unsigned long *bbt)
 {
-    char tmp[90];
+    char *z, *z2, tmp[90];
     struct disk_addr daddr;
-    unsigned long base_sect = 0;
-    static unsigned char ftab[512];
-    int cyl, head, sect, num_sect, x, num_bad = 0, hd = dinfo.disk;
+    unsigned short percent;
+    unsigned long total_done = 0;
+    unsigned long curr_sect, end_sect, sect_count;
+    unsigned long sect;
+    unsigned num_bad = 0;
 
     progress(MESG_FORMATTING);
 
-    if (p->start_sect != 1 || p->end_sect != dinfo.num_sects) {
+    /*if (p->start_sect != 1 || p->end_sect != dinfo.num_sects) {
         progress(ERROR_FORMAT_FRACTION);
         return FAILED;
     }
@@ -116,123 +118,79 @@ int generic_format(struct part_long *p, int bbt_size, unsigned long *bbt)
     if (detected_os == SYS_WIN95) {
         progress(ERROR_FORMAT_WIN95);
         return FAILED;
+    }*/
+
+    if ((z = (char *)malloc(63 * SECT_SIZE)) == 0) {
+        show_error(ERROR_MALLOC);
+        return FAILED;
+    }
+    memset(z, 0, 63 * SECT_SIZE);
+
+
+    if ((z2 = (char *)malloc(63 * SECT_SIZE)) == 0) {
+        show_error(ERROR_MALLOC);
+        free(z);
+        return FAILED;
     }
 
     disk_lock(hd);
 
-    num_sect = dinfo.num_sects;
+    daddr.disk = dinfo.disk;
+    curr_sect = QUICK_BASE(p);
+    end_sect = curr_sect + p->num_sect - 1;
 
-    /* -----> now we handle special case for the first side */
+    /* we do not write across track boundaries, one track at a time */
+    sect_count = dinfo.num_sects - (curr_sect % dinfo.num_sects);
+    while (curr_sect <= end_sect) {
 
-    daddr.disk = hd;
-    daddr.sect = QUICK_BASE(p);
-    /* TODO convert to LBA
-    daddr.disk = hd;
-    daddr.cyl  = p->start_cyl;
-    daddr.head = p->start_head;
-    daddr.sect = 0;
-
-    memset(ftab, 0, 512);
-
-    for (sect = 0; sect < num_sect; sect++) {
-        daddr.sect = sect + 1;
-        if (disk_verify(&daddr, 1) == -1) {
-            if (bbt_size != -1) {
-                if (num_bad == bbt_size) {
-                    disk_unlock(hd);
-                    return FAILED;
-                }
-                bbt[num_bad] = base_sect;
-            }
-            num_bad++;
+        /* we do not want to go beyond end of partition */
+        if (end_sect - curr_sect + 1 < sect_count) {
+            sect_count = end_sect - curr_sect + 1;
         }
-        base_sect++;
-    }
 
-    for (sect = 0; sect < num_sect; sect++) {
-        daddr.sect = sect + 1;
-        disk_write(&daddr, ftab, 1);
-    } */
+        daddr.sect = curr_sect;
 
-    /* -----> end special case */
+        if (!(disk_write(&daddr, z, sect_count) >= 0
+            && disk_verify(&daddr, z2, sect_count) >= 0)) {
 
-    /*for (cyl = p->start_cyl; cyl <= p->end_cyl; cyl++) {
-        for (head = ((cyl == p->start_cyl) ? p->start_head + 1 : 0);
-             head < ((cyl == p->end_cyl) ? p->end_head : dinfo.num_heads);
-             head++) {
-            daddr.disk = hd;
-            daddr.cyl  = cyl;
-            daddr.head = head;
-            daddr.sect = 0;
+            /* if bad sectors detected inside track test which exactly
+               are bad */
+            for (sect = curr_sect; sect <= end_sect; sect++) {
+                daddr.sect = sect;
 
-            for (sect = 0; sect < num_sect; sect++) {
-                ftab[sect * 2 + 1] = sect + 1;
-            }
-
-            if (disk_format(&daddr, ftab) == -1) {
-                progress(ERROR_FORMAT_GEN);
-                disk_unlock(hd);
-                return FAILED;
-            }
-
-            for (sect = 0; sect < num_sect; sect++)
-                if (ftab[sect * 2] != 0)*/ /* is it a bad sector? */
-              /*  {
+                if (disk_verify(&daddr, z, sect_count) < 0) {
                     if (bbt_size != -1) {
                         if (num_bad == bbt_size) {
                             disk_unlock(hd);
+                            free(z);
+                            free(z2);
                             return FAILED;
                         }
-                        bbt[num_bad] = base_sect + sect;
+                        bbt[num_bad] = sect;
                     }
                     num_bad++;
                 }
-
-            base_sect += num_sect;
-
-            x = base_sect * 100 / p->num_sect;
-
-            sprintf(tmp, "%% %3d%%  Cylinder: %3d", x, cyl);
-            if (progress(tmp) == CANCEL) {
-                disk_unlock(hd);
-                return CANCEL;
             }
         }
-    } */
 
-    /* -----> now we handle special case for the last side */
+        curr_sect += sect_count;
+        total_done += sect_count;
+        percent = total_done * 100ull / p->num_sect;
 
-    /*daddr.disk = hd;
-    daddr.cyl  = p->end_cyl;
-    daddr.head = p->end_head;
-
-    memset(ftab, 0, 512);
-
-    for (sect = 0; sect < num_sect; sect++) {
-        daddr.sect = sect + 1;
-        if (disk_verify(&daddr, 1) == -1) {
-            if (bbt_size != -1) {
-                if (num_bad == bbt_size) {
-                    disk_unlock(hd);
-                    return FAILED;
-                }
-                bbt[num_bad] = base_sect + sect;
-            }
-            num_bad++;
+        sprintf(tmp, TEXT("%% %3d%% formatted"), percent);
+        if (progress(tmp) == CANCEL) {
+            disk_unlock(hd);
+            free(z);
+            free(z2);
+            return CANCEL;
         }
-    } 
 
-    for (sect = 0; sect < num_sect; sect++) {
-        daddr.sect = sect + 1;
-        disk_write(&daddr, ftab, 1);
-    } 
-
-    sprintf(tmp, "%% 100%%  Cylinder: %3d", p->end_cyl);
-    progress(tmp);*/
-
-    /* -----> end special case */
+        sect_count = dinfo.num_sects; /* next track */
+    }
 
     disk_unlock(hd);
+    free(z);
+    free(z2);
     return num_bad;
 } /* generic_format */
 
@@ -307,7 +265,7 @@ int generic_clean(struct part_long *p)
         total_done += sect_count;
         percent = total_done * 100ull / p->num_sect;
 
-        sprintf(tmp, "%% %3d%% cleaned", percent);
+        sprintf(tmp, TEXT("%% %3d%% cleaned"), percent);
         if (progress(tmp) == CANCEL) {
             disk_unlock(hd);
             free(z);
