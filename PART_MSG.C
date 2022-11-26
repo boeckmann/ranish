@@ -1,8 +1,8 @@
 #include "part.h"
 
      /* VERSION_DATE "2.37.05            June 10, 1998" */
-#define VERSION_DATE "2.90.02        built " __DATE__
-#define VERSION      "2.90.02"
+#define VERSION_DATE "2.90.03        built " __DATE__
+#define VERSION      "2.90.03"
 
 
 #ifdef LANG_de		/* German  */
