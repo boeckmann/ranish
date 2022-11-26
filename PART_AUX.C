@@ -61,7 +61,7 @@ void pack_part_tab(struct part_long *part, struct part_rec *part_rec, int n)
 
         /* check if partition is out of 1024/255/63 bounds */
         /* if that is the case adjust CHS values */
-        if ((num_sect > 0) && (start_sect >= CHS_MAX_SECT)) {
+        if ((num_sect > 0) && (part[i].start_cyl > 1023)) {
             part_rec[i].start_cylL = 0xFF;
             part_rec[i].start_sectCylH = 0xFF;
             part_rec[i].start_head = 0xFE;
@@ -73,7 +73,7 @@ void pack_part_tab(struct part_long *part, struct part_rec *part_rec, int n)
             part_rec[i].start_head = part[i].start_head;            
         }
 
-        if ((num_sect > 0) && (end_sect >= CHS_MAX_SECT)) {
+        if ((num_sect > 0) && (part[i].end_cyl > 1023)) {
             part_rec[i].end_cylL = 0xFF;
             part_rec[i].end_sectCylH = 0xFF;
             part_rec[i].end_head = 0xFE;
@@ -118,30 +118,35 @@ void unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
         part[i].active = (part_rec[i].boot_flag == 0) ? 0 : 1;
         part[i].os_id = part_rec[i].os_id << 8;
 
+        part[i].start_cyl = part_rec[i].start_cylL |
+                            ((part_rec[i].start_sectCylH & 0xc0) << 2);
+        part[i].start_head = part_rec[i].start_head;
+        part[i].start_sect = part_rec[i].start_sectCylH & 0x3f; 
+
+        part[i].end_cyl =
+            part_rec[i].end_cylL | ((part_rec[i].end_sectCylH & 0xc0) << 2);
+        part[i].end_head = part_rec[i].end_head;
+        part[i].end_sect = part_rec[i].end_sectCylH & 0x3f;
+
         if (num_sect > 0) {
             /* start is out of CHS bounds */
-            if (start_sect >= CHS_MAX_SECT) {
+            if (start_sect != ABS_REL_SECT(&part[i]) &&
+                    (part[i].start_cyl == 1023) &&
+                    (part[i].start_sect == 63) &&
+                    (part[i].start_head >= 254)) {
                 part[i].start_cyl = CYL(start_sect);
                 part[i].start_head = HEAD(start_sect);
                 part[i].start_sect = SECT(start_sect);
 
-            } else {
-                part[i].start_cyl = part_rec[i].start_cylL |
-                                    ((part_rec[i].start_sectCylH & 0xc0) << 2);
-                part[i].start_head = part_rec[i].start_head;
-                part[i].start_sect = part_rec[i].start_sectCylH & 0x3f;            
-            }
+            } 
 
-            if (end_sect >= CHS_MAX_SECT) {
+            if (end_sect != (ABS_END_SECT(&part[i])) &&
+                    (part[i].end_cyl == 1023) &&
+                    (part[i].end_sect == 63) &&
+                    (part[i].end_head >= 254)) {
                 part[i].end_cyl = CYL(end_sect);
                 part[i].end_head = HEAD(end_sect);
                 part[i].end_sect = SECT(end_sect);
-            }
-            else {
-                part[i].end_cyl =
-                    part_rec[i].end_cylL | ((part_rec[i].end_sectCylH & 0xc0) << 2);
-                part[i].end_head = part_rec[i].end_head;
-                part[i].end_sect = part_rec[i].end_sectCylH & 0x3f;            
             }
         }
         else {

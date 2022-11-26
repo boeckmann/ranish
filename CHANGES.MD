@@ -1,5 +1,11 @@
 # Change Log
 
+## Version 2.90.04 alpha
+### Fixes
+ * Fix value wrap-around if disk is larger than 2TiB. Set instead to 2TiB.
+ * Fix sprintf format specifier error
+ * Fix CHS<->LBA mapping correction for head count != 255
+
 ## Version 2.90.03 alpha
 ### Enhancements
  * Implement LBA disk access - part.exe for now
