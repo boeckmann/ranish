@@ -19,6 +19,8 @@
 
 #define EMP_SIZE 44
 
+#define TEXT(x) x
+
 _Packed struct part_rec
 {
     unsigned char boot_flag;
@@ -352,13 +354,14 @@ struct os_desc os_desc[] = {
     {0x0100, "DOS FAT-12", 0, setup_fat, format_fat, print_fat},
     {0x0200, "XENIX root file system", 0, 0, 0, 0},
     {0x0300, "XENIX /usr file system", 0, 0, 0, 0},
-    {0x0400, "DOS FAT-16 (up to 32M)", 0, setup_fat, format_fat, print_fat},
+    {0x0400, "DOS FAT-16 (32M)", 0, setup_fat, format_fat, print_fat},
     {0x0500, "DOS Extended", 1, setup_mbr, format_embr, print_embr},
-    {0x0600, "DOS FAT-16 (up to 2G)", 1, setup_fat, format_fat, print_fat},
+    {0x0600, "DOS FAT-16", 1, setup_fat, format_fat, print_fat},
     {0x0700, "Windows NT NTFS", 1, 0, 0, 0},
     {0x0701, "QNX", 0, 0, 0, 0},
     {0x0702, "OS/2 HPFS", 0, 0, 0, 0},
     {0x0703, "Advanced Unix", 0, 0, 0, 0},
+    {0x0704, "ExFAT", 0, 0, 0, 0},    
     {0x0800, "OS/2 (v1.0-1.3 only)", 0, 0, 0, 0},
     {0x0801, "AIX bootable partition", 0, 0, 0, 0},
     {0x0802, "Commodore DOS", 0, 0, 0, 0},
@@ -369,15 +372,15 @@ struct os_desc os_desc[] = {
     {0x0A01, "OPUS", 0, 0, 0, 0},
     {0x0A02, "Coherent swap partition", 0, 0, 0, 0},
     {0x0B00, "Windows 95 FAT-32", 1, setup_fat32, format_fat32, print_fat32},
-    {0x0C00, "Windows 95 FAT-32 (LBA)", 0, 0, 0, print_fat32},
-    {0x0E00, "LBA VFAT (BIGDOS/FAT16)", 0, 0, 0, print_fat},
-    {0x0F00, "LBA VFAT (DOS Extended)", 0, 0, 0, print_embr},
+    {0x0C00, "Windows 95 FAT-32 LBA", 0, 0, 0, print_fat32},
+    {0x0E00, "DOS FAT-16 LBA", 0, 0, 0, print_fat},
+    {0x0F00, "DOS Extended LBA", 1, setup_mbr, format_embr, print_embr},
     {0x1000, "OPUS", 0, 0, 0, 0},
     {0x1100, "Hidden DOS FAT-12", 0, setup_fat, format_fat, print_fat},
     {0x1200, "Compaq Diagnostics", 0, 0, 0, 0},
     {0x1300, "Reliable Systems FTFS", 0, 0, 0, 0},
     {0x1400, "Hidden DOS FAT-16 (32M)", 0, setup_fat, format_fat, print_fat},
-    {0x1600, "Hidden DOS FAT-16 (<2G)", 1, setup_fat, format_fat, print_fat},
+    {0x1600, "Hidden DOS FAT-16", 1, setup_fat, format_fat, print_fat},
     {0x1700, "Hidden Windows NT NTFS", 1, 0, 0, 0},
     {0x1800, "AST Windows swap file", 0, 0, 0, 0},
     {0x1900, "Willowtech Photon coS", 0, 0, 0, 0},
@@ -389,7 +392,7 @@ struct os_desc os_desc[] = {
      print_fat32},
     {0x1C00, "Hidden LBA FAT-32", 0, 0, 0, print_fat32},
     {0x1E00, "Hidden LBA DOS FAT-16", 0, 0, 0, print_fat},
-    {0x1F00, "Hidden LBA DOS Extended", 0, 0, 0, print_embr},
+    {0x1F00, "Hidden LBA DOS Extended", 0, setup_mbr, format_embr, print_embr},
     {0x2000, "Willowsoft OFS1", 0, 0, 0, 0},
     {0x2100, "-- reserved --", 0, 0, 0, 0},
     {0x2300, "-- reserved --", 0, 0, 0, 0},

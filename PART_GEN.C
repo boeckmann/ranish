@@ -257,8 +257,9 @@ int generic_clean(struct part_long *p)
 {
     char *z, tmp[90];
     struct disk_addr daddr;
+    unsigned short percent;
     unsigned long total_done = 0;
-    int cyl, head, s_sect, e_sect, num_sect, x, hd = dinfo.disk;
+    unsigned long curr_sect, end_sect, sect_count;
 
     if ((z = (char *)malloc(63 * SECT_SIZE)) == 0) {
         show_error(ERROR_MALLOC);
@@ -271,41 +272,42 @@ int generic_clean(struct part_long *p)
 
     disk_lock(hd);
 
-    /* TODO: convert to LBA
-    for (cyl = p->start_cyl; cyl <= p->end_cyl; cyl++) {
-        for (head = ((cyl == p->start_cyl) ? p->start_head : 0);
-             head < ((cyl == p->end_cyl) ? p->end_head + 1 : dinfo.num_heads);
-             head++) {
-            daddr.disk = hd;
-            daddr.cyl  = cyl;
-            daddr.head = head;
+    daddr.disk = dinfo.disk;
+    curr_sect = QUICK_BASE(p);
+    end_sect = curr_sect + p->num_sect - 1;
 
-            s_sect = (cyl == p->start_cyl && head == p->start_head)
-                         ? p->start_sect
-                         : 1;
-            e_sect = (cyl == p->end_cyl && head == p->end_head)
-                         ? p->end_sect
-                         : dinfo.num_sects;
+    /* we do not write across track boundaries, one track at a time */
+    sect_count = dinfo.num_sects - (curr_sect % dinfo.num_sects);
+    while (curr_sect < end_sect) {
 
-            daddr.sect = s_sect;
-            num_sect   = e_sect - s_sect + 1;
-
-            disk_write(&daddr, z, num_sect);
-
-            total_done += num_sect;
-
-            x = total_done * 100 / p->num_sect;
-
-            sprintf(tmp, "%% %3d%%  Cylinder: %3d", x, cyl);
-            if (progress(tmp) == CANCEL) {
-                disk_unlock(hd);
-                free(z);
-                return CANCEL;
-            }
+        if (end_sect - curr_sect < sect_count) {
+            sect_count = end_sect - curr_sect;
         }
+
+        daddr.sect = curr_sect;
+        if (disk_write(&daddr, z, sect_count) < 0) {
+            show_error(TEXT("disk_write returned failure"));
+            disk_unlock(hd);
+            free(z);
+            return FAILED;            
+        }
+
+        curr_sect += sect_count;
+        total_done += sect_count;
+        percent = total_done * 100ull / p->num_sect;
+
+        sprintf(tmp, "%% %3d%% cleaned", percent);
+        if (progress(tmp) == CANCEL) {
+            disk_unlock(hd);
+            free(z);
+            return CANCEL;
+        }
+
+        sect_count = dinfo.num_sects;
     }
-    */
+
     disk_unlock(hd);
     free(z);
     return OK;
+
 } /* generic_clean */
