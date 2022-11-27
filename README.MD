@@ -16,6 +16,8 @@ Assember. The original version was targeted at Turbo C / Turbo Assembler.
 
 
 ## Large disk support
+*The compact and advanced boot managers are not yet adapted to use LBA.*
+
 In contrast to version 2.37.99 the trunk version of Ranish contains
 experimental support for LBA and disk sizes up to 2 TiB if the BIOS provides
 extended INT13 functions. That feature is enabled by default. If you encounter
@@ -49,8 +51,6 @@ write sensible CHS entries to the MBR. In these cases Ranish warns about
 inconsistencies. You may ignore these inconsistencies if you did not encounter
 any problems before. Ranish fixes these inconsistencies when editing
 partitions.
-
-*The compact and advanced boot managers are not yet adapted to use LBA.*
 
 ## Minimum System Requirements
 These are the minimum requirements for the trunk version of Ranish. It may
