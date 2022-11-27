@@ -20,13 +20,14 @@ Assember. The original version was targeted at Turbo C / Turbo Assembler.
 
 In contrast to version 2.37.99 the trunk version of Ranish contains
 experimental support for LBA and disk sizes up to 2 TiB if the BIOS provides
-extended INT13 functions. That feature is enabled by default. If you encounter
+extended INT13 functions. This feature is enabled by default. If you encounter
 issues please file a bug report. To disable large disk support and revert to
 standard INT13 BIOS functions run the partition manager with `-x` as a command
 line argument.
 
 Currently the following virtual CHS geometry is used when working in LBA mode.
-The CHS geometry reported by the BIOS is ignored.
+The CHS geometry reported by the BIOS is ignored. Setting a custom CHS
+geometry is not supported yet.
 
 ```
          Size             Sect Heads
@@ -43,7 +44,7 @@ values can not be properly stored to MBR. In such a case, Ranish stores a
 special CHS value indicating this condition.
 
 At runtime, to do size calculations, Ranish can handle cylinder values greater
-that 1024 based on the virtual disk geometry given above.
+than 1024 based on the virtual disk geometry given above.
 
 ### Compatibility with other tools
 Many tools, when editing partitions beyond the 8064MiB limit, do not care to
