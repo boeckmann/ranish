@@ -17,17 +17,14 @@ Assember. The original version was targeted at Turbo C / Turbo Assembler.
 
 ## Large disk support
 In contrast to version 2.37.99 the trunk version of Ranish contains
-experimental support for LBA and disks larger than 8 GiB, which is enabled
-by default. If you encounter issues please file a bug report.
+experimental support for LBA and disk sizes up to 2 TiB if the BIOS provides
+extended INT13 functions. That feature is enabled by default. If you encounter
+issues please file a bug report. To disable large disk support and revert to
+standard INT13 BIOS functions run the partition manager with `-x` as a command
+line argument.
 
-To disable large disk support and revert to standard INT13 BIOS functions
-run the partition manager with `-x` as an command line argument.
-
-The compact and advanced boot managers are not yet adapted to use LBA.
-
-The following virtual CHS table is used when in LBA mode. It is analog
-to what BIOS uses when performing assisted LBA. The virtual cylinder in
-LBA mode may be larger than 1023. 
+Currently the following virtual CHS geometry is used when working in LBA mode.
+The CHS geometry reported by the BIOS is ignored.
 
 ```
          Size             Sect Heads
@@ -37,6 +34,23 @@ LBA mode may be larger than 1023.
 2016 MiB < X <= 4032 MiB   63  128
 4032 MiB < X               63  255
 ```
+
+The maximum cylinder count which can be stored to MBR is 1024, resultung in
+8064MiB addressable disk space. For partitions exceeding that limit the CHS
+values can not be properly stored to MBR. In such a case, Ranish stores a
+special CHS value indicating this condition.
+
+At runtime, to do size calculations, Ranish can handle cylinder values greater
+that 1024 based on the virtual disk geometry given above.
+
+### Compatibility with other tools
+Many tools, when editing partitions beyond the 8064MiB limit, do not care to
+write sensible CHS entries to the MBR. In these cases Ranish warns about
+inconsistencies. You may ignore these inconsistencies if you did not encounter
+any problems before. Ranish fixes these inconsistencies when editing
+partitions.
+
+*The compact and advanced boot managers are not yet adapted to use LBA.*
 
 ## Minimum System Requirements
 These are the minimum requirements for the trunk version of Ranish. It may
