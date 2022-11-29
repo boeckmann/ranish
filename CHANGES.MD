@@ -1,5 +1,12 @@
 # Change Log
 
+## Version 2.90.05 alpha
+### Enhancements
+ * Allow using a custom CHS geometry given as command line argument `-g cyls,heads,sects`. If cyls=0, it gets calculated from disk size, number of heads and sectors per track.
+
+### Changes
+ * Only use standard CHS geometry in LBA mode if BIOS provided geometry is obviously wrong.
+
 ## Version 2.90.04 alpha
 ### Enhancements
  * Implement virtual CHS geometry in accordance to BIOS assisted LBA instead of relying on info given by BIOS INT13,2 when in LBA mode.

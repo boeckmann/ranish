@@ -2,6 +2,10 @@
 
 struct disk_info dinfo;
 
+unsigned long force_num_cyls = 0;
+unsigned short force_num_heads = 0;
+unsigned short force_num_sects = 0;
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -36,35 +40,55 @@ int get_disk_info(int hd, struct disk_info *di, char *buf_4096)
 
 	if ((result = _get_disk_info(hd, di, buf_4096)) == -1) return result;
 
+	if (force_num_sects) {
+		di->num_sects = force_num_sects;
+	}
+	if (force_num_heads) {
+		di->num_heads = force_num_heads;		
+	}
+	if (force_num_cyls) {
+		di->num_cyls = force_num_cyls;
+	}
+	
 	if (di->lba) {
 		/* comment out to force disk to 2TB size for testing */
 		/* di->total_sects = 0xffffffff; */
 
-		/* calculate virtual CHS value */
-		if (di->total_sects > 63ul * 128ul * 1024ul) {
-			di->num_heads = 255;
-		}
-		else if (di->total_sects > 63ul * 128ul * 1024ul) {
-			di->num_heads = 128;
-		}
-		else if (di->total_sects > 63ul * 32ul * 1024ul) {
-			di->num_heads = 64;
-		}
-		else if (di->total_sects > 63ul * 16ul * 1024ul) {
-			di->num_heads = 32;
-		}
-		else {
-			di->num_heads = 16;			
-		}
-
-		di->sect_per_cyl = di->num_heads * di->num_sects;
-
-		di->num_cyls = di->total_sects / di->sect_per_cyl;
-		if (di->total_sects % di->sect_per_cyl) {
-			di->num_cyls++;
+		if ((di->num_heads <= 16) && 
+			(di->total_sects > 63ul * 16ul * 1024ul) &&
+			(force_num_heads == 0)) {
+			/* calculate virtual CHS value */
+			if (di->total_sects > 63ul * 128ul * 1024ul) {
+				di->num_heads = 255;
+			}
+			else if (di->total_sects > 63ul * 128ul * 1024ul) {
+				di->num_heads = 128;
+			}
+			else if (di->total_sects > 63ul * 32ul * 1024ul) {
+				di->num_heads = 64;
+			}
+			else if (di->total_sects > 63ul * 16ul * 1024ul) {
+				di->num_heads = 32;
+			}
+			else {
+				di->num_heads = 16;			
+			}			
 		}
 	}
+	
+	if (di->lba || force_num_heads || force_num_sects) {
+		di->sect_per_cyl = di->num_heads * di->num_sects;
 
+		/* recalculate cylinder count based on total sectors and
+		   sectors per cylinder */
+		if (!force_num_cyls) {
+			di->num_cyls = di->total_sects / di->sect_per_cyl;
+			if (di->total_sects % di->sect_per_cyl) {
+				di->num_cyls++;
+			}	
+		}
+	}
+	
 	return result;
 }
 

@@ -8,9 +8,8 @@ int hd, select_target, mode, quiet;
 void main(int argc, char **argv)
 {
     int i;
+    unsigned cyls,heads,sects;
     hd = 0x80;
-
-    printf("sizeof disk_addr: %d\n", sizeof(struct disk_addr));
 
     set_messages();
 
@@ -25,6 +24,19 @@ void main(int argc, char **argv)
             if (i < 1 || i > 16)
                 usage();
             hd += i - 1;
+            argc -= 2;
+            argv += 2;
+        }
+        else if (argv[0][1] == 'G' || argv[0][1] == 'g' && argc > 1) {
+            if (sscanf(argv[1], "%u,%u,%u", &cyls, &heads, &sects) != 3 ||
+                heads > 255 || sects > 63) {
+                fprintf(stderr,
+                    "Invalid CHS geometry given.\n");
+                exit(1);
+            }
+            force_num_sects = sects;
+            force_num_heads = heads;
+            force_num_cyls = cyls;
             argc -= 2;
             argv += 2;
         }

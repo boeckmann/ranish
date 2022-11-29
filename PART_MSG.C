@@ -1,8 +1,8 @@
 #include "part.h"
 
      /* VERSION_DATE "2.37.05            June 10, 1998" */
-#define VERSION_DATE "2.90.04        built " __DATE__
-#define VERSION      "2.90.04"
+#define VERSION_DATE "2.90.05        built " __DATE__
+#define VERSION      "2.90.05"
 
 
 #ifdef LANG_de		/* German  */
@@ -1179,7 +1179,12 @@ en( HELP_CMD_LINE =
 
 "Ranish Partition Manager    Version "VERSION"\n\n"
 
-"Usage: part [-q] [-d disk] [-command ...]\n\n"
+"Usage: part [-x] [-q] [-d disk] [-g cyls,heads,sects] [-command ...]\n"
+"            You may disable LBA mode in case of problems with parameter -x\n\n"
+
+"            To enforce a custom CHS disk geometry use parameter -g\n"
+"            If cyls=0, it will be calculated from heads and sects\n\n"
+
 
 " part          - Interactive mode\n"
 " part -i       - Print IDE disk info\n"

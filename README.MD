@@ -25,10 +25,11 @@ issues please file a bug report. To disable large disk support and revert to
 standard INT13 BIOS functions run the partition manager with `-x` as a command
 line argument.
 
-Currently the following virtual CHS geometry is used when working in LBA mode.
-The CHS geometry reported by the BIOS is ignored. Setting a custom CHS
-geometry is not supported yet.
+Currently Ranish uses a standardized virtual CHS geometry if the geometry the
+BIOS provides is obviously wrong. It is obviously wrong if the head count is
+less than or equal to 16 while the disk is larger 504 MB.
 
+The virtual CHS geometry used is:
 ```
          Size             Sect Heads
            X <=  504 MiB   63  16 
@@ -38,13 +39,20 @@ geometry is not supported yet.
 4032 MiB < X               63  255
 ```
 
+You may force a disk geometry by giving it explicitly at command line by
+parameter `-g <cyls>,<heads>,<sects>`. Set the cylinder count to 0 to let
+Ranish calculate the total cylinders based on the number of heads and sectors
+given. For example, `-g 0,254,63` forces Ranish to use 254 heads and 63 sectors
+per track while calculating the cylinder count.
+
 The maximum cylinder count which can be stored to MBR is 1024, resultung in
 8064MiB addressable disk space. For partitions exceeding that limit the CHS
 values can not be properly stored to MBR. In such a case, Ranish stores a
 special CHS value indicating this condition.
 
 At runtime, to do size calculations, Ranish can handle cylinder values greater
-than 1024 based on the virtual disk geometry given above.
+than 1024 based on the virtual disk geometry given above and holds the LBA and
+CHS numbers in sync.
 
 ### Compatibility with other tools
 Many tools, when editing partitions beyond the 8064MiB limit, do not care to
