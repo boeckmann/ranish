@@ -290,7 +290,7 @@ int setup_mbr(struct part_long *p)
                 if (row >= 4)
                     row = 0;
                 data_size = SECT_SIZE;
-                unpack_part_tab(mbr->part_rec, part, num_rows, p);
+                warn = unpack_part_tab(mbr->part_rec, part, num_rows, p);
             }
 
             valid = validate_table(part, num_rows, p);

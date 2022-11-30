@@ -284,7 +284,7 @@ char *sprintf_partrec(char *tmp, struct part_long *, int n, int view);
 void determine_os_num(struct part_long *);
 
 void pack_part_tab(struct part_long *part, struct part_rec *part_rec, int n);
-void unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
+char * unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
                      struct part_long *container);
 
 void pack_adv_part_tab(struct part_long *part, struct adv_part_rec *part_rec,
@@ -372,7 +372,7 @@ struct os_desc os_desc[] = {
     {0x0A01, "OPUS", 0, 0, 0, 0},
     {0x0A02, "Coherent swap partition", 0, 0, 0, 0},
     {0x0B00, "FAT-32", 1, setup_fat32, format_fat32, print_fat32},
-    {0x0C00, "FAT-32 LBA", 0, 0, 0, print_fat32},
+    {0x0C00, "FAT-32 LBA", 1, setup_fat32, format_fat32, print_fat32},
     {0x0E00, "FAT-16 LBA", 1, setup_fat, format_fat, print_fat},
     {0x0F00, "Extended LBA", 1, setup_mbr, format_embr, print_embr},
     {0x1000, "OPUS", 0, 0, 0, 0},
@@ -436,9 +436,9 @@ struct os_desc os_desc[] = {
     {0x8101, "Minix v1.4b+", 0, 0, 0, 0},
     {0x8102, "Mitac Adv Disk Manager", 0, 0, 0, 0},
     {0x8200, "Solaris x86", 1, 0, 0, 0},
-    {0x8201, "Linux Swap partition", 1, 0, 0, 0},
+    {0x8201, "Linux Swap", 1, 0, 0, 0},
     {0x8202, "Prime", 0, 0, 0, 0},
-    {0x8300, "Linux (ext2fs/xiafs)", 1, 0, 0, 0},
+    {0x8300, "Linux", 1, 0, 0, 0},
     {0x8400, "OS/2-renumbered FAT-16", 0, 0, 0, 0},
     {0x8500, "Linux Extended", 1, 0, 0, 0},
     {0x8600, "FAT16 volume/stripe set", 0, 0, 0, 0},

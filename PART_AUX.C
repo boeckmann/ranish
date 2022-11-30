@@ -87,8 +87,24 @@ void pack_part_tab(struct part_long *part, struct part_rec *part_rec, int n)
     }
 } /* pack_part_tab */
 
+static int is_lba_chs_marker(unsigned long cyl, unsigned int head, unsigned int sect)
+{
+    return (cyl == 1023) && (head >= 254) && (sect == 63);
+}
 
-void unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
+static int truncated_chs_equals_lba(unsigned long cyl,
+    unsigned int head,
+    unsigned int sect,
+    unsigned long lba_sect)
+{
+    return ((sect == SECT(lba_sect)) &&
+        (head == HEAD(lba_sect)) &&
+        (cyl == (CYL(lba_sect) % 1024)) &&
+        CYL(lba_sect) > 1023);
+    ;
+}
+
+char * unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
                      struct part_long *container)
 {
     int i;
@@ -96,6 +112,9 @@ void unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
     unsigned long start_sect;
     unsigned long num_sect;
     unsigned long end_sect;
+    int start_chs_marker, end_chs_marker;
+    int start_cyl_wrapped, end_cyl_wrapped;
+    char * message = NULL;
 
     for (i = 0; i < n; i++) {
         part[i].level = container->level + 1;
@@ -130,25 +149,52 @@ void unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
 
         if (num_sect > 0) {
             /* start is out of CHS bounds */
-            if (start_sect != ABS_REL_SECT(&part[i]) &&
-                    (part[i].start_cyl == 1023) &&
-                    (part[i].start_sect == 63) &&
-                    (part[i].start_head >= 254)) {
+            start_chs_marker =
+                start_sect != ABS_REL_SECT(&part[i]) &&
+                is_lba_chs_marker(
+                    part[i].start_cyl,
+                    part[i].start_head,
+                    part[i].start_sect);
+
+            end_chs_marker =
+                end_sect != ABS_REL_SECT(&part[i]) &&
+                is_lba_chs_marker(
+                    part[i].end_cyl,
+                    part[i].end_head,
+                    part[i].end_sect);
+
+            start_cyl_wrapped = truncated_chs_equals_lba(
+                part[i].start_cyl,
+                part[i].start_head,
+                part[i].start_sect,
+                start_sect);
+
+            end_cyl_wrapped = truncated_chs_equals_lba(
+                part[i].end_cyl,
+                part[i].end_head,
+                part[i].end_sect,
+                end_sect);
+
+            /* adjust CHS value if cylinder wrapped or LBA CHS marker found. */
+            if (start_chs_marker || start_cyl_wrapped) {
                 part[i].start_cyl = CYL(start_sect);
                 part[i].start_head = HEAD(start_sect);
                 part[i].start_sect = SECT(start_sect);
 
             } 
 
-            if (end_sect != (ABS_END_SECT(&part[i])) &&
-                    (part[i].end_cyl == 1023) &&
-                    (part[i].end_sect == 63) &&
-                    (part[i].end_head >= 254)) {
+            if (end_chs_marker || end_cyl_wrapped) {
                 part[i].end_cyl = CYL(end_sect);
                 part[i].end_head = HEAD(end_sect);
                 part[i].end_sect = SECT(end_sect);
             }
+
+            if (start_cyl_wrapped || end_cyl_wrapped) {
+                message = TEXT("CHS cylinder wrap-around detected."
+                    " Replaced by LBA marker on next save.");
+            }
         }
+
         else {
             part[i].start_cyl = 0;
             part[i].start_head = 0;
@@ -168,6 +214,8 @@ void unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
         determine_os_num(&part[i]);
 
     }
+
+    return message;
 } /* unpack_part_tab */
 
 void pack_adv_part_tab(struct part_long *part, struct adv_part_rec *part_rec,
