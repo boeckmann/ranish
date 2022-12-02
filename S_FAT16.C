@@ -552,7 +552,7 @@ int setup_fat(struct part_long *p)
     sprintf(tmp, " %u", dinfo.num_sects);
     write_string(DATA_COLOR, StX2 + 12, StY + 10, tmp);
 
-    sprintf(tmp, " %-9lu", p->rel_sect);
+    sprintf(tmp, " %-9lu", fat_calc_hidden_sect(p));
     write_string(DATA_COLOR, StX2 + 12, StY + 11, tmp);
 
     sprintf(tmp, " %-5u", (p->num_sect > 65535L) ? 0 : p->num_sect);
