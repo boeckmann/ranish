@@ -4,6 +4,10 @@
 ### Bug fixes
  * When formatting FAT-16 or FAT-32 partitions store absolute value for hidden sectors if partition type is LBA or partition is contained in an Extended LBA partition. In other cases relative sector count is stored to remain compatibility with MS-DOS / Windows format utility.
 
+### Enhancements
+ * Add the ability to erase partition data of any partition type via menu item. Previously there was no possibility eg. to erase the boot record of FAT partitions without changing the partition type to unused.
+ * Allow hiding / unhiding of partition types 0C and 0E
+
 ### Changes
  * Be more relaxed on LBA<->CHS mismatch. If head and sector number match the ones calculated from LBA number and the cylinder number matches the _wrapped-around one_ calculated from LBA then output a warning instead of considering the CHS value to be garbage.
 
