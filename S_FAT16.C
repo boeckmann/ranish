@@ -1,6 +1,9 @@
 #include "part.h"
 #include <time.h>
 
+/* defined in S_FAT32.C */
+unsigned long fat_calc_hidden_sect(struct part_long *p);
+
 _Packed struct boot_ms_dos
 {
     unsigned char jmp[3];      /* Must be 0xEB, 0x3C, 0x90		*/
@@ -179,7 +182,7 @@ int format_fat(struct part_long *p, char **argv)
     b->num_sects = dinfo.num_sects;
     b->num_sides = dinfo.num_heads;
 
-    b->hid_sects  = p->rel_sect;
+    b->hid_sects  = fat_calc_hidden_sect(p);
     b->total_sect = (u_num_sect < 65536L) ? u_num_sect : 0;
     b->big_total  = (u_num_sect < 65536L) ? 0 : u_num_sect;
 
@@ -376,7 +379,7 @@ int print_fat(struct part_long *p)
            dinfo.num_heads);
     printf("Hidden sectors prior to partition:  %-10s  %-10s\n",
            sprintf_long(tmp1, b->hid_sects),
-           sprintf_long(tmp2, p->rel_sect));
+           sprintf_long(tmp2, fat_calc_hidden_sect(p)));
     printf("      Big total number of sectors:  %-10s  %-10s\n",
            b->big_total == 0 ? "0" : sprintf_long(tmp1, b->big_total),
            (b->total_sect == 0 || p->num_sect > 65535L)
@@ -623,7 +626,7 @@ int setup_fat(struct part_long *p)
                      StY + 10,
                      tmp);
         sprintf(tmp, "%-9lu", b->hid_sects);
-        write_string((b->hid_sects == p->rel_sect) ? DATA_COLOR : INVAL_COLOR,
+        write_string((b->hid_sects == fat_calc_hidden_sect(p)) ? DATA_COLOR : INVAL_COLOR,
                      StX2,
                      StY + 11,
                      tmp);
@@ -775,7 +778,7 @@ int setup_fat(struct part_long *p)
             b->drive_num  = dinfo.disk;
             b->num_sides  = dinfo.num_heads;
             b->num_sects  = dinfo.num_sects;
-            b->hid_sects  = p->rel_sect;
+            b->hid_sects  = fat_calc_hidden_sect(p);
             b->total_sect = (p->num_sect < 65536L) ? p->num_sect : 0;
             b->big_total  = (p->num_sect < 65536L) ? 0 : p->num_sect;
             b->magic_num  = MBR_MAGIC_NUM;

@@ -30,7 +30,7 @@ _Packed struct boot_fat32
 
     unsigned long root_clust; /* First cluster in root		*/
 
-    unsigned short fs_sect_num; /* FS Sector number (1) ???		*/
+    unsigned short fs_info_sect_num; /* FS Sector number (1) ???		*/
     unsigned short bs_bak_sect; /* Boot sector backup (6)		*/
 
     unsigned char resrvd2[12]; /* Reserved				*/
@@ -68,6 +68,25 @@ _Packed struct boot_fat32
 
 #define MBR_MAGIC_NUM32 0xAA550000L
 
+unsigned long fat_calc_hidden_sect(struct part_long *p)
+{
+    struct part_long *q = p;
+    while (q) {
+        if (q->os_id == 0x0C00 ||
+            q->os_id == 0x0E00 ||
+            q->os_id == 0x0F00 ||
+            q->os_id == 0x1C00 ||
+            q->os_id == 0x1E00 ||
+            q->os_id == 0x1F00)
+        {
+            return p->rel_sect + p->container_base;
+        }
+
+        q = q->container;
+    }
+    return p->rel_sect;
+}
+
 int format_fat32(struct part_long *p, char **argv)
 {
     char *data_pool;
@@ -96,7 +115,7 @@ int format_fat32(struct part_long *p, char **argv)
     b->sect_size   = SECT_SIZE;
     b->res_sects   = 33;
     b->fat_copies  = 2;
-    b->fs_sect_num = 1;
+    b->fs_info_sect_num = 1;
     b->bs_bak_sect = 6;
     b->media_desc  = 0xF8;
     b->ext_signat  = 0x29;
@@ -183,7 +202,7 @@ int format_fat32(struct part_long *p, char **argv)
     b->track_size = dinfo.num_sects;
     b->num_sides  = dinfo.num_heads;
 
-    b->hid_sects = p->rel_sect;
+    b->hid_sects = fat_calc_hidden_sect(p);
     b->num_sects = p->num_sect;
 
     b->serial_num =
@@ -321,7 +340,7 @@ int print_fat32(struct part_long *p)
 
     printf("Hidden sectors prior to partition:  %-10s  %-10s\n",
            sprintf_long(tmp1, b->hid_sects),
-           sprintf_long(tmp2, p->rel_sect));
+           sprintf_long(tmp2, fat_calc_hidden_sect(p)));
     printf("          Total number of sectors:  %-10s  %-10s\n",
            sprintf_long(tmp1, b->num_sects),
            sprintf_long(tmp2, p->num_sect));
@@ -343,7 +362,7 @@ int print_fat32(struct part_long *p)
      unsigned char  fs_ver_maj;	/* File System Version (major)		*/
      unsigned short fs_ver_min	/* File System Version (minor)		*/
 
-     unsigned short fs_sect_num; /* FS Sector number (1) ???		*/
+     unsigned short fs_info_sect_num; /* FS Sector number (1) ???		*/
      unsigned short bs_bak_sect; /* Boot sector backup (6)		*/
 
      unsigned long  ext_sign2;	 /* Ext Boot Record Sign (0x41615252)	*/
@@ -503,7 +522,7 @@ int setup_fat32(struct part_long *p)
     sprintf(tmp, " %u", dinfo.num_sects);
     write_string(DATA_COLOR, StX2 + 12, StY + 10, tmp);
 
-    sprintf(tmp, " %-9lu", p->rel_sect);
+    sprintf(tmp, " %-9lu", fat_calc_hidden_sect(p));
     write_string(DATA_COLOR, StX2 + 12, StY + 11, tmp);
 
     sprintf(tmp, " %-9lu", p->num_sect);
@@ -574,7 +593,7 @@ int setup_fat32(struct part_long *p)
                      StY + 10,
                      tmp);
         sprintf(tmp, "%-9lu", b->hid_sects);
-        write_string((b->hid_sects == p->rel_sect) ? DATA_COLOR : INVAL_COLOR,
+        write_string((b->hid_sects == fat_calc_hidden_sect(p)) ? DATA_COLOR : INVAL_COLOR,
                      StX2,
                      StY + 11,
                      tmp);
@@ -712,7 +731,7 @@ int setup_fat32(struct part_long *p)
             b->drive_num = dinfo.disk;
             b->num_sides = dinfo.num_heads;
             b->num_sects = dinfo.num_sects;
-            b->hid_sects = p->rel_sect;
+            b->hid_sects = fat_calc_hidden_sect(p);
             b->num_sects = p->num_sect;
             b->magic_num = MBR_MAGIC_NUM32;
         }
