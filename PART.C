@@ -842,7 +842,7 @@ int setup_mbr(struct part_long *p)
             continue;
         }
 
-        if (ev.key == 'F' || ev.key == 'f' || CLICK(20, 11, 38)) /* Format */
+        if (ev.key == 'F' || ev.key == 'f' || CLICK(20, 11, 29)) /* Format */
         {
             int fstatus;
 
@@ -891,7 +891,7 @@ int setup_mbr(struct part_long *p)
             continue;
         }
 
-        if (ev.key == 'V' || ev.key == 'v' || CLICK(21, 11, 38)) /* Verify */
+        if (ev.key == 'V' || ev.key == 'v' || CLICK(21, 11, 32)) /* Verify */
         {
             int fstatus;
 
@@ -921,6 +921,46 @@ int setup_mbr(struct part_long *p)
             continue;
         }
 
+        if (ev.key == 'e' || ev.key == 'E' || CLICK(22, 11, 33))
+        {
+            int fstatus;
+
+            if (part[row].empty)
+                continue;
+
+            if (part[row].valid == 0) {
+                show_error(ERROR_FIX_FIRST);
+                continue;
+            }
+
+            if (part[row].inh_changed) {
+                mesg = MESG_NOT_SAVED;
+                continue;
+            }            
+
+            if (enter_string(
+                    4, hint_y, "Type \"yes\" to erase data", sizeof(tmp), tmp, NULL) == 0)
+                continue;
+
+            if (strcmp(tmp, "yes") != 0) {
+                mesg = TEXT("Erase canceled by user.");
+                continue;
+            }
+            
+            fstatus = generic_clean(&part[row]);
+
+            if (fstatus == OK)
+                mesg = TEXT("Erase completed.");
+            else if (fstatus == CANCEL)
+                mesg = TEXT("Erase canceled by user.");
+            else if (fstatus == FAILED)
+                show_error(TEXT("Erase failed."));
+
+            force_redraw_header = 1;
+            force_redraw_table  = 1;
+            force_redraw_menu   = 1;
+            continue;
+        }
         if (preview_mode == 1) {
             mesg = HINT_RETURN;
             continue;
