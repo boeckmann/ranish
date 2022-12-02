@@ -1194,11 +1194,13 @@ int setup_mbr(struct part_long *p)
             (ev.key == 'H' || ev.key == 'h' || CLICK(19, 11, 38))) { /* Hide */
             if (part[row].os_id == 0x0100 || part[row].os_id == 0x0400 ||
                 part[row].os_id == 0x0600 || part[row].os_id == 0x0700 ||
-                part[row].os_id == 0x0B00)
+                part[row].os_id == 0x0B00 || part[row].os_id == 0x0C00 ||
+                part[row].os_id == 0x0E00)
                 part[row].os_id += 0x1000;
             else if (part[row].os_id == 0x1100 || part[row].os_id == 0x1400 ||
                      part[row].os_id == 0x1600 || part[row].os_id == 0x1700 ||
-                     part[row].os_id == 0x1B00)
+                     part[row].os_id == 0x1B00 || part[row].os_id == 0x0C00 ||
+                     part[row].os_id == 0x1E00)
                 part[row].os_id -= 0x1000;
             else
                 part[row].os_id = OS_HIDDEN;
@@ -1318,7 +1320,8 @@ int setup_mbr(struct part_long *p)
                         part[i].os_id == 0x1600 || /* FAT-16 BIG */
                         part[i].os_id == 0x1700 || /* NTFS       */
                         part[i].os_id == 0x1B00 || /* FAT-32     */
-                        part[i].os_id == 0x1C00)   /* FAT-32 LBA */
+                        part[i].os_id == 0x1C00 || /* FAT-32 LBA */
+                        part[i].os_id == 0x1E00)   /* FAT-16 LBA */
                     {
                         part[i].os_id -=
                             0x1000; /* Unhiding hidden partitions */
@@ -1336,7 +1339,8 @@ int setup_mbr(struct part_long *p)
                          part[i].os_id == 0x0600 || /* FAT-16 BIG */
                          part[i].os_id == 0x0700 || /* NTFS       */
                          part[i].os_id == 0x0B00 || /* FAT-32     */
-                         part[i].os_id == 0x0C00))  /* FAT-32 LBA */
+                         part[i].os_id == 0x0C00 || /* FAT-32 LBA */
+                         part[i].os_id == 0x0E00))  /* FAT-16 LBA */
                     {
                         adv->menu[0].x.part.tag = n + 1;
                     }
@@ -1895,11 +1899,13 @@ void command_line(int argc, char **argv)
 
         if (part[i].os_id == 0x0100 || part[i].os_id == 0x0400 ||
             part[i].os_id == 0x0600 || part[i].os_id == 0x0700 ||
-            part[i].os_id == 0x0B00)
+            part[i].os_id == 0x0B00 || part[i].os_id == 0x0C00 ||
+            part[i].os_id == 0x0E00)
             part[i].os_id += 0x1000;
         else if (part[i].os_id == 0x1100 || part[i].os_id == 0x1400 ||
                  part[i].os_id == 0x1600 || part[i].os_id == 0x1700 ||
-                 part[i].os_id == 0x1B00)
+                 part[i].os_id == 0x1B00 || part[i].os_id == 0x1C00 ||
+                 part[i].os_id == 0x1C00)
             part[i].os_id -= 0x1000;
         else {
             fprintf(
