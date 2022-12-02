@@ -1,11 +1,20 @@
 # Change Log
 
+## Version 2.90.06 alpha
+### Bug fixes
+ * When formatting FAT-16 or FAT-32 partitions store absolute value for hidden sectors if partition type is LBA or partition is contained in an Extended LBA partition. In other cases relative sector count is stored to remain compatibility with MS-DOS / Windows format utility.
+
+### Changes
+ * Be more relaxed on LBA<->CHS mismatch. If head and sector number match the ones calculated from LBA number and the cylinder number matches the _wrapped-around one_ calculated from LBA then output a warning instead of considering the CHS value to be garbage.
+
+
 ## Version 2.90.05 alpha
 ### Enhancements
  * Allow using a custom CHS geometry given as command line argument `-g cyls,heads,sects`. If cyls=0, it gets calculated from disk size, number of heads and sectors per track.
 
 ### Changes
  * Only use standard CHS geometry in LBA mode if BIOS provided geometry is obviously wrong.
+
 
 ## Version 2.90.04 alpha
 ### Enhancements
@@ -15,6 +24,7 @@
 ### Fixes
  * Fix value wrap-around if disk is larger than 2TiB. Set instead to 2TiB.
  * Fix sprintf format specifier error
+
 
 ## Version 2.90.03 alpha
 ### Enhancements
@@ -28,14 +38,17 @@
 ### Changes
  * Do not use INT13,5 for partition formatting any more. It has no LBA equivalent.
 
+
 ## Version 2.90.02 alpha
 ### Fixes
  * Fix freeze / crash when help is opened a second time, caused by a memory invalidation.
  * Fix a bug that causes the scroll bar of help window to stay at the topmost position.
 
+
 ## Version 2.90.01 alpha
 ### Fixes
  * prevent IPL check sum corruption by advanced boot loader
+
 
 ## Version 2.90.00 alpha
 ### Fixes
@@ -51,8 +64,10 @@
  * Ported to Open Watcom C and Netwide Assembler.
  * Brought the source in a more readable shape.
 
+
 ## Version 2.37.99
  * Rebuilt the binaries of the original source with Borland C++ 3.1 and TASM 5.1.
+
 
 ## Version 2.37.11
  * This is the unmodified source of Mikhail Ranish's last public domain version of the software excluding the freeware binaries.
