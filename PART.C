@@ -1235,12 +1235,12 @@ int setup_mbr(struct part_long *p)
             if (part[row].os_id == 0x0100 || part[row].os_id == 0x0400 ||
                 part[row].os_id == 0x0600 || part[row].os_id == 0x0700 ||
                 part[row].os_id == 0x0B00 || part[row].os_id == 0x0C00 ||
-                part[row].os_id == 0x0E00)
+                part[row].os_id == 0x0E00 || part[row].os_id == 0x0F00)
                 part[row].os_id += 0x1000;
             else if (part[row].os_id == 0x1100 || part[row].os_id == 0x1400 ||
                      part[row].os_id == 0x1600 || part[row].os_id == 0x1700 ||
-                     part[row].os_id == 0x1B00 || part[row].os_id == 0x0C00 ||
-                     part[row].os_id == 0x1E00)
+                     part[row].os_id == 0x1B00 || part[row].os_id == 0x1C00 ||
+                     part[row].os_id == 0x1E00 || part[row].os_id == 0x1F00)
                 part[row].os_id -= 0x1000;
             else
                 part[row].os_id = OS_HIDDEN;
@@ -1940,12 +1940,12 @@ void command_line(int argc, char **argv)
         if (part[i].os_id == 0x0100 || part[i].os_id == 0x0400 ||
             part[i].os_id == 0x0600 || part[i].os_id == 0x0700 ||
             part[i].os_id == 0x0B00 || part[i].os_id == 0x0C00 ||
-            part[i].os_id == 0x0E00)
+            part[i].os_id == 0x0E00 || part[i].os_id == 0x0F00)
             part[i].os_id += 0x1000;
         else if (part[i].os_id == 0x1100 || part[i].os_id == 0x1400 ||
                  part[i].os_id == 0x1600 || part[i].os_id == 0x1700 ||
                  part[i].os_id == 0x1B00 || part[i].os_id == 0x1C00 ||
-                 part[i].os_id == 0x1C00)
+                 part[i].os_id == 0x1E00 || part[i].os_id == 0x1F00)
             part[i].os_id -= 0x1000;
         else {
             fprintf(
