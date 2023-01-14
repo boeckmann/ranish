@@ -1,5 +1,24 @@
 # Change Log
 
+## Version 2.90.08 alpha
+### Bug fixes
+ * Fix cluster size calculation in FAT format routines.
+ * Fix calculation of FAT table size in format routines.
+ * Fix sector number overflow in FAT format routines when crossing 2TiB barrier.
+ * Prevent user from formatting partitions with wrong FAT type leading to non-conformant file systems.
+
+### Changes
+ * Remove display of minimum and maximum size in FAT file system screen because it can take a long time to calculate and nobody knows what this really means (it means that one can change the size of the file system and partition entry without having to change the file system layout, i.e. the size of the FAT tables or performing defragmentation).
+
+## Version 2.90.07 alpha
+### Bug fixes
+
+### Enhancements
+ * Allow hiding and unhiding of partition type 0F.
+
+### Changes
+
+
 ## Version 2.90.06 alpha
 ### Bug fixes
  * When formatting FAT-16 or FAT-32 partitions store absolute value for hidden sectors if partition type is LBA or partition is contained in an Extended LBA partition. In other cases relative sector count is stored to remain compatibility with MS-DOS / Windows format utility.

@@ -42,6 +42,19 @@ _Packed struct boot_ms_dos
 
 #define FAT12_MAX_SIZE 6144   /* 4096 12-bit entries */
 
+/* according to Microsoft FAT specification */
+unsigned fat16_cluster_size(unsigned long sectors)
+{
+    if (sectors <= 8400) return 0;
+    else if (sectors <= 32680) return 2;
+    else if (sectors <= 262144) return 4;
+    else if (sectors <= 524288) return 8;
+    else if (sectors <= 1048576) return 16;
+    else if (sectors <= 2097152) return 32;
+    else if (sectors <= 4194304) return 64;
+    else return 128;
+}
+
 /*   0x01, "DOS FAT-12"			*/
 /*   0x04, "DOS FAT-16 (<=32Mb)"	*/
 /*   0x06, "BIGDOS FAT-16 (>=32Mb)"	*/
@@ -51,8 +64,9 @@ int format_fat(struct part_long *p, char **argv)
     char *data_pool;
     struct boot_ms_dos *b;
     unsigned short int *fat;
-    int i, j, k, wr_sect, ret_code, fat_size, sys_type, next_bad;
-    unsigned long l, num_clust, u_num_sect, x_num_sect, base_sect, *bbt;
+    int i, j, k, wr_sect, ret_code, sys_type, next_bad;
+    unsigned long num_clust, num_sect, base_sect, *bbt;
+    long fat_size;
 
     unsigned int num_bad    = 0;
     unsigned int clust_size = 4;
@@ -79,8 +93,7 @@ int format_fat(struct part_long *p, char **argv)
     memmove(b->label, "NO NAME    ", 11);
     b->magic_num = MBR_MAGIC_NUM;
 
-    u_num_sect = p->num_sect;
-    x_num_sect = p->num_sect;
+    num_sect = p->num_sect;
 
     while (*argv != 0) {
         if (_stricmp(*argv, "/destructive") == 0)
@@ -96,13 +109,6 @@ int format_fat(struct part_long *p, char **argv)
                 progress("^Invalid cluster size.");
                 goto failed;
             }
-        } else if (_strnicmp(*argv, "/x:", 3) == 0) {
-            if (_stricmp(*argv, "/x:disk") == 0)
-                l = dinfo.total_sects;
-            else
-                l = atol((*argv) + 3);
-            if (l > x_num_sect)
-                x_num_sect = l;
         } else if (_strnicmp(*argv, "/l:", 3) == 0) {
             strncpy(tmp, (*argv) + 3, 11);
             tmp[11] = 0;
@@ -118,51 +124,54 @@ int format_fat(struct part_long *p, char **argv)
         argv++;
     }
 
+    if (QUICK_BASE(p) > QUICK_BASE(p) + num_sect) {
+        progress("^Partition crosses 2TiB boundary. Refusing to format.");
+        goto failed;
+    }
+
     if (p->os_id == 0x0400 || p->os_id == 0x0600 || /* FAT16 */
         p->os_id == 0x1400 || p->os_id == 0x1600) {
-        l = 1 + 512 + ROOT_SIZE + 64L * MAX_CLUST16;
-        if (l < u_num_sect)
-            u_num_sect = l;
-        if (l < x_num_sect)
-            x_num_sect = l;
 
-        while (clust_size < 64) {
-            if (1 + 512 + ROOT_SIZE + (unsigned long)clust_size * MAX_CLUST16 >
-                x_num_sect)
-                break;
-            clust_size *= 2;
+        clust_size = fat16_cluster_size(num_sect);
+
+        if (clust_size == 0) {
+            progress("^FAT16 partition too small. Use FAT12 instead!");
+            goto failed;
         }
 
-        fat_size = (x_num_sect - ROOT_SIZE - 1 + 2 * clust_size) /
-                       (clust_size * 256 + 2) +
-                   1;
-        num_clust = (x_num_sect - ROOT_SIZE - 1 - 2 * fat_size) / (clust_size);
+        fat_size = ((num_sect - ROOT_SIZE - 1) + (clust_size * 256 + 2 - 1)) /
+                       (clust_size * 256 + 2);
 
+        num_clust = (num_sect - ROOT_SIZE - 1 - 2 * fat_size) / (clust_size);
+
+        if ((clust_size == 128) || (num_clust > MAX_CLUST16)) {
+            progress("^FAT16 partition too large. Use FAT32 instead!");
+            goto failed;
+        }
+        
         memmove(b->fs_id, "FAT16   ", 8);
 
         sys_type = 16;
     }
 
-    if (p->os_id == 0x0100 || p->os_id == 0x1100 ||
-        num_clust < MAX_CLUST12) /* FAT12 */
+    if (p->os_id == 0x0100 || p->os_id == 0x1100) /* FAT12 */
     {
-        l = 1 + 512 + ROOT_SIZE + 64L * MAX_CLUST12;
-        if (l < u_num_sect)
-            u_num_sect = l;
-        if (l < x_num_sect)
-            x_num_sect = l;
-
         while (clust_size < 64) {
             if (1 + 24 + ROOT_SIZE + (unsigned long)clust_size * MAX_CLUST12 >
-                x_num_sect)
+                num_sect)
                 break;
             clust_size *= 2;
         }
 
-        fat_size = (x_num_sect - ROOT_SIZE - 1 + 2 * clust_size) /
+        if (clust_size > 8) {
+            progress("^Partition is too big. Use FAT16 instead!");
+            goto failed;
+        }
+
+        fat_size = (num_sect - ROOT_SIZE - 1 + 2 * clust_size) /
                        ((long)clust_size * 512 * 2 / 3 + 2) +
                    1;
-        num_clust = (x_num_sect - ROOT_SIZE - 1 - 2 * fat_size) / (clust_size);
+        num_clust = (num_sect - ROOT_SIZE - 1 - 2 * fat_size) / (clust_size);
 
         memmove(b->fs_id, "FAT12   ", 8);
 
@@ -170,7 +179,7 @@ int format_fat(struct part_long *p, char **argv)
     }
 
     if (fat_size < 0 ||
-        1 + 2 * fat_size + ROOT_SIZE + clust_size > p->num_sect) {
+        1 + 2 * fat_size + ROOT_SIZE + clust_size > num_sect) {
         progress("^Partition is too small.");
         goto failed;
     }
@@ -183,8 +192,8 @@ int format_fat(struct part_long *p, char **argv)
     b->num_sides = dinfo.num_heads;
 
     b->hid_sects  = fat_calc_hidden_sect(p);
-    b->total_sect = (u_num_sect < 65536L) ? u_num_sect : 0;
-    b->big_total  = (u_num_sect < 65536L) ? 0 : u_num_sect;
+    b->total_sect = (num_sect < 65536L) ? num_sect : 0;
+    b->big_total  = (num_sect < 65536L) ? 0 : num_sect;
 
     b->serial_num =
         ((p->rel_sect << 16) + (p->num_sect * ((long)b % 451))) +
@@ -416,9 +425,9 @@ int print_fat(struct part_long *p)
 int setup_fat(struct part_long *p)
 {
     struct event ev;
-    int i, syst, act, pos, fatsz;
+    int i, syst, act, pos;
     char *tmp, *tmp1;
-    unsigned long n, l, lc, max_clust, min_clust, min_num_sect, max_num_sect;
+    unsigned long n, max_clust;
     struct boot_ms_dos *b, *b_orig,
         *fat_boot_code = (struct boot_ms_dos *)FAT_BOOT;
 
@@ -503,10 +512,16 @@ int setup_fat(struct part_long *p)
                  StX,
                  StY + 13,
                  "Big total number of sectors:               123456789");
+    write_string(TEXT_COLOR,
+                 StX,
+                 StY + 14,
+                 "   Total number of clusters:");
+    
+    /*
     write_string(TEXT_COLOR, StX, StY + 15, "     Minimum partition size:");
     write_string(TEXT_COLOR, StX, StY + 16, "     Current partition size:");
     write_string(TEXT_COLOR, StX, StY + 17, "     Maximum partition size:");
-
+    */
     sprintf(tmp, "%-.8s", b->sys_id);
     write_string(DATA_COLOR, StX2, StY + 1, tmp);
 
@@ -525,12 +540,12 @@ int setup_fat(struct part_long *p)
     sprintf(tmp, "%d", b->sect_size);
     write_string(DATA_COLOR, StX3, StY + 3, tmp);
 
+    
     sprintf(tmp,
-            "%-3d %s max clusters",
-            b->fat_size,
-            sprintf_long(tmp1, max_clust));
+            "%-3d",
+            b->fat_size);
     write_string(DATA_COLOR, StX2, StY + 4, tmp);
-
+    
     sprintf(tmp, "%d", b->num_fats);
     write_string(DATA_COLOR, StX3, StY + 4, tmp);
 
@@ -561,6 +576,7 @@ int setup_fat(struct part_long *p)
     sprintf(tmp, " %-9lu", (p->num_sect > 65535L) ? p->num_sect : 0);
     write_string(DATA_COLOR, StX2 + 12, StY + 13, tmp);
 
+    /*
     write_string(HINT_COLOR, StX2, StY + 16, "Reading FAT... ");
     move_cursor(StX2 + 14, StY + 16);
 
@@ -583,23 +599,23 @@ int setup_fat(struct part_long *p)
 
     min_num_sect = n + min_clust * b->clust_size;
     max_num_sect = n + max_clust * b->clust_size;
-
+    
     sprintf(tmp,
-            "%ld sectors = %s kbytes",
+            "%lu sectors = %s kbytes",
             min_num_sect,
             sprintf_long(tmp1, (min_num_sect) / 2));
     write_string(DATA_COLOR, StX2, StY + 15, tmp);
 
     sprintf(tmp,
-            "%ld sectors = %s kbytes",
+            "%lu sectors = %s kbytes",
             max_num_sect,
             sprintf_long(tmp1, (max_num_sect) / 2));
     write_string(DATA_COLOR, StX2, StY + 17, tmp);
 
     n = b->total_sect != 0 ? b->total_sect : b->big_total;
-    sprintf(tmp, "%ld sectors = %s kbytes", n, sprintf_long(tmp1, n / 2));
+    sprintf(tmp, "%lu sectors = %s kbytes", n, sprintf_long(tmp1, n / 2));
     write_string(DATA_COLOR, StX2, StY + 16, tmp);
-
+    */
     pos = 0;
     act = 0;
 
@@ -644,6 +660,11 @@ int setup_fat(struct part_long *p)
                      StX2,
                      StY + 13,
                      tmp);
+        sprintf(tmp, "%-9lu", 
+            (p->num_sect - b->res_sects - 2 * b->fat_size)
+             / b->clust_size);
+        write_string(DATA_COLOR, StX2, StY + 14, tmp);
+        
         sprintf(tmp, "%04X", b->magic_num);
         write_string((b->magic_num == MBR_MAGIC_NUM) ? DATA_COLOR
                                                      : INVAL_COLOR,
@@ -716,6 +737,7 @@ int setup_fat(struct part_long *p)
                            999999999L);
         /*   get_event(&ev,EV_KEY); */
 
+        /*
         n = b->total_sect != 0 ? b->total_sect : b->big_total;
         sprintf(tmp, "%ld sectors = %s kbytes", n, sprintf_long(tmp1, n / 2));
         clear_window(DATA_COLOR, StX2, StY + 16, 78 - StX2, 1);
@@ -724,7 +746,7 @@ int setup_fat(struct part_long *p)
                      StX2,
                      StY + 16,
                      tmp);
-
+        */
         p->changed = (memcmp(b, b_orig, SECT_SIZE) == 0) ? 0 : 1;
         if (p->changed == 0)
             write_string(HINT_COLOR, 15, 24, "F2");

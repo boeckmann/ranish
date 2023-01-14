@@ -232,7 +232,7 @@ void edit_str_field(struct event *ev, int ev_mask, int attr, int x, int y,
 void edit_int_field(struct event *ev, int ev_mask, int attr, int x, int y,
                     int field_len, unsigned long *n, unsigned long limit)
 {
-    int i;
+    unsigned i;
 
     while (1) {
         if (field_len > 0) {
@@ -265,8 +265,8 @@ void edit_int_field(struct event *ev, int ev_mask, int attr, int x, int y,
         } else if (ev->key >= '0' && ev->key <= '9') {
             i = ev->key - '0';
 
-            if (limit >= i && (*n) <= (limit - i) / 10)
-                (*n) = (*n) * 10 + i;
+            if (limit >= i && (*n) <= (limit - i) / 10u)
+                (*n) = (*n) * 10u + i;
         } else
             break;
 
@@ -974,7 +974,7 @@ int enter_string(int x, int y, char *prompt, int maxlen, char *str, char *help)
 
 void show_error(char *msg)
 {
-    int x, y = 12, w, h = 4, pressed;
+    int x, y = 8, w, h = 4, pressed;
     struct event ev;
     static char buf[4 * 80 * 2];
 
