@@ -10,7 +10,7 @@ _Packed struct boot_fat32
 
     unsigned short sect_size; /* Sector size in bytes (512)		*/
     unsigned char clust_size; /* Sectors per cluster (1,2,4,...,128)	*/
-    unsigned short res_sects; /* Reserved sectors at the beginning (33)*/
+    unsigned short res_sects; /* Reserved sectors at the beginning (32)*/
     unsigned char fat_copies; /* Number of FAT copies (2)		*/
 
     unsigned char resrvd1[4]; /* Reserved				*/
@@ -60,6 +60,26 @@ _Packed struct boot_fat32
     unsigned long magic_num3;   /* Ext Boot Record Sign (0xAA550000)	*/
 };
 
+_Packed struct dirent_fat32
+{
+    unsigned char name[11];
+    unsigned char attr;
+    unsigned char nt_res;
+    unsigned char crt_time_tenth;
+    unsigned int  crt_time;
+    unsigned int  crt_date;
+    unsigned int  lst_acc_date;
+    unsigned int  fst_clus_hi;
+    unsigned int  wrt_time;
+    unsigned int  wrt_date;
+    unsigned int  fst_clus_lo;
+    unsigned long file_size;
+};
+
+enum {
+    DIRENT_ATTR_VOL = 0x08
+};
+
 #define BBT_SIZE 128
 
 #define F_NORM  0
@@ -98,6 +118,81 @@ unsigned fat32_cluster_size(unsigned long sectors)
     else return 64;
 }
 
+unsigned long fat32_clust_to_sect(struct boot_fat32 *b, unsigned long clust)
+{
+    return b->res_sects + b->fat_copies * b->fat_size + (clust-2) * b->clust_size;
+}
+
+int fat32_read_clust(unsigned char * buf,
+    struct part_long *p, 
+    struct boot_fat32 *b,
+    unsigned long clust)
+{
+    int i;
+    unsigned long sect = fat32_clust_to_sect(b, clust);
+    if (clust < 2) return -1;
+
+    for (i = 0; i < b->clust_size; i++) {
+        if (disk_read_rel(p, sect+i, buf, 1) == -1) return -1;
+        buf += SECT_SIZE;
+    }
+    return 0;
+}
+
+int fat32_write_clust(unsigned char * buf,
+    struct part_long *p, 
+    struct boot_fat32 *b,
+    unsigned long clust)
+{
+    int i;
+    unsigned long sect = fat32_clust_to_sect(b, clust);
+    if (clust < 2) return -1;
+
+    for (i = 0; i < b->clust_size; i++) {
+        if (disk_write_rel(p, sect+i, buf, 1) == -1) return -1;
+        buf += SECT_SIZE;
+    }
+    return 0;
+}
+
+unsigned long fat32_next_clust(unsigned char *buf, struct boot_fat32 *b, unsigned long clust)
+{
+    return 0;
+}
+
+int fat32_update_label_file(struct part_long *p, struct boot_fat32 *b)
+{
+    unsigned char *buf;
+    struct dirent_fat32 *dirent;
+    unsigned long cluster;
+    int i;
+    unsigned entries_per_clust = b->clust_size * SECT_SIZE / sizeof(struct dirent_fat32);
+
+    buf = malloc(SECT_SIZE * b->clust_size);
+    if (buf == NULL) return -1;
+
+    cluster = b->root_clust;
+    if (fat32_read_clust(buf, p, b, cluster) == -1) goto failed;
+    dirent = (struct dirent_fat32 *)buf;
+    
+    for (i = 0; i < entries_per_clust; i++) {
+        if ((dirent->name[0] == 0) || ((dirent->attr & DIRENT_ATTR_VOL) != 0)) {  
+            dirent->attr |= DIRENT_ATTR_VOL;
+            memcpy(dirent->name, b->label, sizeof(b->label));
+            if (fat32_write_clust(buf, p, b, cluster) == -1) goto failed;
+            break;
+        }
+        dirent += 1;
+    }
+
+    free(buf);
+    return 0;
+
+failed:
+    free(buf);
+    return -1;
+}
+
 int format_fat32(struct part_long *p, char **argv)
 {
     char *data_pool;
@@ -112,16 +207,15 @@ int format_fat32(struct part_long *p, char **argv)
     unsigned long clust_size = 0;
     unsigned int form_type  = F_NORM;
 
-    if ((data_pool = malloc(SECT_SIZE * 3 + BBT_SIZE * sizeof(long))) == 0) {
+    if ((data_pool = malloc(SECT_SIZE * 5 + BBT_SIZE * sizeof(long))) == 0) {
         show_error(ERROR_MALLOC);
         return FAILED;
     }
+    b = (struct boot_fat32 *)(data_pool);
+    fat = (unsigned long int *)(data_pool + SECT_SIZE * 3);
+    bbt = (unsigned long int *)(data_pool + SECT_SIZE * 4);
 
-    b   = (struct boot_fat32 *)(data_pool);
-    fat = (unsigned long int *)(data_pool);
-    bbt = (unsigned long int *)(data_pool + SECT_SIZE * 3);
-
-    memset(b, 0, SECT_SIZE * 3);
+    memset(data_pool, 0, SECT_SIZE * 4);
 
     memmove(b->jmp, "\xEB\x58\x90", 3);
     memmove(b->sys_id, "MSWIN4.1", 8);
@@ -242,7 +336,7 @@ int format_fat32(struct part_long *p, char **argv)
 
     progress("^Initializing file system ...");
 
-    if (num_bad != 0 && bbt[0] < 33 + 2 * fat_size + 2 * clust_size) {
+    if (num_bad != 0 && bbt[0] < b->res_sects + 2 * fat_size + 2 * clust_size) {
         progress(
             "Beginning of the partition is unusable. Try to move it forward.");
         goto failed;
@@ -264,12 +358,12 @@ int format_fat32(struct part_long *p, char **argv)
 
     progress("~Writing FAT tables ...");
 
-    wr_sect = 33;
+    wr_sect = b->res_sects;
 
-    for (k = 0; k < 2; k++) /* Writing two copies of FAT16 */
+    for (k = 0; k < 2; k++) /* Writing two copies of FAT32 */
     {
         next_bad  = 0;
-        base_sect = 33 + 2 * fat_size + clust_size /*root*/;
+        base_sect = b->res_sects + b->fat_copies * fat_size + clust_size /*root*/;
 
         for (i = 0; i < fat_size; i++) {
             memset(fat, 0, 512);
@@ -297,7 +391,7 @@ int format_fat32(struct part_long *p, char **argv)
         }
     }
 
-    memset(fat, 0, 512);
+    memset(fat, 0, SECT_SIZE);
 
     progress("~Writing root directory ...");
 
@@ -306,6 +400,11 @@ int format_fat32(struct part_long *p, char **argv)
             progress("Error writing root directory.");
             goto failed;
         }
+
+    if (fat32_update_label_file(p, b) == -1) {
+        progress("Error writing volume label.");
+        goto failed;
+    }
 
     disk_unlock(dinfo.disk);
     free(data_pool);
@@ -407,8 +506,7 @@ int setup_fat32(struct part_long *p)
     int i, act, pos;
     char *tmp, *tmp1;
     struct boot_fat32 *b, *b_orig;
-    unsigned long n, l, lc, max_clust, min_clust, min_num_sect, max_num_sect,
-        fatsz;
+    unsigned long n, l, lc, fatsz;
 
     if ((tmp = malloc(7 * SECT_SIZE)) == 0) {
         show_error(ERROR_MALLOC);
@@ -426,14 +524,24 @@ int setup_fat32(struct part_long *p)
         return FAILED;
     }
 
+    if ((b->clust_size < 1) ||
+        (b->clust_size > 128) ||
+        (b->sect_size != 512) ||
+        (b->res_sects == 0)) {
+	   show_error("Partition seems not to be FAT formatted");
+	   free(tmp);
+	   return FAILED;
+    }
+
     memmove(b_orig, b, 3 * SECT_SIZE);
 
     clear_window(TEXT_COLOR, 2, 5, 78, 19);
     write_string(HINT_COLOR, 56, 24, "F5");
     write_string(MENU_COLOR, 58, 24, " - SetExp");
 
+    /*
     max_clust = ((unsigned long)SECT_SIZE * b->fat_size / 4u - 2u);
-
+    */
     write_string(TEXT_COLOR,
                  StX,
                  StY + 1,
@@ -566,6 +674,8 @@ int setup_fat32(struct part_long *p)
                     lc = l;
         }
     */
+
+    /*
     min_clust = (lc * 8 / 32 + (lc * 8 % 32 == 0 ? 0 : 1) - 2);
 
     n = b->res_sects + b->fat_copies * b->fat_size;
@@ -573,7 +683,7 @@ int setup_fat32(struct part_long *p)
     min_num_sect = n + min_clust * b->clust_size;
     max_num_sect = n + max_clust * b->clust_size;
 
-    /*
+    
     sprintf(tmp,
             "%lu sectors = %s KiB",
             min_num_sect,
@@ -697,8 +807,9 @@ int setup_fat32(struct part_long *p)
                            -1);
         /*   get_event(&ev,EV_KEY); */
 
-        n = b->num_sects;
         /*
+        n = b->num_sects;
+        
         sprintf(tmp, "%lu sectors = %s KiB", n, sprintf_long(tmp1, n / 2));
         clear_window(DATA_COLOR, StX2, StY + 16, 78 - StX2, 1);
         write_string((n >= min_num_sect && n <= max_num_sect) ? DATA_COLOR
@@ -746,8 +857,9 @@ int setup_fat32(struct part_long *p)
             disk_lock(dinfo.disk);
 
             if (disk_write_rel(p, 0, b, 3) == -1 ||
-                disk_write_rel(p, 6, b, 3) == -1) {
-                show_error("Error saving boot sector");
+                disk_write_rel(p, 6, b, 3) == -1 ||
+                fat32_update_label_file(p, b) == -1) {
+                show_error("Error saving boot sector or label file.");
             } else {
                 memmove(b_orig, b, 3 * SECT_SIZE);
             }
