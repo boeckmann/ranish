@@ -139,7 +139,7 @@ int format_fat(struct part_long *p, char **argv)
             goto failed;
         }
 
-        fat_size = ((num_sect - ROOT_SIZE - 1) + (clust_size * 256 + 2 - 1)) /
+        fat_size = ((unsigned long long)(num_sect - ROOT_SIZE - 1) + (clust_size * 256 + 2 - 1)) /
                        (clust_size * 256 + 2);
 
         num_clust = (num_sect - ROOT_SIZE - 1 - 2 * fat_size) / (clust_size);
@@ -445,6 +445,15 @@ int setup_fat(struct part_long *p)
         show_error("Error reading boot sector");
         free(tmp);
         return FAILED;
+    }
+
+    if ((b->clust_size < 1) ||
+        (b->clust_size > 128) ||
+    (b->sect_size != 512) ||
+    (b->res_sects == 0)) {
+       show_error("Partition seems not to be FAT formatted");
+       free(tmp);
+       return FAILED;
     }
 
     memmove(b_orig, b, SECT_SIZE);
