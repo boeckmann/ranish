@@ -1131,6 +1131,19 @@ int setup_mbr(struct part_long *p)
         {
             if (view == VIEW_ADV && part[row].os_id == OS_ADV)
                 continue;
+            
+            if (part[row].os_id == 0x0500 || part[row].os_id == 0x0F00 || 
+                part[row].os_id == 0x1F00) {
+               if (enter_string(
+                       4, hint_y, "This will delete all nested partitions. Type \"yes\"", sizeof(tmp), tmp, NULL) == 0)
+                   continue;
+
+               if (strcmp(tmp, "yes") != 0) {
+                   mesg = TEXT("Deletion canceled by user.");
+                   continue;
+               }
+            }
+
             part[row].empty      = 1;
             part[row].valid      = 0;
             part[row].os_id      = 0;
