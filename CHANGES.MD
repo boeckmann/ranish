@@ -1,5 +1,14 @@
 # Change Log
 
+## Version 2.90.09 alpha
+### Bug fixes
+ * Fixed a bug in FAT32 format routine introduced in 2.90.08 resulting from reducing the reserved sectors from 33 count to 32.
+ * Fix crash when showing FAT file system information for uninitialized file systems.
+ 
+### Enhancements
+ * Create Volume ID file when formatting FAT-32 file systems
+ * Inform users that all nested partitions are deleted when deleting extended partitions.
+
 ## Version 2.90.08 alpha
 ### Bug fixes
  * Fix cluster size calculation in FAT format routines.
