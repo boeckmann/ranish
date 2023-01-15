@@ -1055,7 +1055,7 @@ void redraw_menu(int view)
     write_string(HINT_COLOR, 11, 21, "V)");
     write_string(MENU_COLOR, 13, 21, MENU_VERIFY);
     write_string(HINT_COLOR, 11, 22, "E)");
-    write_string(MENU_COLOR, 13, 22, TEXT(" Erase partition data"));
+    write_string(MENU_COLOR, 13, 22, TEXT(" Erase partition content"));
 
     write_string(HINT_COLOR, 42, 20, "S)");
     write_string(MENU_COLOR, 44, 20, (view == VIEW_ADV) ? MENU_SAVE_ADV : MENU_SAVE_MBR);

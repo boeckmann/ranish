@@ -583,7 +583,7 @@ it( HINT_ADV    = "Spazio - modifica menu   Ins - seleziona tipo sistema  Enter 
 nl( HINT_ADV    = "Spatie - Menu bewerken   Ins - Systeem type sel.    Enter - Config.")
 cs( HINT_ADV    = "<mezera> - nab¡dka       <Ins> - volba soub. syst.  <Enter> - nastaven¡")
 
-en( HINT_INS    = "Space - toggle active    Ins - select system type   Enter - setup")
+en( HINT_INS    = "SPACE) toggle active  INS) set type  DEL) delete partition  RETURN) setup")
 se( HINT_INS    = "Space - „ndra aktiv      Ins - v„lj system typ      Enter - Konfigurera")
 sp( HINT_INS    = "Space - cambia activo    Ins - escoje tipo sistema  Enter - instalar")
 de( HINT_INS    = "Space - Startbar ein/aus Ins - Systemtyp w„hlen     Enter - Setup")
