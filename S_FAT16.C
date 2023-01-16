@@ -150,6 +150,7 @@ int format_fat(struct part_long *p, char **argv)
     }
 
     if (p->os_id == 0x0400 || p->os_id == 0x0600 || /* FAT16 */
+        p->os_id == 0x0e00 || p->os_id == 0x1e00 ||
         p->os_id == 0x1400 || p->os_id == 0x1600) {
 
         clust_size = fat16_cluster_size(num_sect);
