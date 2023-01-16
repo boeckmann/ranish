@@ -1,33 +1,10 @@
 #include "part.h"
+#include "fat.h"
 #include <time.h>
 
 /* defined in S_FAT32.C */
 unsigned long fat_calc_hidden_sect(struct part_long *p);
 
-_Packed struct boot_ms_dos
-{
-    unsigned char jmp[3];      /* Must be 0xEB, 0x3C, 0x90		*/
-    unsigned char sys_id[8];   /* Probably:   "MSDOS5.0"		*/
-    unsigned short sect_size;  /* Sector size in bytes (512)		*/
-    unsigned char clust_size;  /* Sectors per cluster (1,2,4,...,128)	*/
-    unsigned short res_sects;  /* Reserved sectors at the beginning	*/
-    unsigned char num_fats;    /* Number of FAT copies (1 or 2)	*/
-    unsigned short root_entr;  /* Root directory entries		*/
-    unsigned short total_sect; /* Total sectors (if less 64k)		*/
-    unsigned char media_desc;  /* Media descriptor byte (F8h for HD)	*/
-    unsigned short fat_size;   /* Sectors per fat			*/
-    unsigned short num_sects;  /* Sectors per track			*/
-    unsigned short num_sides;  /* Sides				*/
-    unsigned long hid_sects;   /* Special hidden sectors		*/
-    unsigned long big_total;   /* Big total number of sectors  	*/
-    unsigned short drive_num;  /* Drive number				*/
-    unsigned char ext_signat;  /* Extended Boot Record signature (29h)	*/
-    unsigned long serial_num;  /* Volume serial number			*/
-    unsigned char label[11];   /* Volume label				*/
-    unsigned char fs_id[8];    /* File system id			*/
-    unsigned char xcode[448];  /* Loader executable code		*/
-    unsigned short magic_num;  /* Magic number (Must be 0xAA55) 	*/
-};
 
 #define BBT_SIZE 128
 
@@ -36,7 +13,8 @@ _Packed struct boot_ms_dos
 #define F_DESTR 2
 
 #define ROOT_ENTR   (512)
-#define ROOT_SIZE   (ROOT_ENTR / 16)
+#define ROOT_ENTR_PER_SECT 512 / 32
+#define ROOT_SIZE   (ROOT_ENTR / ROOT_ENTR_PER_SECT)
 #define MAX_CLUST12 (4084)  /* Maximum number of clusters in FAT12 system */
 #define MAX_CLUST16 (65524) /* Maximum number of clusters in FAT16 system */
 
@@ -53,6 +31,48 @@ unsigned fat16_cluster_size(unsigned long sectors)
     else if (sectors <= 2097152) return 32;
     else if (sectors <= 4194304) return 64;
     else return 128;
+}
+
+int fat16_update_label_file(struct part_long *p, struct boot_ms_dos *b)
+{
+    unsigned char *buf;
+    struct dirent *dirent;
+    unsigned root_sect_cnt, j;
+    unsigned long start_sect, sect;
+
+    if ((buf = malloc(SECT_SIZE)) == NULL) return FAILED;
+
+    root_sect_cnt = b->root_entr / 16;
+    start_sect = b->res_sects + b->num_fats * b->fat_size;
+
+    for (sect = start_sect; sect < start_sect + root_sect_cnt; sect++)
+    {
+        if (disk_read_rel(p, sect, buf, 1) == FAILED) goto failed;
+        dirent = (struct dirent *)buf;
+
+        for (j = 0; j < DIRENT_PER_SECT; j++) {
+            if (dirent->name[0] == 0 || 
+                    (dirent->attr & DIRENT_LONG_NAME_MASK) != DIRENT_LONG_NAME_MASK &&
+                    ((dirent->attr) & (DIRENT_ATTR_VOL | DIRENT_ATTR_DIR))  == DIRENT_ATTR_VOL) {  
+
+                memset(dirent, 0, sizeof(struct dirent));
+                dirent->attr |= DIRENT_ATTR_VOL;
+                memcpy(dirent->name, b->label, sizeof(b->label));
+                if (disk_write_rel(p, sect, buf, 1) == FAILED) goto failed;
+                goto success;
+            }
+
+            dirent++;
+        }
+    }
+
+success:
+    free(buf);
+    return OK;
+
+failed:
+    free(buf);
+    return FAILED;
 }
 
 /*   0x01, "DOS FAT-12"			*/
@@ -229,7 +249,7 @@ int format_fat(struct part_long *p, char **argv)
 
     progress("~Writing boot sector ...");
 
-    if (disk_write_rel(p, 0, b, 1) == -1) /*  Writing boot sector  */
+    if (disk_write_rel(p, 0, b, 1) == FAILED) /*  Writing boot sector  */
     {
         progress("Error writing boot sector.");
         goto failed;
@@ -263,7 +283,7 @@ int format_fat(struct part_long *p, char **argv)
                     base_sect += clust_size * 256;
                 }
 
-                if (disk_write_rel(p, wr_sect++, fat, 1) == -1) {
+                if (disk_write_rel(p, wr_sect++, fat, 1) == FAILED) {
                     progress("Error writing FAT.");
                     goto failed;
                 }
@@ -297,7 +317,7 @@ int format_fat(struct part_long *p, char **argv)
 
         for (k = 0; k < 2; k++)
             for (i = 0; i < fat_size; i++)
-                if (disk_write_rel(p, wr_sect++, fat + i * 256, 1) == -1) {
+                if (disk_write_rel(p, wr_sect++, fat + i * 256, 1) == FAILED) {
                     progress("Error writing FAT.");
                     goto failed;
                 }
@@ -308,10 +328,15 @@ int format_fat(struct part_long *p, char **argv)
     progress("~Writing root directory ...");
 
     for (i = 0; i < ROOT_SIZE; i++)
-        if (disk_write_rel(p, wr_sect++, fat, 1) == -1) {
+        if (disk_write_rel(p, wr_sect++, fat, 1) == FAILED) {
             progress("Error writing root directory.");
             goto failed;
         }
+
+    if (fat16_update_label_file(p, b) == FAILED) {
+        progress("Error writing volume label.");
+        goto failed;
+    }
 
     disk_unlock(dinfo.disk);
     free(data_pool);
@@ -343,7 +368,7 @@ int format_embr(struct part_long *p, char **argv)
             sizeof(mbr->x.std.code) - EMP_SIZE);
     mbr->magic_num = MBR_MAGIC_NUM;
 
-    if (disk_write_rel(p, 0, mbr, 1) == -1) {
+    if (disk_write_rel(p, 0, mbr, 1) == FAILED) {
         progress("Error Writing Extended Master Boot Record.");
         disk_unlock(dinfo.disk);
         return FAILED;
@@ -794,8 +819,9 @@ int setup_fat(struct part_long *p)
 
             disk_lock(dinfo.disk);
 
-            if (disk_write_rel(p, 0, b, 1) == -1) {
-                show_error("Error saving boot sector");
+            if (disk_write_rel(p, 0, b, 1) == FAILED ||
+                fat16_update_label_file(p, b) == FAILED) {
+                show_error("Error saving boot sector or volume label");
             } else {
                 memmove(b_orig, b, SECT_SIZE);
             }

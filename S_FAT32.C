@@ -1,84 +1,8 @@
 #include "part.h"
+#include "fat.h"
 #include <time.h>
 
-_Packed struct boot_fat32
-{
-    /* Sector 1 */
 
-    unsigned char jmp[3];    /* Must be 0xEB, 0x58, 0x90 = jmp 5A	*/
-    unsigned char sys_id[8]; /* Probably:   "MSWIN4.1"		*/
-
-    unsigned short sect_size; /* Sector size in bytes (512)		*/
-    unsigned char clust_size; /* Sectors per cluster (1,2,4,...,128)	*/
-    unsigned short res_sects; /* Reserved sectors at the beginning (32)*/
-    unsigned char fat_copies; /* Number of FAT copies (2)		*/
-
-    unsigned char resrvd1[4]; /* Reserved				*/
-    unsigned char media_desc; /* Media descriptor byte (F8h)		*/
-    unsigned short sfat_size; /* Sectors per FAT			*/
-
-    unsigned short track_size; /* Sectors per track			*/
-    unsigned short num_sides;  /* Sides				*/
-
-    unsigned long hid_sects; /* Special hidden sectors		*/
-    unsigned long num_sects; /* Big total number of sectors  	*/
-    unsigned long fat_size;  /* Sectors per FAT (big)		*/
-    unsigned char fat_attr;  /* FAT attributes (I guess)		*/
-
-    unsigned char fs_ver_maj;  /* File System Version (major)		*/
-    unsigned short fs_ver_min; /* File System Version (minor)		*/
-
-    unsigned long root_clust; /* First cluster in root		*/
-
-    unsigned short fs_info_sect_num; /* FS Sector number (1) ???		*/
-    unsigned short bs_bak_sect; /* Boot sector backup (6)		*/
-
-    unsigned char resrvd2[12]; /* Reserved				*/
-    unsigned char drive_num;   /* Physical drive number (80h)		*/
-    unsigned char resrvd3[1];  /* Reserved				*/
-
-    unsigned char ext_signat; /* Extended Boot Record signature (29h)	*/
-    unsigned long serial_num; /* Volume serial number			*/
-    unsigned char label[11];  /* Volume label				*/
-    unsigned char fs_id[8];   /* File system id ("FAT32   ")		*/
-    unsigned char xcode[418]; /* Boot loader code (first part)	*/
-    unsigned long magic_num;  /* Magic number (Must be 0xAA550000) 	*/
-
-    /* Sector 2 */
-
-    unsigned long ext_sign2;    /* Ext Boot Record Sign (0x41615252)	*/
-    unsigned char resrvd4[480]; /* Reserved				*/
-    unsigned long ext_sign3;    /* FS Info Signature    (0x61417272)	*/
-    unsigned long free_clust;   /* Number of free clusters		*/
-    unsigned long next_free;    /* Next free cluster			*/
-    unsigned char resrvd5[12];  /* Reserved				*/
-    unsigned long magic_num2;   /* Ext Boot Record Sign (0xAA550000)	*/
-
-    /* Sector 3 */
-
-    unsigned char resrvd6[508]; /* Reserved				*/
-    unsigned long magic_num3;   /* Ext Boot Record Sign (0xAA550000)	*/
-};
-
-_Packed struct dirent_fat32
-{
-    unsigned char name[11];
-    unsigned char attr;
-    unsigned char nt_res;
-    unsigned char crt_time_tenth;
-    unsigned int  crt_time;
-    unsigned int  crt_date;
-    unsigned int  lst_acc_date;
-    unsigned int  fst_clus_hi;
-    unsigned int  wrt_time;
-    unsigned int  wrt_date;
-    unsigned int  fst_clus_lo;
-    unsigned long file_size;
-};
-
-enum {
-    DIRENT_ATTR_VOL = 0x08
-};
 
 #define BBT_SIZE 128
 
@@ -130,13 +54,13 @@ int fat32_read_clust(unsigned char * buf,
 {
     int i;
     unsigned long sect = fat32_clust_to_sect(b, clust);
-    if (clust < 2) return -1;
+    if (clust < 2) return FAILED;
 
     for (i = 0; i < b->clust_size; i++) {
-        if (disk_read_rel(p, sect+i, buf, 1) == -1) return -1;
+        if (disk_read_rel(p, sect+i, buf, 1) == FAILED) return FAILED;
         buf += SECT_SIZE;
     }
-    return 0;
+    return OK;
 }
 
 int fat32_write_clust(unsigned char * buf,
@@ -146,51 +70,57 @@ int fat32_write_clust(unsigned char * buf,
 {
     int i;
     unsigned long sect = fat32_clust_to_sect(b, clust);
-    if (clust < 2) return -1;
+    if (clust < 2) return FAILED;
 
     for (i = 0; i < b->clust_size; i++) {
-        if (disk_write_rel(p, sect+i, buf, 1) == -1) return -1;
+        if (disk_write_rel(p, sect+i, buf, 1) == FAILED) return FAILED;
         buf += SECT_SIZE;
     }
-    return 0;
+    return OK;
 }
 
-unsigned long fat32_next_clust(unsigned char *buf, struct boot_fat32 *b, unsigned long clust)
-{
-    return 0;
-}
 
 int fat32_update_label_file(struct part_long *p, struct boot_fat32 *b)
 {
     unsigned char *buf;
-    struct dirent_fat32 *dirent;
-    unsigned long cluster;
-    int i;
-    unsigned entries_per_clust = b->clust_size * SECT_SIZE / sizeof(struct dirent_fat32);
+    struct dirent *dirent;
+    unsigned long cluster, start_sect, sect;
+    int j;
 
-    buf = malloc(SECT_SIZE * b->clust_size);
-    if (buf == NULL) return -1;
+    buf = malloc(SECT_SIZE);
+    if (buf == NULL) return FAILED;
 
     cluster = b->root_clust;
-    if (fat32_read_clust(buf, p, b, cluster) == -1) goto failed;
-    dirent = (struct dirent_fat32 *)buf;
-    
-    for (i = 0; i < entries_per_clust; i++) {
-        if ((dirent->name[0] == 0) || ((dirent->attr & DIRENT_ATTR_VOL) != 0)) {  
-            dirent->attr |= DIRENT_ATTR_VOL;
-            memcpy(dirent->name, b->label, sizeof(b->label));
-            if (fat32_write_clust(buf, p, b, cluster) == -1) goto failed;
-            break;
+    start_sect = fat32_clust_to_sect(b, cluster);
+
+    /* for now we only search the first cluster for a volume id */
+    for (sect = start_sect; sect < start_sect + b->clust_size; sect++)
+    {
+        if (disk_read_rel(p, sect, buf, 1) == FAILED) goto failed;
+        dirent = (struct dirent *)buf;
+
+        for (j = 0; j < DIRENT_PER_SECT; j++) {
+            if (dirent->name[0] == 0 || 
+                    (dirent->attr & DIRENT_LONG_NAME_MASK) != DIRENT_LONG_NAME_MASK &&
+                    ((dirent->attr) & (DIRENT_ATTR_VOL | DIRENT_ATTR_DIR))  == DIRENT_ATTR_VOL) { 
+                memset(dirent, 0, sizeof(struct dirent));
+                dirent->attr |= DIRENT_ATTR_VOL;
+                memcpy(dirent->name, b->label, sizeof(b->label));
+                if (disk_write_rel(p, sect, buf, 1) == FAILED) goto failed;
+                goto success;
+            }
+
+            dirent++;
         }
-        dirent += 1;
     }
 
+success:
     free(buf);
-    return 0;
+    return OK;
 
 failed:
     free(buf);
-    return -1;
+    return FAILED;
 }
 
 int format_fat32(struct part_long *p, char **argv)
@@ -344,13 +274,13 @@ int format_fat32(struct part_long *p, char **argv)
 
     progress("~Writing boot sector ...");
 
-    if (disk_write_rel(p, 0, b, 3) == -1) /*  Writing boot sector  */
+    if (disk_write_rel(p, 0, b, 3) == FAILED) /*  Writing boot sector  */
     {
         progress("Error writing boot sector.");
         goto failed;
     }
 
-    if (disk_write_rel(p, 6, b, 3) == -1) /*  Writing boot sector (backup) */
+    if (disk_write_rel(p, 6, b, 3) == FAILED) /*  Writing boot sector (backup) */
     {
         progress("Error writing boot sector.");
         goto failed;
@@ -384,7 +314,7 @@ int format_fat32(struct part_long *p, char **argv)
                 base_sect += clust_size * 128;
             }
 
-            if (disk_write_rel(p, wr_sect++, fat, 1) == -1) {
+            if (disk_write_rel(p, wr_sect++, fat, 1) == FAILED) {
                 progress("Error writing FAT.");
                 goto failed;
             }
@@ -396,12 +326,12 @@ int format_fat32(struct part_long *p, char **argv)
     progress("~Writing root directory ...");
 
     for (i = 0; i < clust_size; i++)
-        if (disk_write_rel(p, wr_sect++, fat, 1) == -1) {
+        if (disk_write_rel(p, wr_sect++, fat, 1) == FAILED) {
             progress("Error writing root directory.");
             goto failed;
         }
 
-    if (fat32_update_label_file(p, b) == -1) {
+    if (fat32_update_label_file(p, b) == FAILED) {
         progress("Error writing volume label.");
         goto failed;
     }
@@ -856,10 +786,10 @@ int setup_fat32(struct part_long *p)
 
             disk_lock(dinfo.disk);
 
-            if (disk_write_rel(p, 0, b, 3) == -1 ||
-                disk_write_rel(p, 6, b, 3) == -1 ||
-                fat32_update_label_file(p, b) == -1) {
-                show_error("Error saving boot sector or label file.");
+            if (disk_write_rel(p, 0, b, 3) == FAILED ||
+                disk_write_rel(p, 6, b, 3) == FAILED ||
+                fat32_update_label_file(p, b) == FAILED) {
+                show_error("Error saving boot sector or volume label.");
             } else {
                 memmove(b_orig, b, 3 * SECT_SIZE);
             }
