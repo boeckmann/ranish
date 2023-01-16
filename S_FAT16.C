@@ -13,8 +13,7 @@ unsigned long fat_calc_hidden_sect(struct part_long *p);
 #define F_DESTR 2
 
 #define ROOT_ENTR   (512)
-#define ROOT_ENTR_PER_SECT 512 / 32
-#define ROOT_SIZE   (ROOT_ENTR / ROOT_ENTR_PER_SECT)
+#define ROOT_SIZE   (ROOT_ENTR / DIRENT_PER_SECT)
 #define MAX_CLUST12 (4084)  /* Maximum number of clusters in FAT12 system */
 #define MAX_CLUST16 (65524) /* Maximum number of clusters in FAT16 system */
 
@@ -42,7 +41,7 @@ int fat16_update_label_file(struct part_long *p, struct boot_ms_dos *b)
 
     if ((buf = malloc(SECT_SIZE)) == NULL) return FAILED;
 
-    root_sect_cnt = b->root_entr / 16;
+    root_sect_cnt = b->root_entr / DIRENT_PER_SECT;
     start_sect = b->res_sects + b->num_fats * b->fat_size;
 
     for (sect = start_sect; sect < start_sect + root_sect_cnt; sect++)
