@@ -1,5 +1,14 @@
 # Change Log
 
+## Version 2.90.10 alpha
+### Enhancements
+ * Create Volume ID file when formatting FAT-12/16 file system.
+
+### Changes
+ * Make quick format the default format option. Use /verify switch to do a bad sector scan.
+ * Do not create or Volume ID file or make sure it does not exist if volume label is "NO NAME".
+
+
 ## Version 2.90.09 alpha
 ### Bug fixes
  * Fixed a bug in FAT32 format routine introduced in 2.90.08 resulting from reducing the reserved sectors from 33 count to 32.
@@ -8,6 +17,7 @@
 ### Enhancements
  * Create Volume ID file when formatting FAT-32 file systems
  * Inform users that all nested partitions are deleted when deleting extended partitions.
+
 
 ## Version 2.90.08 alpha
 ### Bug fixes

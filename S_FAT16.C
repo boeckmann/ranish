@@ -10,7 +10,7 @@ unsigned long fat_calc_hidden_sect(struct part_long *p);
 #define BBT_SIZE 128
 
 #define F_NORM  0
-#define F_QUICK 1
+#define F_VERIFY 1
 #define F_DESTR 2
 
 #define ROOT_ENTR   (512)
@@ -125,8 +125,8 @@ int format_fat(struct part_long *p, char **argv)
     while (*argv != 0) {
         if (_stricmp(*argv, "/destructive") == 0)
             form_type = F_DESTR;
-        else if (_stricmp(*argv, "/quick") == 0)
-            form_type = F_QUICK;
+        else if (_stricmp(*argv, "/verify") == 0)
+            form_type = F_VERIFY;
         else if (_strnicmp(*argv, "/c:", 3) == 0) {
             k = atoi((*argv) + 3);
             for (i = k / 2, j = 0; i != 0 && j < 7; j++, i /= 2)
@@ -230,12 +230,12 @@ int format_fat(struct part_long *p, char **argv)
 
     flush_caches();
 
-    if (form_type == F_QUICK)
-        ret_code = 0;
-    else if (form_type == F_DESTR)
+    if (form_type == F_DESTR)
         ret_code = generic_format(p, BBT_SIZE, bbt);
-    else
+    else if (form_type == F_VERIFY)
         ret_code = generic_verify(p, BBT_SIZE, bbt);
+    else
+        ret_code = 0;
 
     if (ret_code < 0) /* format failed or canceled */
     {
@@ -557,7 +557,7 @@ int setup_fat(struct part_long *p)
     write_string(TEXT_COLOR,
                  StX,
                  StY + 14,
-                 "   Total number of clusters:");
+                 "         Number of clusters:");
     
     /*
     write_string(TEXT_COLOR, StX, StY + 15, "     Minimum partition size:");
@@ -703,7 +703,7 @@ int setup_fat(struct part_long *p)
                      StY + 13,
                      tmp);
         sprintf(tmp, "%-9lu", 
-            (p->num_sect - b->res_sects - 2 * b->fat_size)
+            (((b->big_total) ? b->big_total : b->total_sect) - b->res_sects - 2 * b->fat_size)
              / b->clust_size);
         write_string(DATA_COLOR, StX2, StY + 14, tmp);
         
