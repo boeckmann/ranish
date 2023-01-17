@@ -800,7 +800,7 @@ int setup_fat32(struct part_long *p)
                     goto calc_aborted;
                 }
 
-                if (disk_read_rel(p, n, tmp, 1) == -1) {
+                if (disk_read_rel(p, n, tmp, 1) == FAILED) {
                     show_error("Error reading FAT table");
                     break;
                 } else {
@@ -811,7 +811,7 @@ int setup_fat32(struct part_long *p)
                 }                
             }
             
-            min_clust = lc - 1;
+            min_clust = (lc + 3) / 4 - 2;
             min_num_sect = b->res_sects + b->fat_copies * b->fat_size + min_clust * b->clust_size;
                 
             sprintf(tmp,

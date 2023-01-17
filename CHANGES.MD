@@ -2,6 +2,10 @@
 
 ## Version 2.90.10 alpha
 ### Enhancements
+* Re-enable smallest file system size calculation for FAT12/16. Because it may take a long time it has to be triggered by pressing F7.
+
+## Version 2.90.10 alpha
+### Enhancements
  * Create Volume ID file when formatting FAT-12/16 file system.
  * Re-enable smallest file system size calculation for FAT32. Because it may take a long time it has to be triggered by pressing F7.
 
@@ -30,13 +34,11 @@
 ### Changes
  * Remove display of minimum and maximum size in FAT file system screen because it can take a long time to calculate and nobody knows what this really means (it means that one can change the size of the file system and partition entry without having to change the file system layout, i.e. the size of the FAT tables or performing defragmentation).
 
+
 ## Version 2.90.07 alpha
-### Bug fixes
 
 ### Enhancements
  * Allow hiding and unhiding of partition type 0F.
-
-### Changes
 
 
 ## Version 2.90.06 alpha
