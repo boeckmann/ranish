@@ -444,7 +444,8 @@ int setup_fat32(struct part_long *p)
     int i, act, pos;
     char *tmp, *tmp1;
     struct boot_fat32 *b, *b_orig;
-    unsigned long n, l, lc, fatsz;
+    unsigned long n, l, lc;
+    unsigned long min_clust, max_clust, min_num_sect, max_num_sect;
 
     if ((tmp = malloc(7 * SECT_SIZE)) == 0) {
         show_error(ERROR_MALLOC);
@@ -452,7 +453,6 @@ int setup_fat32(struct part_long *p)
     }
 
     tmp1 = tmp + 100;
-    /* tmp2=tmp+120; */
     b      = (struct boot_fat32 *)(tmp + SECT_SIZE);
     b_orig = b + 1;
 
@@ -477,9 +477,12 @@ int setup_fat32(struct part_long *p)
     write_string(HINT_COLOR, 56, 24, "F5");
     write_string(MENU_COLOR, 58, 24, " - SetExp");
 
-    /*
-    max_clust = ((unsigned long)SECT_SIZE * b->fat_size / 4u - 2u);
-    */
+    min_clust = 0;
+    max_clust = ((unsigned long)SECT_SIZE / 4 * b->fat_size - 2);
+    min_num_sect = 0;
+    n = b->res_sects + b->fat_copies * b->fat_size;
+    max_num_sect = n + max_clust * b->clust_size;
+
     write_string(TEXT_COLOR,
                  StX,
                  StY + 1,
@@ -530,11 +533,12 @@ int setup_fat32(struct part_long *p)
                  StY + 13,
                  "         Number of clusters:");
 
-    /*
-    write_string(TEXT_COLOR, StX, StY + 15, "     Minimum partition size:");
-    write_string(TEXT_COLOR, StX, StY + 16, "     Current partition size:");
-    write_string(TEXT_COLOR, StX, StY + 17, "     Maximum partition size:");
-    */
+    
+    write_string(TEXT_COLOR, StX, StY + 15, "     Minimum partition size:  press    to calculate");
+    write_string(HINT_COLOR, StX + 36, StY + 15, "F7");
+    write_string(TEXT_COLOR, StX, StY + 16, "     Current partition size:  ?");
+    write_string(TEXT_COLOR, StX, StY + 17, "     Maximum partition size:  ?");
+    
     sprintf(tmp, "%-.8s", b->sys_id);
     write_string(DATA_COLOR, StX2, StY + 1, tmp);
 
@@ -560,8 +564,6 @@ int setup_fat32(struct part_long *p)
     sprintf(tmp, "%d", b->sect_size);
     write_string(DATA_COLOR, StX3, StY + 3, tmp);
 
-    /*sprintf(
-        tmp, "%-7lu %s max clust", b->fat_size, sprintf_long(tmp1, max_clust));*/
     sprintf(
         tmp, "%-7lu", b->fat_size);
 
@@ -594,40 +596,6 @@ int setup_fat32(struct part_long *p)
     sprintf(tmp, " %-9lu", p->num_sect);
     write_string(DATA_COLOR, StX2 + 12, StY + 12, tmp);
 
-    /*
-    write_string(HINT_COLOR, StX2, StY + 16, "Reading FAT... ");
-    move_cursor(StX2 + 21, StY + 16);
-    */
-    fatsz = min(65536L, b->fat_size);
-    l = lc = 0;
-    /*
-    for (n = b->res_sects; n < b->res_sects + fatsz; n++)
-        if (disk_read_rel(p, n, tmp, 1) == -1) {
-            show_error("Error reading FAT table");
-            break;
-        } else {
-            write_int(HINT_COLOR, StX2 + 16, StY + 16, 5, n - b->res_sects);
-            for (i = 0; i < SECT_SIZE; i++, l++)
-                if (tmp[i] != 0)
-                    lc = l;
-        }
-    */
-
-    /*
-    min_clust = (lc * 8 / 32 + (lc * 8 % 32 == 0 ? 0 : 1) - 2);
-
-    n = b->res_sects + b->fat_copies * b->fat_size;
-
-    min_num_sect = n + min_clust * b->clust_size;
-    max_num_sect = n + max_clust * b->clust_size;
-
-    
-    sprintf(tmp,
-            "%lu sectors = %s KiB",
-            min_num_sect,
-            sprintf_long(tmp1, (min_num_sect) / 2));
-    write_string(DATA_COLOR, StX2, StY + 15, tmp);
-
     sprintf(tmp,
             "%lu sectors = %s KiB",
             max_num_sect,
@@ -637,7 +605,7 @@ int setup_fat32(struct part_long *p)
     n = b->num_sects;
     sprintf(tmp, "%lu sectors = %s KiB", n, sprintf_long(tmp1, n / 2));
     write_string(DATA_COLOR, StX2, StY + 16, tmp);
-    */
+    
     pos = 0;
     act = 0;
 
@@ -674,9 +642,9 @@ int setup_fat32(struct part_long *p)
                      StY + 12,
                      tmp);
 
-        sprintf(tmp, "%-11lu", 
+        sprintf(tmp, "%-11lu  max %-11lu", 
             (b->num_sects - b->res_sects - b->fat_copies * b->fat_size)
-             / b->clust_size);
+             / b->clust_size, max_clust);
         write_string(DATA_COLOR, StX2, StY + 13, tmp);
 
         sprintf(tmp, "%08lX", b->magic_num);
@@ -748,7 +716,7 @@ int setup_fat32(struct part_long *p)
                            -1);
         /*   get_event(&ev,EV_KEY); */
 
-        /*
+        
         n = b->num_sects;
         
         sprintf(tmp, "%lu sectors = %s KiB", n, sprintf_long(tmp1, n / 2));
@@ -758,7 +726,7 @@ int setup_fat32(struct part_long *p)
                      StX2,
                      StY + 16,
                      tmp);
-        */
+        
         p->changed = (memcmp(b, b_orig, SECT_SIZE) == 0) ? 0 : 1;
         if (p->changed == 0)
             write_string(HINT_COLOR, 15, 24, "F2");
@@ -817,6 +785,42 @@ int setup_fat32(struct part_long *p)
             b->hid_sects = fat_calc_hidden_sect(p);
             b->num_sects = p->num_sect;
             b->magic_num = MBR_MAGIC_NUM32;
+        } else if (ev.scan == 0x4100) /* F7 - Calculate size */
+        {
+            write_string(HINT_COLOR, StX2, StY + 15, "Reading FAT...               ");
+            move_cursor(StX2 + 21, StY + 15);
+            
+            l = lc = 0;
+            for (n = b->res_sects; n < b->res_sects + b->fat_size; n++) {
+                get_event(&ev, EV_KEY | EV_NONBLOCK);
+                if (ev.key == 27) {
+                    write_string(TEXT_COLOR, StX, StY + 15, 
+                        "     Minimum partition size:  press    to calculate");
+                     write_string(HINT_COLOR, StX + 36, StY + 15, "F7");
+                    goto calc_aborted;
+                }
+
+                if (disk_read_rel(p, n, tmp, 1) == -1) {
+                    show_error("Error reading FAT table");
+                    break;
+                } else {
+                    write_int(HINT_COLOR, StX2 + 16, StY + 15, 5, n - b->res_sects);
+                    for (i = 0; i < SECT_SIZE; i++, l++)
+                        if (tmp[i] != 0)
+                           lc = l;
+                }                
+            }
+            
+            min_clust = lc - 1;
+            min_num_sect = b->res_sects + b->fat_copies * b->fat_size + min_clust * b->clust_size;
+                
+            sprintf(tmp,
+                "%lu sectors = %s KiB",
+                min_num_sect,
+                sprintf_long(tmp1, (min_num_sect) / 2));
+            write_string(DATA_COLOR, StX2, StY + 15, tmp);
+
+        calc_aborted: (void)0;
         }
 
     } /* while(1) */
