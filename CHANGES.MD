@@ -3,6 +3,7 @@
 ## Version 2.90.10 alpha
 ### Enhancements
  * Create Volume ID file when formatting FAT-12/16 file system.
+ * Re-enable smallest file system size calculation for FAT32. Because it may take a long time it has to be triggered by pressing F7.
 
 ### Changes
  * Make quick format the default format option. Use /verify switch to do a bad sector scan.
