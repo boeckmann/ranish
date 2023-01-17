@@ -1,6 +1,7 @@
 #include "part.h"
 #include "fat.h"
 #include <time.h>
+#include <ctype.h>
 
 /* defined in S_FAT32.C */
 unsigned long fat_calc_hidden_sect(struct part_long *p);
@@ -54,9 +55,16 @@ int fat16_update_label_file(struct part_long *p, struct boot_ms_dos *b)
                     (dirent->attr & DIRENT_LONG_NAME_MASK) != DIRENT_LONG_NAME_MASK &&
                     ((dirent->attr) & (DIRENT_ATTR_VOL | DIRENT_ATTR_DIR))  == DIRENT_ATTR_VOL) {  
 
-                memset(dirent, 0, sizeof(struct dirent));
-                dirent->attr |= DIRENT_ATTR_VOL;
-                memcpy(dirent->name, b->label, sizeof(b->label));
+                if (memcmp(b->label, NO_NAME_LABEL, 11)) {
+                    /* update label or create new one if not found */
+                    memset(dirent, 0, sizeof(struct dirent));
+                    dirent->attr |= DIRENT_ATTR_VOL;
+                    memcpy(dirent->name, b->label, sizeof(b->label));
+                }
+                else if (dirent->name[0] != 0) {
+                    /* delete label file if it exists and label is "NO NAME" */
+                    dirent->name[0] = 0xe5;
+                }
                 if (disk_write_rel(p, sect, buf, 1) == FAILED) goto failed;
                 goto success;
             }
@@ -721,9 +729,12 @@ int setup_fat(struct part_long *p)
             edit_str_field(&ev, 0, EDIT_COLOR, StX2, StY + 7, 12, tmp, &pos);
             if (memcmp(tmp, tmp1, 12) != 0) {
                 for (i = 0; tmp[i] != 0 && i < 11; i++)
-                    b->label[i] = tmp[i];
+                    b->label[i] = toupper(tmp[i]);
                 for (; i < 11; i++)
                     b->label[i] = ' ';
+                if (!memcmp(b->label, "           ", 11)) {
+                    memcpy(b->label, NO_NAME_LABEL, 11);
+                }
             }
         }
 
