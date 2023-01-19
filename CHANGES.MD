@@ -1,8 +1,14 @@
 # Change Log
 
-## Version 2.90.10 alpha
+## Version 2.90.11 alpha
 ### Enhancements
-* Re-enable smallest file system size calculation for FAT12/16. Because it may take a long time it has to be triggered by pressing F7.
+ * Re-enable smallest file system size calculation for FAT12/16. Because it may take a long time it has to be triggered by pressing F7.
+ * Recognise partition type 0x27 (Windows Rescue Environment)
+ * Warn when entering extended MBR which can not be modified because of non-saved changes in one of its parents.
+
+### Changes
+ * Disable format of FAT-12 partitions because current format routine generates non-conformant file systems (512 root entries while only 224 are allowed).
+
 
 ## Version 2.90.10 alpha
 ### Enhancements

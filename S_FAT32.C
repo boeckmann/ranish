@@ -104,7 +104,7 @@ int fat32_update_label_file(struct part_long *p, struct boot_fat32 *b)
                     (dirent->attr & DIRENT_LONG_NAME_MASK) != DIRENT_LONG_NAME_MASK &&
                     ((dirent->attr) & (DIRENT_ATTR_VOL | DIRENT_ATTR_DIR))  == DIRENT_ATTR_VOL) {
 
-                if (memcmp(b->label, NO_NAME_LABEL, 11)) {
+                if (memcmp(b->label, NO_NAME_LABEL, sizeof(b->label))) {
                     /* update label or create new one if not found */
                     memset(dirent, 0, sizeof(struct dirent));
                     dirent->attr |= DIRENT_ATTR_VOL;
@@ -116,7 +116,7 @@ int fat32_update_label_file(struct part_long *p, struct boot_fat32 *b)
                 }
                 if (disk_write_rel(p, sect, buf, 1) == FAILED) goto failed;
                 goto success;
-               }
+            }
 
             dirent++;
         }
@@ -145,7 +145,7 @@ int format_fat32(struct part_long *p, char **argv)
     unsigned long clust_size = 0;
     unsigned int form_type  = F_NORM;
 
-    if ((data_pool = malloc(SECT_SIZE * 5 + BBT_SIZE * sizeof(long))) == 0) {
+    if ((data_pool = malloc(SECT_SIZE * 4 + BBT_SIZE * sizeof(long))) == 0) {
         show_error(ERROR_MALLOC);
         return FAILED;
     }
@@ -817,7 +817,7 @@ int setup_fat32(struct part_long *p)
             sprintf(tmp,
                 "%lu sectors = %s KiB",
                 min_num_sect,
-                sprintf_long(tmp1, (min_num_sect) / 2));
+                sprintf_long(tmp1, (min_num_sect) / 2u));
             write_string(DATA_COLOR, StX2, StY + 15, tmp);
 
         calc_aborted: (void)0;

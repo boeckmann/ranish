@@ -257,6 +257,10 @@ int setup_mbr(struct part_long *p)
         }
     }
 
+    if (p->inh_invalid || p->inh_changed) {
+        mesg = TEXT("One or more parent MBR not saved or invalid! Changes can not be saved.");
+    }
+
     while (1) {
         help = 0;
 
