@@ -102,7 +102,7 @@ _Packed struct dirent
     unsigned long file_size;
 };
 
-const unsigned DIRENT_PER_SECT = 512 / sizeof(struct dirent);
+static const unsigned DIRENT_PER_SECT = 512 / sizeof(struct dirent);
 
 enum {
 	DIRENT_ATTR_READ_ONLY = 0x01,
@@ -113,7 +113,7 @@ enum {
     DIRENT_ATTR_ARCHIVE = 0x20
 };
 
-const unsigned char  DIRENT_LONG_NAME_MASK = 
+static const unsigned char  DIRENT_LONG_NAME_MASK = 
     DIRENT_ATTR_READ_ONLY | DIRENT_ATTR_HIDDEN | DIRENT_ATTR_SYSTEM |DIRENT_ATTR_VOL;
 
 #define NO_NAME_LABEL "NO NAME    "
