@@ -5,6 +5,16 @@
 int num_disks;
 int hd, select_target, mode, quiet;
 
+struct event ev;
+char tmp2[80];
+char tmp3[80];
+char file_name[80];
+
+int interactive;
+char buf[25 * 80 * 2];
+char base_dir[256];
+char tmp[SECT_SIZE * 3];
+
 void main(int argc, char **argv)
 {
     int i;
