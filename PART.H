@@ -346,12 +346,13 @@ extern char file_name[80];
 extern int interactive;
 extern char buf[25 * 80 * 2];
 extern char base_dir[256];
-extern char tmp[SECT_SIZE];
+extern char tmp[SECT_SIZE * 3];
 extern struct disk_info dinfo;
-extern struct os_desc os_desc[];
 
+#ifdef _PART_C
+#define mesg(M) char *M
+#else
 #define mesg(M) extern char *M
-
 #endif
 
 mesg(PROGRAM_TITLE);
