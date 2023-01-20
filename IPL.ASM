@@ -2,9 +2,10 @@ cpu 8086
 
 section COMPACT_MBR_IPL class=BOOT align=16
 
-global	_COMPACT_MBR_IPL
-global	_EMP_IPL
-global	_STD_IPL
+global _COMPACT_MBR_IPL
+global _EMP_IPL
+global _EMP_IPL_SIZE
+global _STD_IPL
 
 _COMPACT_MBR_IPL:
 	;
@@ -336,6 +337,8 @@ _EMP_IPL:
 .p3:
 		call	.p0
 		db 	0
+
+_EMP_IPL_SIZE dw ($-$$)
 
 section STD_MBR_IPL class=BOOT align=16
 

@@ -18,7 +18,6 @@
 
 #define CHS_MAX_SECT 1024ul * 255ul * 63ul
 
-#define EMP_SIZE 44
 
 #define TEXT(x) x
 
@@ -237,6 +236,8 @@ struct os_desc
 #define MAIN_BORDER "ÉÍ»º ºÈÍ¼"
 #define VERT_BORDER "º ºº ºº º"
 #define HRZN_BORDER " Ä       "
+
+extern unsigned EMP_IPL_SIZE;
 
 void __cdecl COMPACT_MBR_IPL(void); /* external assembly code */
 void __cdecl ADV_IPL(void);

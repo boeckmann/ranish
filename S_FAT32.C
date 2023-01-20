@@ -166,8 +166,8 @@ int format_fat32(struct part_long *p, char **argv)
     b->ext_signat  = 0x29;
     memmove(b->label, "NO NAME    ", 11);
     memmove(b->fs_id, "FAT32   ", 8);
-    memmove(b->xcode, EMP_IPL, EMP_SIZE);
-    strncpy(b->xcode + EMP_SIZE, MESG_NON_SYSTEM, sizeof(b->xcode) - EMP_SIZE);
+    memmove(b->xcode, EMP_IPL, EMP_IPL_SIZE);
+    strncpy(b->xcode + EMP_IPL_SIZE, MESG_NON_SYSTEM, sizeof(b->xcode) - EMP_IPL_SIZE);
 
     b->ext_sign2 = 0x41615252L;
     b->ext_sign3 = 0x61417272L;

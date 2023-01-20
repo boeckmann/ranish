@@ -370,10 +370,10 @@ int format_embr(struct part_long *p, char **argv)
     progress("~Writing Extended Master Boot Record ...");
 
     memset(mbr, 0, SECT_SIZE);
-    memmove(mbr->x.std.code, EMP_IPL, EMP_SIZE);
-    strncpy(mbr->x.std.code + EMP_SIZE,
+    memmove(mbr->x.std.code, EMP_IPL, EMP_IPL_SIZE);
+    strncpy(mbr->x.std.code + EMP_IPL_SIZE,
             MESG_EXT_NONBOOT,
-            sizeof(mbr->x.std.code) - EMP_SIZE);
+            sizeof(mbr->x.std.code) - EMP_IPL_SIZE);
     mbr->magic_num = MBR_MAGIC_NUM;
 
     if (disk_write_rel(p, 0, mbr, 1) == FAILED) {

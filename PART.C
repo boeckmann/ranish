@@ -1346,10 +1346,10 @@ int setup_mbr(struct part_long *p)
         if (view == VIEW_EMBR &&
             (ev.key == 'I' || ev.key == 'i' ||
              CLICK(16, 11, 60))) { /* Install dummy boot rec into EMBR */
-            memmove(mbr->x.std.code, EMP_IPL, EMP_SIZE);
-            strncpy(mbr->x.std.code + EMP_SIZE,
+            memmove(mbr->x.std.code, EMP_IPL, EMP_IPL_SIZE);
+            strncpy(mbr->x.std.code + EMP_IPL_SIZE,
                     MESG_EXT_NONBOOT,
-                    sizeof(mbr->x.std.code) - EMP_SIZE);
+                    sizeof(mbr->x.std.code) - EMP_IPL_SIZE);
             mesg = MESG_INSTALL;
         } else if (view == VIEW_EMBR &&
                    (ev.key == 'R' || ev.key == 'r' ||
