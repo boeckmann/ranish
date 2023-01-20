@@ -6,7 +6,7 @@ struct os_desc os_desc_tbl[] = {
        print */
 
     {0x0000, "Unused", 1, 0, format_unused, 0},
-    {0x0100, "FAT-12", 0, setup_fat, 0, print_fat},
+    {0x0100, "FAT-12", 0, setup_fat, format_fat, print_fat},
     {0x0200, "XENIX root file system", 0, 0, 0, 0},
     {0x0300, "XENIX /usr file system", 0, 0, 0, 0},
     {0x0400, "FAT-16 (< 32 MiB)", 0, setup_fat, format_fat, print_fat},

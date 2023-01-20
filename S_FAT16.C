@@ -13,8 +13,6 @@ unsigned long fat_calc_hidden_sect(struct part_long *p);
 #define F_VERIFY 1
 #define F_DESTR 2
 
-#define ROOT_ENTR   (512)
-#define ROOT_SIZE   (ROOT_ENTR / DIRENT_PER_SECT)
 #define MAX_CLUST12 (4084)  /* Maximum number of clusters in FAT12 system */
 #define MAX_CLUST16 (65524) /* Maximum number of clusters in FAT16 system */
 
@@ -94,6 +92,7 @@ int format_fat(struct part_long *p, char **argv)
     int i, j, k, wr_sect, ret_code, sys_type, next_bad;
     unsigned long num_clust, num_sect, base_sect, *bbt;
     long fat_size;
+    unsigned root_sect_cnt;
 
     unsigned int num_bad    = 0;
     unsigned int clust_size = 4;
@@ -114,7 +113,6 @@ int format_fat(struct part_long *p, char **argv)
     b->sect_size  = SECT_SIZE;
     b->res_sects  = 1;
     b->num_fats   = 2;
-    b->root_entr  = ROOT_ENTR;
     b->media_desc = 0xF8;
     b->ext_signat = 0x29;
     memmove(b->label, "NO NAME    ", 11);
@@ -160,6 +158,9 @@ int format_fat(struct part_long *p, char **argv)
         p->os_id == 0x0e00 || p->os_id == 0x1e00 ||
         p->os_id == 0x1400 || p->os_id == 0x1600) {
 
+        b->root_entr  = 512;
+        root_sect_cnt = b->root_entr / DIRENT_PER_SECT;
+
         clust_size = fat16_cluster_size(num_sect);
 
         if (clust_size == 0) {
@@ -167,10 +168,10 @@ int format_fat(struct part_long *p, char **argv)
             goto failed;
         }
 
-        fat_size = ((unsigned long long)(num_sect - ROOT_SIZE - 1) + (clust_size * 256 + 2 - 1)) /
+        fat_size = ((unsigned long long)(num_sect - root_sect_cnt - 1) + (clust_size * 256 + 2 - 1)) /
                        (clust_size * 256 + 2);
 
-        num_clust = (num_sect - ROOT_SIZE - 1 - 2 * fat_size) / (clust_size);
+        num_clust = (num_sect - root_sect_cnt - 1 - 2 * fat_size) / (clust_size);
 
         if ((clust_size == 128) || (num_clust > MAX_CLUST16)) {
             progress("^FAT16 partition too large. Use FAT32 instead!");
@@ -184,8 +185,11 @@ int format_fat(struct part_long *p, char **argv)
 
     if (p->os_id == 0x0100 || p->os_id == 0x1100) /* FAT12 */
     {
+        b->root_entr  = 224;
+        root_sect_cnt = b->root_entr / DIRENT_PER_SECT;
+
         while (clust_size < 64) {
-            if (1 + 24 + ROOT_SIZE + (unsigned long)clust_size * MAX_CLUST12 >
+            if (1 + 24 + root_sect_cnt + (unsigned long)clust_size * MAX_CLUST12 >
                 num_sect)
                 break;
             clust_size *= 2;
@@ -196,10 +200,10 @@ int format_fat(struct part_long *p, char **argv)
             goto failed;
         }
 
-        fat_size = (num_sect - ROOT_SIZE - 1 + 2 * clust_size) /
+        fat_size = (num_sect - root_sect_cnt - 1 + 2 * clust_size) /
                        ((long)clust_size * 512 * 2 / 3 + 2) +
                    1;
-        num_clust = (num_sect - ROOT_SIZE - 1 - 2 * fat_size) / (clust_size);
+        num_clust = (num_sect - root_sect_cnt - 1 - 2 * fat_size) / (clust_size);
 
         memmove(b->fs_id, "FAT12   ", 8);
 
@@ -207,7 +211,7 @@ int format_fat(struct part_long *p, char **argv)
     }
 
     if (fat_size < 0 ||
-        1 + 2 * fat_size + ROOT_SIZE + clust_size > num_sect) {
+        1 + 2 * fat_size + root_sect_cnt + clust_size > num_sect) {
         progress("^Partition is too small.");
         goto failed;
     }
@@ -249,7 +253,7 @@ int format_fat(struct part_long *p, char **argv)
 
     progress("^Initializing file system ...");
 
-    if (num_bad != 0 && bbt[0] < 1 + 2 * fat_size + ROOT_SIZE) {
+    if (num_bad != 0 && bbt[0] < 1 + 2 * fat_size + root_sect_cnt) {
         progress(
             "Beginning of the partition is unusable. Try to move it forward.");
         goto failed;
@@ -271,7 +275,7 @@ int format_fat(struct part_long *p, char **argv)
         for (k = 0; k < 2; k++) /* Writing two copies of FAT16 */
         {
             next_bad  = 0;
-            base_sect = 1 + 2 * fat_size + ROOT_SIZE;
+            base_sect = 1 + 2 * fat_size + root_sect_cnt;
 
             for (i = 0; i < fat_size; i++) {
                 memset(fat, 0, 512);
@@ -312,7 +316,7 @@ int format_fat(struct part_long *p, char **argv)
         fat12[0].c1 = 0xFFF;
 
         next_bad  = 0;
-        base_sect = 1 + 2 * fat_size + ROOT_SIZE;
+        base_sect = 1 + 2 * fat_size + root_sect_cnt;
 
         while (next_bad != num_bad) {
             j = (bbt[next_bad++] - base_sect) / clust_size + 2;
@@ -335,7 +339,7 @@ int format_fat(struct part_long *p, char **argv)
 
     progress("~Writing root directory ...");
 
-    for (i = 0; i < ROOT_SIZE; i++)
+    for (i = 0; i < root_sect_cnt; i++)
         if (disk_write_rel(p, wr_sect++, fat, 1) == FAILED) {
             progress("Error writing root directory.");
             goto failed;
