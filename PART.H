@@ -238,7 +238,7 @@ struct os_desc
 #define VERT_BORDER "บ บบ บบ บ"
 #define HRZN_BORDER " ฤ       "
 
-void __cdecl IPL(void); /* external assembly code */
+void __cdecl COMPACT_MBR_IPL(void); /* external assembly code */
 void __cdecl ADV_IPL(void);
 void __cdecl EMP_IPL(void);
 void __cdecl STD_IPL(void);

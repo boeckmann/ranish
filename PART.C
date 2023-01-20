@@ -1530,10 +1530,10 @@ int setup_mbr(struct part_long *p)
             view             = VIEW_ADV;
         } else if (view == VIEW_MBR && (ev.key == 'I' || ev.key == 'i' ||
                                         CLICK(16, 11, 47))) { /* Install IPL */
-            if (memcmp(mbr, IPL, 0x180) == 0)
-                memmove(mbr, IPL, sizeof(mbr->x.ipl.code));
+            if (memcmp(mbr, COMPACT_MBR_IPL, 0x180) == 0)
+                memmove(mbr, COMPACT_MBR_IPL, sizeof(mbr->x.ipl.code));
             else {
-                memmove(mbr, IPL, sizeof(mbr->x.ipl));
+                memmove(mbr, COMPACT_MBR_IPL, sizeof(mbr->x.ipl));
                 mesg = MESG_INSTALL;
             }
             setup_ipl(mbr);

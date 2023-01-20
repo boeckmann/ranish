@@ -1,9 +1,12 @@
 cpu 8086
 
-section IPL_BOOT class=BOOT align=16
+section COMPACT_MBR_IPL class=BOOT align=16
 
-global	_IPL
-_IPL:
+global	_COMPACT_MBR_IPL
+global	_EMP_IPL
+global	_STD_IPL
+
+_COMPACT_MBR_IPL:
 	;
 	;  BIOS loads MBR at 0000:7C00h
 	;
@@ -24,12 +27,12 @@ _IPL:
 		DB	0E9h
 		DW	0600h-7C00h+.ENTRY-($+2)
 	;
-VIRUS	EQU	(M1-_IPL-100h)
-ERROR	EQU	(M2-_IPL-100h)
-BOOTING	EQU	(M3-_IPL-100h)
-HD_NUM	EQU	(M4-_IPL-100h)
-WRITING	EQU	(M5-_IPL-100h)
-NL	EQU	(M6-_IPL-100h)
+VIRUS	EQU	(M1-_COMPACT_MBR_IPL-100h)
+ERROR	EQU	(M2-_COMPACT_MBR_IPL-100h)
+BOOTING	EQU	(M3-_COMPACT_MBR_IPL-100h)
+HD_NUM	EQU	(M4-_COMPACT_MBR_IPL-100h)
+WRITING	EQU	(M5-_COMPACT_MBR_IPL-100h)
+NL	EQU	(M6-_COMPACT_MBR_IPL-100h)
 	;
 .ENTRY:
 	;
@@ -199,7 +202,7 @@ NL	EQU	(M6-_IPL-100h)
 	mov	dl, [di]		; Boot sector expects Drive# in DL
 ;	jmp	7C00h			; Transfer control to loaded BootSector
 		DB	0E9h
-		DW	7C00h-600h-($+2-_IPL)
+		DW	7C00h-600h-($+2-_COMPACT_MBR_IPL)
 
 
 	;
@@ -285,7 +288,7 @@ M5:	DB "Writing changes..."
 M6:	DB 0Dh,0Ah,0
 	;
 
-GAP: times (01b6h-($-_IPL)) db 0
+GAP: times (01b6h-($-_COMPACT_MBR_IPL)) db 0
 
 DOT_LEN	DW	30h
 VIR_CHK	DB	01
@@ -293,3 +296,137 @@ ST_PART	DB	00
 FD_PARM	DB	00,00,01,00	; Floppy disk boot sector parameters
 	DB	40h DUP(0)
 	DB	055h, 0AAh
+
+
+section EMPTY_MBR_IPL class=BOOT align=16
+
+_EMP_IPL:
+		;
+		;  Dummy boot record to display message like
+		;
+		;  "Partition is not bootable ..."
+		;
+		;  MBR loads this boot record at 0000:7C00h
+		;
+		mov	ax, cs
+		mov	ds, ax
+		mov	ss, ax
+		mov	sp, 7C00h
+		jmp	short	.p3
+.p0:
+		pop	si
+		mov	ah, 0Eh
+		mov	bh, 00h
+.p1:
+		cld
+		lodsb
+		or	al, al
+		jz	.p2
+		int	10h
+		jmp	.p1
+.p2:
+		xor	ax, ax
+		int	16h
+		mov	ax, 0E0Dh
+		int	10h
+		mov	al, 0Ah
+		int	10h
+		int	19h
+		;
+.p3:
+		call	.p0
+		db 	0
+
+section STD_MBR_IPL class=BOOT align=16
+
+_STD_IPL:
+
+		;
+		;   IPL that comes with MS-DOS's fdisk.exe
+		;
+
+		CLI
+		XOR	AX,AX
+		MOV	SS,AX
+		MOV	SP,7C00h
+		MOV	SI,SP
+		PUSH	AX
+		POP	ES
+		PUSH	AX
+		POP	DS
+		STI
+		CLD
+		MOV	DI,0600h
+		MOV	CX,0100h
+		REPNZ
+		MOVSW
+	;	JMP	0000:061D
+		DB	0EAh
+		DW	061Dh, 0000h
+._061D:
+		MOV	SI,07BEh
+		MOV	BL,04h
+._0622:
+		CMP	BYTE [SI],80h
+		JZ	._0635
+		CMP	BYTE [SI],00h
+		JNZ	._0648
+		ADD	SI,10h
+		DEC	BL
+		JNZ	._0622
+		INT	18h
+._0635:
+		MOV	DX,[SI]
+		MOV	CX,[SI+02]
+		MOV	BP,SI
+._063C:
+		ADD	SI,10h
+		DEC	BL
+		JZ	._065D
+		CMP	BYTE [SI],00
+		JZ	._063C
+._0648:
+		MOV	SI,068Bh
+._064B:
+		LODSB
+		CMP	AL,00
+		JZ	._065B
+		PUSH	SI
+		MOV	BX,0007
+		MOV	AH,0Eh
+		INT	10h
+		POP	SI
+		JMP	._064B
+._065B:
+		JMP	._065B
+._065D:
+		MOV	DI,0005h
+._0660:
+		MOV	BX,7C00h
+		MOV	AX,0201h
+		PUSH	DI
+		INT	13h
+		POP	DI
+		JNB	._0678
+		XOR	AX,AX
+		INT	13h
+		DEC	DI
+		JNZ	._0660
+		MOV	SI,06A3h
+		JMP	._064B
+._0678:
+		MOV	SI,06C2h
+		MOV	DI,7DFEh
+		CMP	WORD [DI],0AA55h
+		JNZ	._064B
+		MOV	SI,BP
+	;	JMP	0000:7C00
+		DB	0EAh
+		DW	7C00h, 0000h
+
+._068B:	DB	"Invalid partition table",0
+._06A3:	DB	"Error loading operating system",0
+._06C2:	DB	"Missing operating system",0
+
+		DB	293 DUP(0)
+
