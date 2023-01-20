@@ -153,6 +153,12 @@ int format_fat32(struct part_long *p, char **argv)
     fat = (unsigned long int *)(data_pool + SECT_SIZE * 3);
     bbt = (unsigned long int *)(data_pool + SECT_SIZE * 4);
 
+    /* make test read to check if whole partition is accessible */
+    if (disk_write_rel(p, p->num_sect-1, fat, 1) == FAILED) {
+        progress(TEXT("Can not access last sector of partition. Refusing to format!"));
+        goto failed;
+    }
+
     memset(data_pool, 0, SECT_SIZE * 4);
 
     memmove(b->jmp, "\xEB\x58\x90", 3);
@@ -203,7 +209,7 @@ int format_fat32(struct part_long *p, char **argv)
             strncpy(tmp, (*argv) + 3, 11);
             tmp[11] = 0;
             for (i = 0; tmp[i] != 0 && i < 11; i++)
-                b->label[i] = tmp[i];
+                b->label[i] = toupper(tmp[i]);
             for (; i < 11; i++)
                 b->label[i] = ' ';
         } else {

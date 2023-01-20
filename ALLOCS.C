@@ -70,6 +70,6 @@ void print_mem_stat()
 	printf("calloc calls     : %lu\n", calloc_count);
 	printf("realloc calls    : %lu\n", realloc_count);
 	printf("free calls       : %lu\n", free_count);
-	printf("allocated mem    : %lu\n", alloc_bytes);
-	printf("max allocated mem: %lu\n", alloc_max_bytes);
+	printf("allocated mem now: %lu bytes\n", alloc_bytes);
+	printf("max allocated mem: %lu bytes\n", alloc_max_bytes);
 }
