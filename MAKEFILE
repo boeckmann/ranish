@@ -13,13 +13,13 @@ linker          = wlink
 linker_flags    =
 
 part_c_objects   = PART.OBJ PART_AUX.OBJ PART_GEN.OBJ PART_GUI.OBJ PART_HTM.OBJ DISKIOC.OBJ
-part_c_objects  += PART_IDE.OBJ PART_MSG.OBJ
+part_c_objects  += PART_IDE.OBJ PART_MSG.OBJ PARTTYPE.OBJ ALLOCS.OBJ
 part_c_objects  += S_FAT16.OBJ S_FAT32.OBJ S_UNKNWN.OBJ
 part_asm_objects = SCREEN.OBJ DISKIO.OBJ IPL.OBJ IPL2.OBJ FAT_BOOT.OBJ
 part_asm_objects+= MANOUTER.OBJ
 part_objects     = $(part_c_objects) $(part_asm_objects)
 
-header_files = PART.H DISKIO.H SCREEN.H
+header_files = PART.H DISKIO.H SCREEN.H ALLOCS.H
 
 !ifdef DEBUG
 compiler_flags += -d2

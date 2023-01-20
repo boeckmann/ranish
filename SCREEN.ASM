@@ -20,7 +20,7 @@ _LastMouseBtns dw   0   ;
 OriginalTimer1 dw   0   ;
 OriginalTimer2 dw   0   ;
 
-section CONIO_TEXT class=CODE align=16
+section SCREEN_TEXT class=CODE align=16
 
 global   _screen_init
 global   _screen_exit

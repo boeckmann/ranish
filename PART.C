@@ -142,6 +142,7 @@ void start_gui(void)
     clear_window(White + BakBlack, 1, 1, 80, 25);
     move_cursor(1, 1);
     hide_mouse();
+    print_mem_stat();
 } /* start_gui */
 
 
