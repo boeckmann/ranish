@@ -85,6 +85,9 @@ void main(int argc, char **argv)
 
     diskio_exit();
     screen_exit();
+
+    print_mem_stat();
+    printf("\nEMP_IPL_SIZE: %u\n", EMP_IPL_SIZE);
     exit(0);
 } /* main */
 
@@ -152,7 +155,6 @@ void start_gui(void)
     clear_window(White + BakBlack, 1, 1, 80, 25);
     move_cursor(1, 1);
     hide_mouse();
-    print_mem_stat();
 } /* start_gui */
 
 

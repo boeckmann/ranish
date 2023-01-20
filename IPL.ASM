@@ -336,9 +336,14 @@ _EMP_IPL:
 		;
 .p3:
 		call	.p0
+_EMP_IPL_END:
 		db 	0
 
-_EMP_IPL_SIZE dw ($-$$)
+
+section EMPTY_MBR_DATA class=DATA align=2
+GROUP DGROUP EMPTY_MBR_DATA
+
+_EMP_IPL_SIZE: dw (_EMP_IPL_END-_EMP_IPL)
 
 section STD_MBR_IPL class=BOOT align=16
 
