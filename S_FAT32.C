@@ -12,7 +12,7 @@
 
 #define MBR_MAGIC_NUM32 0xAA550000L
 
-unsigned long fat_calc_hidden_sect(struct part_long *p)
+unsigned long fat_calc_hidden_sectors(struct part_long *p)
 {
     struct part_long *q = p;
     while (q) {
@@ -234,7 +234,7 @@ int format_fat32(struct part_long *p, char **argv)
        goto failed;
     }
 
-    i = num_sect - b->res_sects;
+    i = num_sect - b->res_sects + 2 * clust_size;
     j = (clust_size * 128u) + b->fat_copies;
     fat_size = ((unsigned long long)i + (j-1)) / j;
 
@@ -251,7 +251,7 @@ int format_fat32(struct part_long *p, char **argv)
     b->track_size = dinfo.num_sects;
     b->num_sides  = dinfo.num_heads;
 
-    b->hid_sects = fat_calc_hidden_sect(p);
+    b->hid_sects = fat_calc_hidden_sectors(p);
     b->num_sects = num_sect;
 
     b->serial_num =
@@ -394,7 +394,7 @@ int print_fat32(struct part_long *p)
 
     printf("Hidden sectors prior to partition:  %-10s  %-10s\n",
            sprintf_long(tmp1, b->hid_sects),
-           sprintf_long(tmp2, fat_calc_hidden_sect(p)));
+           sprintf_long(tmp2, fat_calc_hidden_sectors(p)));
     printf("          Total number of sectors:  %-10s  %-10s\n",
            sprintf_long(tmp1, b->num_sects),
            sprintf_long(tmp2, p->num_sect));
@@ -596,7 +596,7 @@ int setup_fat32(struct part_long *p)
     sprintf(tmp, " %u", dinfo.num_sects);
     write_string(DATA_COLOR, StX2 + 12, StY + 10, tmp);
 
-    sprintf(tmp, " %-9lu", fat_calc_hidden_sect(p));
+    sprintf(tmp, " %-9lu", fat_calc_hidden_sectors(p));
     write_string(DATA_COLOR, StX2 + 12, StY + 11, tmp);
 
     sprintf(tmp, " %-9lu", p->num_sect);
@@ -638,7 +638,7 @@ int setup_fat32(struct part_long *p)
                      StY + 10,
                      tmp);
         sprintf(tmp, "%-11lu", b->hid_sects);
-        write_string((b->hid_sects == fat_calc_hidden_sect(p)) ? DATA_COLOR : INVAL_COLOR,
+        write_string((b->hid_sects == fat_calc_hidden_sectors(p)) ? DATA_COLOR : INVAL_COLOR,
                      StX2,
                      StY + 11,
                      tmp);
@@ -788,7 +788,7 @@ int setup_fat32(struct part_long *p)
             b->drive_num = dinfo.disk;
             b->num_sides = dinfo.num_heads;
             b->num_sects = dinfo.num_sects;
-            b->hid_sects = fat_calc_hidden_sect(p);
+            b->hid_sects = fat_calc_hidden_sectors(p);
             b->num_sects = p->num_sect;
             b->magic_num = MBR_MAGIC_NUM32;
         } else if (ev.scan == 0x4100) /* F7 - Calculate size */

@@ -1,6 +1,26 @@
 #ifndef FAT_HEADER
 #define FAT_HEADER
 
+#define FAT_LABEL_LEN (sizeof ((struct boot_ms_dos *)(0))->label)
+
+#define MAX_CLUST12 4084  /* Maximum number of clusters in FAT12 system */
+#define MAX_CLUST16 65524 /* Maximum number of clusters in FAT16 system */
+
+#define FAT12_MAX_TABLE_SECTS 12
+#define FAT12_MAX_TABLE_SIZE  6144
+#define FAT16_MAX_TABLE_SECTS 256
+
+#define FAT16_ENTRY_SIZE 2
+
+#define FAT_ERR_TOO_SMALL -1
+#define FAT_ERR_TOO_LARGE -2
+
+enum {
+    FAT_12 = 12,
+    FAT_16 = 16,
+    FAT_32 = 32
+};
+
 _Packed struct boot_ms_dos
 {
     unsigned char jmp[3];      /* Must be 0xEB, 0x3C, 0x90		*/
@@ -25,6 +45,7 @@ _Packed struct boot_ms_dos
     unsigned char xcode[448];  /* Loader executable code		*/
     unsigned short magic_num;  /* Magic number (Must be 0xAA55) 	*/
 };
+
 
 _Packed struct boot_fat32
 {
@@ -117,5 +138,9 @@ static const unsigned char  DIRENT_LONG_NAME_MASK =
     DIRENT_ATTR_READ_ONLY | DIRENT_ATTR_HIDDEN | DIRENT_ATTR_SYSTEM |DIRENT_ATTR_VOL;
 
 #define NO_NAME_LABEL "NO NAME    "
+
+/* defined in S_FAT32.C */
+unsigned long fat_calc_hidden_sectors(struct part_long *p);
+
 
 #endif
