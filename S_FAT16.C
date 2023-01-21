@@ -240,18 +240,22 @@ static int fat_initialize_bpb(struct part_long *p,
     return OK;
 }
 
+
+/* initializes the FAT-16 tables */
+/* marks bad clusters for sectors given in bbt if bbt != NULL and num_bad>0 */
 static int fat16_initialize_table(struct part_long *p,
                                   struct boot_ms_dos *b,
                                   unsigned long *bbt,
                                   unsigned short num_bad)
 {
-    unsigned short fat[SECT_SIZE / 2];
+    unsigned short *fat;
     int copy;
     unsigned short next_bad;
     unsigned short table_sector;
     unsigned long base_sector;
     unsigned long current_sector;
 
+    if (!(fat = malloc(b->sect_size))) return FAILED;
     current_sector = b->res_sects;
     
     for (copy = 0; copy < b->num_fats; copy++)
@@ -277,14 +281,19 @@ static int fat16_initialize_table(struct part_long *p,
                 base_sector += b->clust_size * 256;
             }
             if (disk_write_rel(p, current_sector++, fat, 1) == FAILED) {
+                free(fat);
                 return FAILED;
             }
         }
     }
+
+    free(fat);
     return OK;
 }
 
 
+/* initializes the FAT-12 tables */
+/* marks bad clusters for sectors given in bbt if bbt != NULL and num_bad>0 */
 static int fat12_initialize_table(struct part_long *p,
                                   struct boot_ms_dos *b,
                                   unsigned long *bbt,
@@ -325,34 +334,35 @@ static int fat12_initialize_table(struct part_long *p,
     for (copy = 0; copy < b->num_fats; copy++) {
         for (table_sector = 0; table_sector < b->fat_size; table_sector++) {
             if (disk_write_rel(p, current_sector++, fat + table_sector * b->sect_size, 1) == FAILED) {
-                goto failed;
+                free(fat);
+                return FAILED;
             }
         }
     }
 
     free(fat);
     return OK;
-
-failed:
-    free(fat);
-    return FAILED;
 }
 
 
 int fat_initialize_root(struct part_long *p, struct boot_ms_dos *b)
 {
-    char fat[SECT_SIZE];
+    char *buf;
     unsigned short sector;
     unsigned short root_sectors = fat_root_sectors(b);
     unsigned long abs_sector = b->res_sects + b->num_fats * b->fat_size;
 
-    memset(fat, 0, b->sect_size);
+    if (!(buf = malloc(b->sect_size))) return FAILED;
+    memset(buf, 0, b->sect_size);
+
     for (sector = 0; sector < root_sectors; sector++) {
-        if (disk_write_rel(p, abs_sector++, fat, 1) == FAILED) {
+        if (disk_write_rel(p, abs_sector++, buf, 1) == FAILED) {
+            free(buf);
             return FAILED;
         }        
     }
 
+    free(buf);
     return fat16_update_label_file(p, b);
 }
 
@@ -389,7 +399,7 @@ int format_fat(struct part_long *p, char **argv)
 
     /* make test read to check if whole partition is accessible */
     if (disk_read_rel(p, p->num_sect-1, data_pool, 1) == FAILED) {
-        progress(TEXT("Can not access last sector of partition. Refusing to format!"));
+        progress(TEXT("^Can not access last sector of partition. Refusing to format!"));
         goto failed;
     }
 
@@ -512,15 +522,17 @@ failed:
 
 int format_embr(struct part_long *p, char **argv)
 {
-    struct mbr *mbr = (struct mbr *)&tmp;
+    struct mbr *mbr;
+    (void)argv;
 
+    if (!(mbr = malloc(sizeof(struct mbr)))) return FAILED;
     flush_caches();
 
     disk_lock(dinfo.disk);
 
     progress("^Initializing Extended DOS partition ...");
 
-    progress("~Writing Extended Master Boot Record ...");
+    progress("Writing Extended Master Boot Record ...");
 
     memset(mbr, 0, SECT_SIZE);
     memmove(mbr->x.std.code, EMP_IPL, EMP_IPL_SIZE);
@@ -532,12 +544,12 @@ int format_embr(struct part_long *p, char **argv)
     if (disk_write_rel(p, 0, mbr, 1) == FAILED) {
         progress("Error Writing Extended Master Boot Record.");
         disk_unlock(dinfo.disk);
+        free(mbr);
         return FAILED;
     }
 
-    argv++; /* so compiler will not show warning */
-
     disk_unlock(dinfo.disk);
+    free(mbr);
     return OK;
 } /* format_embr */
 
