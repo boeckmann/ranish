@@ -1,7 +1,7 @@
 #ifndef FAT_HEADER
 #define FAT_HEADER
 
-#define FAT_LABEL_LEN (sizeof ((struct boot_ms_dos *)(0))->label)
+#define FAT_LABEL_LEN (sizeof ((struct boot_ms_dos *)(0))->x.f16.label)
 
 #define MAX_CLUST12 4084  /* Maximum number of clusters in FAT12 system */
 #define MAX_CLUST16 65524 /* Maximum number of clusters in FAT16 system */
@@ -11,6 +11,7 @@
 #define FAT16_MAX_TABLE_SECTS 256
 
 #define FAT16_ENTRY_SIZE 2
+#define FAT32_ENTRY_SIZE 4
 
 #define FAT_ERR_TOO_SMALL -1
 #define FAT_ERR_TOO_LARGE -2
@@ -20,6 +21,12 @@ enum {
     FAT_16 = 16,
     FAT_32 = 32
 };
+
+#define FAT32_BACKUP_SECTOR 6 /* location of second boot record copy */
+
+#define FAT32_TRAIL_SIG 0xAA550000L
+#define FAT32_LEAD_SIG 0x41615252
+#define FAT32_STRUC_SIG 0x61417272
 
 _Packed struct boot_ms_dos
 {
@@ -32,18 +39,52 @@ _Packed struct boot_ms_dos
     unsigned short root_entr;  /* Root directory entries		*/
     unsigned short total_sect; /* Total sectors (if less 64k)		*/
     unsigned char media_desc;  /* Media descriptor byte (F8h for HD)	*/
-    unsigned short fat_size;   /* Sectors per fat			*/
-    unsigned short num_sects;  /* Sectors per track			*/
+    unsigned short fat_size16; /* Sectors per fat			*/
+    unsigned short track_size; /* Sectors per track			*/
     unsigned short num_sides;  /* Sides				*/
     unsigned long hid_sects;   /* Special hidden sectors		*/
     unsigned long big_total;   /* Big total number of sectors  	*/
-    unsigned short drive_num;  /* Drive number				*/
-    unsigned char ext_signat;  /* Extended Boot Record signature (29h)	*/
-    unsigned long serial_num;  /* Volume serial number			*/
-    unsigned char label[11];   /* Volume label				*/
-    unsigned char fs_id[8];    /* File system id			*/
-    unsigned char xcode[448];  /* Loader executable code		*/
-    unsigned short magic_num;  /* Magic number (Must be 0xAA55) 	*/
+    union {
+        _Packed struct x_fat16 {
+            unsigned short drive_num;  /* Drive number              */
+            unsigned char ext_signat;  /* Extended Boot Record signature (29h)  */
+            unsigned long serial_num;  /* Volume serial number          */
+            unsigned char label[11];   /* Volume label              */
+            unsigned char fs_id[8];    /* File system id            */
+            unsigned char xcode[448];  /* Loader executable code        */
+        } f16;
+        _Packed struct x_fat32 {
+            unsigned long fat_size;     /* Sectors per FAT (big) */
+            unsigned short ext_flags;   /* active FAT etc.  */        
+            unsigned char fs_ver_maj;   /* File System Version (major) */
+            unsigned char fs_ver_min;  /* File System Version (minor) */       
+            unsigned long root_clust;   /* First cluster in root */       
+            unsigned short fs_info_sect_num; /* FS Sector number (1) */
+            unsigned short bs_bak_sect; /* Boot sector backup (6) */        
+            unsigned char _resrvd1[12]; /* Reserved */
+            unsigned char drive_num;    /* Physical drive number (80h) */
+            unsigned char _resrvd2;     /* Reserved */        
+            unsigned char ext_signat;   /* Extended Boot Record signature (29h) */
+            unsigned long serial_num;   /* Volume serial number */
+            unsigned char label[11];    /* Volume label */
+            unsigned char fs_id[8];     /* File system id ("FAT32   ") */
+            unsigned char xcode[420];   /* Boot loader code (first part) */
+        } f32;
+    } x;
+    unsigned short magic_num;  /* Magic number (Must be 0xAA55)     */
+};
+
+/* sectors 3 and 3 of FAT-32 extended boot record */
+_Packed struct fat32_ext_bootrec {
+    unsigned long lead_sig;
+    char _resrvd1[480];
+    unsigned long struc_sig;
+    unsigned long free_cluster_count;
+    unsigned long next_free_cluster;
+    char _resrvd2[12];
+    unsigned long trail_sig;
+    char _resrvd3[508];
+    unsigned long trail2_sig;
 };
 
 
@@ -69,10 +110,10 @@ _Packed struct boot_fat32
     unsigned long hid_sects; /* Special hidden sectors		*/
     unsigned long num_sects; /* Big total number of sectors  	*/
     unsigned long fat_size;  /* Sectors per FAT (big)		*/
-    unsigned char fat_attr;  /* FAT attributes (I guess)		*/
+    unsigned short fat_attr;  /* FAT attributes (I guess)		*/
 
     unsigned char fs_ver_maj;  /* File System Version (major)		*/
-    unsigned short fs_ver_min; /* File System Version (minor)		*/
+    unsigned char fs_ver_min; /* File System Version (minor)		*/
 
     unsigned long root_clust; /* First cluster in root		*/
 
@@ -87,8 +128,8 @@ _Packed struct boot_fat32
     unsigned long serial_num; /* Volume serial number			*/
     unsigned char label[11];  /* Volume label				*/
     unsigned char fs_id[8];   /* File system id ("FAT32   ")		*/
-    unsigned char xcode[418]; /* Boot loader code (first part)	*/
-    unsigned long magic_num;  /* Magic number (Must be 0xAA550000) 	*/
+    unsigned char xcode[420]; /* Boot loader code (first part)	*/
+    unsigned short magic_num;  /* Magic number (Must be 0xAA550000) 	*/
 
     /* Sector 2 */
 
