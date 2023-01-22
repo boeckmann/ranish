@@ -113,19 +113,19 @@ static unsigned long fat_max_clusters(struct boot_ms_dos *b, int fat_type)
 }
 
 
-static unsigned long fat32_clust_to_sect(struct boot_ms_dos *b, unsigned long clust)
+static unsigned long fat_cluster_to_sector(struct boot_ms_dos *b, unsigned long cluster)
 {
-    return b->res_sects + b->num_fats * fat_size(b) + (clust-2) * b->clust_size;
+    return fat_non_data_sectors(b) + (cluster - 2) * b->clust_size;
 }
 
 
-static int fat32_read_clust(unsigned char * buf,
+int fat_read_cluster(unsigned char * buf,
     struct part_long *p, 
     struct boot_ms_dos *b,
     unsigned long clust)
 {
     int i;
-    unsigned long sect = fat32_clust_to_sect(b, clust);
+    unsigned long sect = fat_cluster_to_sector(b, clust);
     if (clust < 2) return FAILED;
 
     for (i = 0; i < b->clust_size; i++) {
@@ -136,13 +136,13 @@ static int fat32_read_clust(unsigned char * buf,
 }
 
 
-static int fat32_write_clust(unsigned char * buf,
+int fat_write_cluster(unsigned char * buf,
     struct part_long *p, 
     struct boot_ms_dos *b,
     unsigned long clust)
 {
     int i;
-    unsigned long sect = fat32_clust_to_sect(b, clust);
+    unsigned long sect = fat_cluster_to_sector(b, clust);
     if (clust < 2) return FAILED;
 
     for (i = 0; i < b->clust_size; i++) {
@@ -192,7 +192,7 @@ static int fat_update_label_file(struct part_long *p, struct boot_ms_dos *b)
     if ((buf = malloc(SECT_SIZE)) == NULL) return FAILED;
 
     if (is_fat32(b)) {
-        start_sect = fat32_clust_to_sect(b, b->x.f32.root_clust);
+        start_sect = fat_cluster_to_sector(b, b->x.f32.root_clust);
         root_sect_cnt = b->clust_size;
     } else {
         start_sect = b->res_sects + b->num_fats * fat_size(b);
@@ -539,7 +539,7 @@ int fat_initialize_root(struct part_long *p, struct boot_ms_dos *b)
     unsigned long abs_sector;
 
     if (is_fat32(b)) {
-        abs_sector = fat32_clust_to_sect(b, b->x.f32.root_clust);
+        abs_sector = fat_cluster_to_sector(b, b->x.f32.root_clust);
         num_sectors = b->clust_size;
     } else {
         abs_sector = b->res_sects + b->num_fats * fat_size(b);
