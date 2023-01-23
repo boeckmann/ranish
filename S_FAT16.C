@@ -54,21 +54,10 @@ static unsigned fat32_cluster_size(unsigned long sectors)
     else return 64;
 }
 
-
-static int is_fat32(struct boot_ms_dos *b)
+unsigned int fat32_eoc(unsigned long cluster)
 {
-    return b->root_entr == 0 && b->total_sect == 0 && b->fat_size16 == 0;
+    return  cluster >= 0x0FFFFFF8;
 }
-
-/* returns the numer of root sectors for FAT-16 or 0 for FAT-32 */
-static unsigned long fat_root_sectors(struct boot_ms_dos *b)
-{
-    if (is_fat32(b)) return 0;
-
-    return ((unsigned long)b->root_entr * sizeof(struct dirent) + b->sect_size - 1)
-        / b->sect_size;
-}
-
 
 static unsigned long fat_num_sectors(struct boot_ms_dos *b)
 {
@@ -82,6 +71,22 @@ static unsigned long fat_size(struct boot_ms_dos *b)
 }
 
 
+static int is_fat32(struct boot_ms_dos *b)
+{
+    return b->root_entr == 0 && b->total_sect == 0 && b->fat_size16 == 0;
+}
+
+
+/* returns the numer of root sectors for FAT-16 or 0 for FAT-32 */
+static unsigned long fat_root_sectors(struct boot_ms_dos *b)
+{
+    if (is_fat32(b)) return 0;
+
+    return ((unsigned long)b->root_entr * sizeof(struct dirent) + b->sect_size - 1)
+        / b->sect_size;
+}
+
+
 static unsigned long fat_non_data_sectors(struct boot_ms_dos *b)
 {
     return b->res_sects + b->num_fats * fat_size(b) + fat_root_sectors(b);
@@ -91,6 +96,14 @@ static unsigned long fat_non_data_sectors(struct boot_ms_dos *b)
 static unsigned long fat_num_clusters(struct boot_ms_dos *b)
 {
     return (fat_num_sectors(b) - fat_non_data_sectors(b)) / b->clust_size;
+}
+
+
+static int fat_type(struct boot_ms_dos *b)
+{
+    if (b->root_entr == 0 && b->total_sect == 0 && b->fat_size16 == 0) return FAT_32;
+    else if (fat_num_clusters(b) > MAX_CLUST12) return FAT_16;
+    else return FAT_12;
 }
 
 
@@ -112,10 +125,96 @@ static unsigned long fat_max_clusters(struct boot_ms_dos *b, int fat_type)
     return 0;
 }
 
+/*--- cache routines -------------------------------------------------------*/
 
-static unsigned long fat_cluster_to_sector(struct boot_ms_dos *b, unsigned long cluster)
+static char fat_cache[SECT_SIZE];
+static unsigned long fat_cache_sector = 0;
+static void *fat_cache_entity = NULL;
+static int fat_cache_dirty = 0; /* cache was written to */
+
+static void fat_cache_clear(struct part_long *p)
+{
+    fat_cache_sector = 0;
+    fat_cache_entity = NULL;
+}
+
+
+/* mark FAT cache as dirty */
+static void fat_cache_mark_dirty()
+{
+    fat_cache_dirty = 1;
+}
+
+
+static int fat_cache_flush()
+{
+    struct part_long *p;
+
+    if (fat_cache_entity == NULL) return OK;
+
+    if (fat_cache_dirty) {
+        p = (struct part_long *)fat_cache_entity;
+        if (disk_write_rel(p, fat_cache_sector, fat_cache, 1) == FAILED) return FAILED;
+        fat_cache_dirty = 0;
+    }
+
+    return OK;
+}
+
+
+static int in_fat_cache(struct part_long *p, unsigned long sector)
+{
+    return fat_cache_sector == sector && fat_cache_entity == p;
+}
+
+
+static void * fat_cache_read(struct part_long *p, unsigned long sector)
+{
+    if (in_fat_cache(p, sector)) return OK;
+
+    fat_cache_flush();
+    if (disk_read_rel(p, sector, fat_cache, 1) == FAILED) return NULL;
+
+    fat_cache_sector = sector;
+    fat_cache_entity = p;
+    return fat_cache;
+}
+
+
+/*--- cluster routines -----------------------------------------------------*/
+
+/* calculates the data sector for the given cluster */
+static unsigned long fat_cluster_to_data_sector(struct boot_ms_dos *b, unsigned long cluster)
 {
     return fat_non_data_sectors(b) + (cluster - 2) * b->clust_size;
+}
+
+
+/* find the next cluster in chain */
+static unsigned long fat_next_cluster(struct part_long *p, struct boot_ms_dos *b, unsigned long cluster, int fat_typ)
+{
+    unsigned long fat_sector;
+    unsigned long fat_offset;
+    char *buf;
+
+    if (fat_typ == FAT_32) {
+        fat_sector = b->res_sects + 4 * cluster / b->sect_size;
+        fat_offset = b->res_sects + 4 * cluster % b->sect_size;
+    } else if (fat_typ == FAT_16) {
+        fat_sector = b->res_sects + 2 * cluster / b->sect_size;
+        fat_offset = b->res_sects + 2 * cluster % b->sect_size;        
+    }
+
+    buf = fat_cache_read(p, fat_sector);
+    if (!buf) return INVALID_CLUSTER;
+
+    if (fat_typ == FAT_32) {
+        return (*(unsigned long *)(buf + fat_offset));
+    } else if (fat_typ == FAT_16) {
+        return (*(unsigned short *)(buf + fat_offset));        
+    }
+
+    return INVALID_CLUSTER;
 }
 
 
@@ -125,7 +224,7 @@ int fat_read_cluster(unsigned char * buf,
     unsigned long clust)
 {
     int i;
-    unsigned long sect = fat_cluster_to_sector(b, clust);
+    unsigned long sect = fat_cluster_to_data_sector(b, clust);
     if (clust < 2) return FAILED;
 
     for (i = 0; i < b->clust_size; i++) {
@@ -142,7 +241,7 @@ int fat_write_cluster(unsigned char * buf,
     unsigned long clust)
 {
     int i;
-    unsigned long sect = fat_cluster_to_sector(b, clust);
+    unsigned long sect = fat_cluster_to_data_sector(b, clust);
     if (clust < 2) return FAILED;
 
     for (i = 0; i < b->clust_size; i++) {
@@ -186,46 +285,65 @@ static int fat_update_label_file(struct part_long *p, struct boot_ms_dos *b)
 {
     unsigned char *buf;
     struct dirent *dirent;
-    unsigned long root_sect_cnt, j;
+    unsigned long sector_count, j;
     unsigned long start_sect, sect;
+    unsigned long data_cluster;
+    unsigned long next_data_cluster = 0;
+    int fat_typ = fat_type(b);
 
     if ((buf = malloc(SECT_SIZE)) == NULL) return FAILED;
 
-    if (is_fat32(b)) {
-        start_sect = fat_cluster_to_sector(b, b->x.f32.root_clust);
-        root_sect_cnt = b->clust_size;
+    if (fat_typ == FAT_32) {
+        data_cluster = b->x.f32.root_clust;
+        next_data_cluster = fat_next_cluster(p, b, data_cluster, FAT_32);
+        start_sect = fat_cluster_to_data_sector(b, data_cluster);
+        sector_count = b->clust_size;
     } else {
         start_sect = b->res_sects + b->num_fats * fat_size(b);
-        root_sect_cnt = fat_root_sectors(b);
+        sector_count = fat_root_sectors(b);
     }
 
-    for (sect = start_sect; sect < start_sect + root_sect_cnt; sect++)
-    {
-        if (disk_read_rel(p, sect, buf, 1) == FAILED) goto failed;
-        dirent = (struct dirent *)buf;
-
-        for (j = 0; j < DIRENT_PER_SECT; j++) {
-            if (dirent->name[0] == 0 || 
-                    (dirent->attr & DIRENT_LONG_NAME_MASK) != DIRENT_LONG_NAME_MASK &&
-                    ((dirent->attr) & (DIRENT_ATTR_VOL | DIRENT_ATTR_DIR))  == DIRENT_ATTR_VOL) {  
-
-                if (memcmp(fat_label(b), NO_NAME_LABEL, sizeof(b->x.f16.label))) {
-                    /* update label or create new one if not found */
-                    memset(dirent, 0, sizeof(struct dirent));
-                    dirent->attr |= DIRENT_ATTR_VOL;
-                    memcpy(dirent->name, fat_label(b), sizeof(b->x.f16.label));
+    while (1) {
+        for (sect = start_sect; sect < start_sect + sector_count; sect++)
+        {
+            if (disk_read_rel(p, sect, buf, 1) == FAILED) goto failed;
+            dirent = (struct dirent *)buf;
+    
+            for (j = 0; j < DIRENT_PER_SECT; j++) {
+                if (dirent->name[0] == 0 || 
+                        (dirent->attr & DIRENT_LONG_NAME_MASK) != DIRENT_LONG_NAME_MASK &&
+                        ((dirent->attr) & (DIRENT_ATTR_VOL | DIRENT_ATTR_DIR))  == DIRENT_ATTR_VOL) {  
+    
+                    if (memcmp(fat_label(b), NO_NAME_LABEL, sizeof(b->x.f16.label))) {
+                        /* update label or create new one if not found */
+                        memset(dirent, 0, sizeof(struct dirent));
+                        dirent->attr |= DIRENT_ATTR_VOL;
+                        memcpy(dirent->name, fat_label(b), sizeof(b->x.f16.label));
+                    }
+                    else if (dirent->name[0] != 0) {
+                        /* delete label file if it exists and label is "NO NAME" */
+                        dirent->name[0] = 0xe5;
+                    }
+                    if (disk_write_rel(p, sect, buf, 1) == FAILED) goto failed;
+                    goto success;
                 }
-                else if (dirent->name[0] != 0) {
-                    /* delete label file if it exists and label is "NO NAME" */
-                    dirent->name[0] = 0xe5;
-                }
-                if (disk_write_rel(p, sect, buf, 1) == FAILED) goto failed;
-                goto success;
+    
+                dirent++;
             }
-
-            dirent++;
         }
+
+        if (fat_typ == FAT_32) {
+            if (fat32_eoc(next_data_cluster)) break;
+            else {
+                data_cluster = next_data_cluster;
+                next_data_cluster = fat_next_cluster(p, b, data_cluster, FAT_32);
+                start_sect = fat_cluster_to_data_sector(b, data_cluster);
+            }
+        } else {
+            break;
+        }    
     }
+
 
 success:
     free(buf);
@@ -539,7 +657,7 @@ int fat_initialize_root(struct part_long *p, struct boot_ms_dos *b)
     unsigned long abs_sector;
 
     if (is_fat32(b)) {
-        abs_sector = fat_cluster_to_sector(b, b->x.f32.root_clust);
+        abs_sector = fat_cluster_to_data_sector(b, b->x.f32.root_clust);
         num_sectors = b->clust_size;
     } else {
         abs_sector = b->res_sects + b->num_fats * fat_size(b);

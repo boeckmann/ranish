@@ -106,6 +106,9 @@ int get_disk_info(int hd, struct disk_info *, char *buf_4096);
 /* result < 0 if error occured */
 int disk_read(struct disk_addr *, void *, int num_sect);
 int disk_write(struct disk_addr *, void *, int num_sect);
+int disk_buffered_read(struct disk_addr *, void *, int num_sect);
+int disk_buffered_write(struct disk_addr *, void *, int num_sect);
+
 int disk_format(struct disk_addr *, void *ftable);
 int disk_verify(struct disk_addr *, void *, int num_sect);
 

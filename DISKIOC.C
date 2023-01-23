@@ -6,6 +6,7 @@ unsigned long force_num_cyls = 0;
 unsigned short force_num_heads = 0;
 unsigned short force_num_sects = 0;
 
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -107,6 +108,7 @@ int disk_read(struct disk_addr *daddr, void *buf, int num_sect)
     return result;
 }
 
+
 int disk_write(struct disk_addr *daddr, void *buf, int num_sect)
 {
 	struct disk_addr_chs chs;
@@ -121,6 +123,19 @@ int disk_write(struct disk_addr *daddr, void *buf, int num_sect)
 
     return result;
 }
+
+
+int disk_buffered_read(struct disk_addr *daddr, void *buf, int num_sect)
+{
+	return disk_read(daddr, buf, num_sect);
+}
+
+
+int disk_buffered_write(struct disk_addr *daddr, void *buf, int num_sect)
+{
+	return disk_write(daddr, buf, num_sect);
+}
+
 
 int disk_format(struct disk_addr *daddr, void *ftable)
 {

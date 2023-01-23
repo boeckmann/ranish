@@ -86,8 +86,10 @@ void main(int argc, char **argv)
     diskio_exit();
     screen_exit();
 
-    print_mem_stat();
-    printf("\nEMP_IPL_SIZE: %u\n", EMP_IPL_SIZE);
+#ifdef DEBUG
+        print_mem_stat();
+#endif
+        
     exit(0);
 } /* main */
 
@@ -1749,7 +1751,7 @@ void command_line(int argc, char **argv)
 
         disk_unlock(dinfo.disk);
         printf("%s\n", (view == VIEW_ADV) ? MESG_ADV_SAVED2 : MESG_MBR_SAVED2);
-        return;
+        goto done;
     } /* load */
 
     if (disk_read_rel(p, 0, mbr, 1) == -1)
@@ -1880,7 +1882,7 @@ void command_line(int argc, char **argv)
             }
         } /* print logical */
 
-        return;
+        goto done;
     } /* print */
 
     if (argv[0][0] == 'S' || argv[0][0] == 's') /* Save */
@@ -1897,7 +1899,7 @@ void command_line(int argc, char **argv)
         printf("%s\n", (view == VIEW_ADV) ? MESG_ADVFILE_SAVED : MESG_FILE_SAVED);
         if (!valid)
             fprintf(stderr, "Warning: %s\n", WARN_INVALID);
-        return;
+        goto done;
     } /* save */
 
     if (argv[0][0] == 'C' || argv[0][0] == 'c') /* Compare */
@@ -1916,7 +1918,7 @@ void command_line(int argc, char **argv)
         if (!valid)
             fprintf(stderr, "Warning: %s\n", WARN_INVALID);
         printf("%s\n", MESG_NO_DIFFERENCES);
-        return;
+        goto done;
     } /* save */
 
     if (!valid)
@@ -1928,7 +1930,7 @@ void command_line(int argc, char **argv)
 
         if (view == VIEW_ADV) {
             printf("Command has no effect, because Advanced Boot Manager is installed.\n");
-            return;
+            goto done;
         }
         if (argc < 2)
             usage();
@@ -1952,14 +1954,14 @@ void command_line(int argc, char **argv)
         printf("%s\n", MESG_MBR_SAVED);
 
         disk_unlock(hd);
-        return;
+        goto done;
     } /* activate */
 
     if (argv[0][0] == 'H' || argv[0][0] == 'h') /* Hide */
     {
         if (view == VIEW_ADV) {
             printf("Command has no effect, because Advanced Boot Manager is installed.\n");
-            return;
+            goto done;
         }
         if (argc < 2)
             usage();
@@ -1981,7 +1983,7 @@ void command_line(int argc, char **argv)
             fprintf(
                 stderr,
                 "I will not hide partition which I couldn't unhide later\n");
-            return;
+            goto done;
         }
 
         pack_part_tab(part, mbr->part_rec, 4);
@@ -1996,7 +1998,7 @@ void command_line(int argc, char **argv)
         printf("%s\n", MESG_MBR_SAVED);
 
         disk_unlock(hd);
-        return;
+        goto done;
     } /* hide */
 
     if (argv[0][0] == 'F' || argv[0][0] == 'f') /* Format */
@@ -2021,7 +2023,7 @@ void command_line(int argc, char **argv)
         else
             printf("\n%s\n", MESG_FORMAT_OK);
 
-        return;
+        goto done;
     }
 
     if (argv[0][0] == 'V' || argv[0][0] == 'v') /* Verify */
@@ -2043,7 +2045,11 @@ void command_line(int argc, char **argv)
         else
             printf("\n%s\n", MESG_VERIFY_OK);
 
-        return;
+        goto done;
     }
+
+done:
+    free(p);
+    free(data);
 
 } /* command_line */
