@@ -1,7 +1,8 @@
 #include "part.h"
 
      /* VERSION_DATE "2.37.05            June 10, 1998" */
-#define VERSION_DATE "2.90.11        built " __DATE__
+/*#define VERSION_DATE "2.90.11        built " __DATE__*/
+#define VERSION_DATE "2.90.12 SMOKEY built " __DATE__
 #define VERSION      "2.90.11"
 
 

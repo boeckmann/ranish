@@ -5,7 +5,7 @@ struct disk_info dinfo;
 unsigned long force_num_cyls = 0;
 unsigned short force_num_heads = 0;
 unsigned short force_num_sects = 0;
-
+unsigned long reported_total_sectors = 0;
 
 #ifdef __cplusplus
 extern "C"
@@ -35,23 +35,17 @@ static void lba_to_chs(struct disk_addr *laddr, struct disk_addr_chs *chs)
 
 }
 
+unsigned long test_sectors[] = { 0x10000000, 0xfffffff, 16450559, 16434494, 0 };
+
 int get_disk_info(int hd, struct disk_info *di, char *buf_4096)
 {
-	int result;
+	int result, i;
+	struct disk_addr addr;
 
 	if ((result = _get_disk_info(hd, di, buf_4096)) == -1) return result;
-
-	if (force_num_sects) {
-		di->num_sects = force_num_sects;
-	}
-	if (force_num_heads) {
-		di->num_heads = force_num_heads;		
-	}
-	if (force_num_cyls) {
-		di->num_cyls = force_num_cyls;
-	}
+    reported_total_sectors = dinfo.total_sects;
 	
-	if (di->lba) {
+	if (di->lba && lba_enabled) {
 		/* comment out to force disk to 2TB size for testing */
 		/* di->total_sects = 0xffffffff; */
 
@@ -75,18 +69,47 @@ int get_disk_info(int hd, struct disk_info *di, char *buf_4096)
 				di->num_heads = 16;			
 			}			
 		}
+
+        addr.disk = dinfo.disk;
+        addr.sect = dinfo.total_sects - 1;
+
+        /* test if last sector is accessable */
+        if (disk_read(&addr, buf_4096, 1) != 0) {
+        	i = 0;
+        	while(test_sectors[i]) {
+        		addr.sect = test_sectors[i];
+        		if (disk_read(&addr, buf_4096, 1) == 0) {
+					di->total_sects = test_sectors[i] + 1;
+					break;
+				}
+        	}
+	        if (test_sectors[i] == 0) return -1;
+        }
 	}
 	
-	if (di->lba || force_num_heads || force_num_sects) {
-		di->sect_per_cyl = di->num_heads * di->num_sects;
+	if (force_num_sects) {
+		di->num_sects = force_num_sects;
+	}
+	if (force_num_heads) {
+		di->num_heads = force_num_heads;		
+	}
+	if (force_num_cyls) {
+		di->num_cyls = force_num_cyls;
+	}
 
+	if ((di->lba && lba_enabled) || force_num_heads || force_num_sects) {
+		di->sect_per_cyl = di->num_heads * di->num_sects;
+		if (!force_num_cyls) {
 		/* recalculate cylinder count based on total sectors and
 		   sectors per cylinder */
-		if (!force_num_cyls) {
 			di->num_cyls = di->total_sects / di->sect_per_cyl;
 			if (di->total_sects % di->sect_per_cyl) {
 				di->num_cyls++;
-			}	
+			}
+		}	
+		else {
+			di->total_sects = ((unsigned long) di->num_cyls) * di->num_heads * di->num_sects;
+			reported_total_sectors = di->total_sects;
 		}
 	}
 	

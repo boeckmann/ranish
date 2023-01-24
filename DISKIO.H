@@ -33,6 +33,8 @@ extern struct disk_info dinfo;
 extern unsigned long force_num_cyls;
 extern unsigned short force_num_heads;
 extern unsigned short force_num_sects;
+extern unsigned long reported_total_sectors;
+
 
 extern int lba_enabled; /* on=1 by default, set 0 th disable lba access */
 

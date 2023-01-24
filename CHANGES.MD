@@ -1,5 +1,14 @@
 # Change Log
 
+## Version 2.90.12 alpha
+
+### Enhancements
+ * Rewrote the FAT-12/16/32 format routines. Instead of three routines only one handling all cases is left.
+
+### Critical Bug Fixe
+ * Fix a bug leading to partitions exceeding the end of the disk. The error occured when operating on disks not ending on a cylinder boundary, working in LBA mode under CHS view and creating a partition up to the end of the disk. Then the cylinder value the partition was aligned to was not rounded down but up beyond the end of the disk.
+
+
 ## Version 2.90.11 alpha
 ### Enhancements
  * Re-enable smallest file system size calculation for FAT12/16. Because it may take a long time it has to be triggered by pressing F7.
