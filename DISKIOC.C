@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <string.h>
 #include "diskio.h"
 
 struct disk_info dinfo;
@@ -116,6 +118,7 @@ int get_disk_info(int hd, struct disk_info *di, char *buf_4096)
 	return result;
 }
 
+
 int disk_read(struct disk_addr *daddr, void *buf, int num_sect)
 {
 	struct disk_addr_chs chs;
@@ -148,18 +151,6 @@ int disk_write(struct disk_addr *daddr, void *buf, int num_sect)
 }
 
 
-int disk_buffered_read(struct disk_addr *daddr, void *buf, int num_sect)
-{
-	return disk_read(daddr, buf, num_sect);
-}
-
-
-int disk_buffered_write(struct disk_addr *daddr, void *buf, int num_sect)
-{
-	return disk_write(daddr, buf, num_sect);
-}
-
-
 int disk_format(struct disk_addr *daddr, void *ftable)
 {
 	struct disk_addr_chs chs;
@@ -169,6 +160,7 @@ int disk_format(struct disk_addr *daddr, void *ftable)
     return disk_format_chs(&chs, ftable);
 
 }
+
 
 int disk_verify(struct disk_addr *daddr, void *buf, int num_sect)
 {
@@ -185,3 +177,62 @@ int disk_verify(struct disk_addr *daddr, void *buf, int num_sect)
     return result;
 }
 
+
+int disk_fill_sectors(struct disk_addr daddr,
+					  unsigned long num_sect,
+					  unsigned char fill_value,
+					  void (*func)(unsigned long, unsigned long))
+{
+    char *buf;
+	int sect_per_block;
+    unsigned long curr_sect = 0;
+    unsigned long start_sect = daddr.sect;
+    unsigned long block_sect;
+
+    sect_per_block = dinfo.num_sects;
+    buf = malloc(sect_per_block * SECT_SIZE);
+
+    /* if we can not allocate buffer for whole track write sectors one at a time */
+    if (!buf) {
+        buf = malloc(SECT_SIZE);
+        if (!buf) {
+            return -1;
+        } else {
+            sect_per_block = 1;
+        }
+    }
+    memset(buf, fill_value, sect_per_block * SECT_SIZE);
+
+    if (sect_per_block > 1) {
+    	while (curr_sect < num_sect) {
+	    	
+	    	/* align to multiple of sectors per block (track) */
+	    	block_sect = sect_per_block - (start_sect + curr_sect) % sect_per_block;
+	    	if (block_sect + curr_sect > num_sect) block_sect = num_sect - curr_sect;
+
+	    	if (disk_write(&daddr, buf, block_sect) != 0) break;
+
+	    	curr_sect += block_sect;
+	    	daddr.sect += block_sect;
+
+        	if (func) (*func)(curr_sect, num_sect);
+    	}
+    }
+
+    /* write all or (on error) remaining sectors one sector at a time */
+    while (curr_sect < num_sect)
+    {
+    	daddr.sect = start_sect + curr_sect;
+        if (disk_write(&daddr, buf, 1) != 0) {
+            free(buf);
+            return -1;
+        }
+
+        curr_sect++;
+        if (func) (*func)(curr_sect, num_sect);
+    }
+
+    free(buf);
+
+	return 0;
+}

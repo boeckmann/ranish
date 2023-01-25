@@ -492,6 +492,17 @@ static void fat32_initialize_ext_bootrec(struct boot_ms_dos *b,
     eb->trail2_sig = FAT32_TRAIL_SIG;
 }
 
+void format_progress(unsigned long curr, unsigned long total)
+{
+    char buf[16];
+    static unsigned long last = 0xff;
+
+    if (curr != last) {
+        sprintf(buf, "%% %lu%% written", curr * 100 / total);
+        last = curr;
+        progress(buf);
+    }
+}
 
 /* initializes the FAT-16 tables */
 /* marks bad clusters for sectors given in bbt if bbt != NULL and num_bad>0 */
@@ -506,36 +517,58 @@ static int fat32_initialize_table(struct part_long *p,
     unsigned short table_sector;
     unsigned long base_sector;
     unsigned long current_sector;
+    char buf[32];
 
     if (!(fat = malloc(b->sect_size))) return FAILED;
     current_sector = b->res_sects;
     
     for (copy = 0; copy < b->num_fats; copy++)
     {
-        next_bad  = 0;
-        base_sector = fat_non_data_sectors(b);
+        sprintf(buf, "^Writing FAT %d of %u ...", copy+1, b->num_fats);
+        progress(buf);
 
-        for (table_sector = 0; table_sector < b->x.f32.fat_size; table_sector++) {
-            memset(fat, 0, b->sect_size);
-            if (table_sector == 0) {
-                fat[0] = 0xFFFFFFF8;
-                fat[1] = 0xFFFFFFFF;
-                fat[2] = 0xFFFFFFFF;
-                while (bbt && next_bad != num_bad &&
-                       bbt[next_bad] < base_sector + b->clust_size * 125)
-                    fat[(bbt[next_bad++] - base_sector) / b->clust_size + 3] =
-                        0xFFFFFFF7;
-                base_sector += b->clust_size * 125;
-            } else {
-                while (bbt && next_bad != num_bad &&
-                       bbt[next_bad] < base_sector + b->clust_size * 128)
-                    fat[(bbt[next_bad++] - base_sector) / b->clust_size] =
-                        0xFFFFFFF7;
-                base_sector += b->clust_size * 128;
-            }
-            if (disk_write_rel(p, current_sector++, fat, 1) == FAILED) {
+        if ((!num_bad) || (!bbt)) {
+            if (part_fill(p, b->res_sects + b->x.f32.fat_size * copy, b->x.f32.fat_size, 0, format_progress)) {
                 free(fat);
                 return FAILED;
+            }
+
+            memset(fat, 0, SECT_SIZE);
+            fat[0] = 0xFFFFFFF8;
+            fat[1] = 0xFFFFFFFF;
+            fat[2] = 0xFFFFFFFF;
+
+            if (disk_write_rel(p, b->res_sects + b->x.f32.fat_size * copy, fat, 1)) {
+                free(fat);
+                return FAILED;
+            }
+        }
+        else {
+            next_bad  = 0;
+            base_sector = fat_non_data_sectors(b);
+    
+            for (table_sector = 0; table_sector < b->x.f32.fat_size; table_sector++) {
+                memset(fat, 0, b->sect_size);
+                if (table_sector == 0) {
+                    fat[0] = 0xFFFFFFF8;
+                    fat[1] = 0xFFFFFFFF;
+                    fat[2] = 0xFFFFFFFF;
+                    while (bbt && next_bad != num_bad &&
+                           bbt[next_bad] < base_sector + b->clust_size * 125)
+                        fat[(bbt[next_bad++] - base_sector) / b->clust_size + 3] =
+                            0xFFFFFFF7;
+                    base_sector += b->clust_size * 125;
+                } else {
+                    while (bbt && next_bad != num_bad &&
+                           bbt[next_bad] < base_sector + b->clust_size * 128)
+                        fat[(bbt[next_bad++] - base_sector) / b->clust_size] =
+                            0xFFFFFFF7;
+                    base_sector += b->clust_size * 128;
+                }
+                if (disk_write_rel(p, current_sector++, fat, 1) == FAILED) {
+                    free(fat);
+                    return FAILED;
+                }
             }
         }
     }
@@ -561,32 +594,51 @@ static int fat16_initialize_table(struct part_long *p,
 
     if (!(fat = malloc(b->sect_size))) return FAILED;
     current_sector = b->res_sects;
-    
+   
     for (copy = 0; copy < b->num_fats; copy++)
     {
-        next_bad  = 0;
-        base_sector = fat_non_data_sectors(b);
+        sprintf(buf, "^Writing FAT %d of %u ...", copy+1, b->num_fats);
+        progress(buf);
 
-        for (table_sector = 0; table_sector < b->fat_size16; table_sector++) {
-            memset(fat, 0, SECT_SIZE);
-            if (table_sector == 0) {
-                fat[0] = 0xFFF8;
-                fat[1] = 0xFFFF;
-                while (bbt && next_bad != num_bad &&
-                       bbt[next_bad] < base_sector + b->clust_size * 254)
-                    fat[(bbt[next_bad++] - base_sector) / b->clust_size + 2] =
-                        0xFFF7;
-                base_sector += b->clust_size * 254;
-            } else {
-                while (bbt && next_bad != num_bad &&
-                       bbt[next_bad] < base_sector + b->clust_size * 256)
-                    fat[(bbt[next_bad++] - base_sector) / b->clust_size] =
-                        0xFFF7;
-                base_sector += b->clust_size * 256;
-            }
-            if (disk_write_rel(p, current_sector++, fat, 1) == FAILED) {
+        if ((!num_bad) || (!bbt)) {
+            if (part_fill(p, b->res_sects + b->fat_size16 * copy, b->fat_size16, 0, format_progress)) {
                 free(fat);
                 return FAILED;
+            }
+
+            memset(fat, 0, SECT_SIZE);
+            fat[0] = 0xFFF8;
+            fat[1] = 0xFFFF;
+
+            if (disk_write_rel(p, b->res_sects + b->fat_size16 * copy, fat, 1)) {
+                free(fat);
+                return FAILED;
+            }
+        }
+        else {
+            next_bad  = 0;
+            base_sector = fat_non_data_sectors(b);
+            for (table_sector = 0; table_sector < b->fat_size16; table_sector++) {
+                memset(fat, 0, SECT_SIZE);
+                if (table_sector == 0) {
+                    fat[0] = 0xFFF8;
+                    fat[1] = 0xFFFF;
+                    while (bbt && next_bad != num_bad &&
+                           bbt[next_bad] < base_sector + b->clust_size * 254)
+                        fat[(bbt[next_bad++] - base_sector) / b->clust_size + 2] =
+                            0xFFF7;
+                    base_sector += b->clust_size * 254;
+                } else {
+                    while (bbt && next_bad != num_bad &&
+                           bbt[next_bad] < base_sector + b->clust_size * 256)
+                        fat[(bbt[next_bad++] - base_sector) / b->clust_size] =
+                            0xFFF7;
+                    base_sector += b->clust_size * 256;
+                }
+                if (disk_write_rel(p, current_sector++, fat, 1) == FAILED) {
+                    free(fat);
+                    return FAILED;
+                }
             }
         }
     }
@@ -636,6 +688,9 @@ static int fat12_initialize_table(struct part_long *p,
             fat12[bad_cluster / 2].c1 = 0xFF7;
     }
     for (copy = 0; copy < b->num_fats; copy++) {
+        sprintf(buf, "^Writing FAT %d of %u ...", copy+1, b->num_fats);
+        progress(buf);
+
         for (table_sector = 0; table_sector < b->fat_size16; table_sector++) {
             if (disk_write_rel(p, current_sector++, fat + table_sector * b->sect_size, 1) == FAILED) {
                 free(fat);
@@ -810,7 +865,7 @@ int format_fat(struct part_long *p, char **argv)
         goto failed;
     }
 
-    progress("Writing boot sector ...");
+    progress("^Writing boot sector ...");
     if (sys_type == FAT_32) {
         result = disk_write_rel(p, 0, b, 3);
         result |= disk_write_rel(p, FAT32_BACKUP_SECTOR, b, 3);
@@ -822,7 +877,6 @@ int format_fat(struct part_long *p, char **argv)
         goto failed;        
     }
 
-    progress("Writing FAT tables ...");
     if (sys_type == FAT_32) {
         result = fat32_initialize_table(p, b, bbt, num_bad);        
     }

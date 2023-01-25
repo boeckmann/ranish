@@ -31,6 +31,22 @@ int disk_write_rel(struct part_long *p, unsigned long rel_sect, void *buf,
     return disk_write(&daddr, buf, num_sect);
 } /* disk_write_rel */
 
+
+int part_fill(struct part_long *p,
+              unsigned long start_sect,
+              unsigned long num_sect,
+              unsigned char fill_value,
+              void (*func)(unsigned long, unsigned long)
+              )
+{
+    struct disk_addr daddr;
+
+    part_to_disk_addr(p, start_sect, &daddr);
+
+    return disk_fill_sectors(daddr, num_sect, fill_value, func);    
+}
+
+
 void pack_part_tab(struct part_long *part, struct part_rec *part_rec, int n)
 {
     int i;

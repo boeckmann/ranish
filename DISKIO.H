@@ -1,6 +1,8 @@
 #ifndef _DISKIO_H
 #define _DISKIO_H
 
+#define SECT_SIZE 512 /* Must not be changed */
+
 struct disk_addr_chs
 {
     unsigned short disk;
@@ -108,11 +110,13 @@ int get_disk_info(int hd, struct disk_info *, char *buf_4096);
 /* result < 0 if error occured */
 int disk_read(struct disk_addr *, void *, int num_sect);
 int disk_write(struct disk_addr *, void *, int num_sect);
-int disk_buffered_read(struct disk_addr *, void *, int num_sect);
-int disk_buffered_write(struct disk_addr *, void *, int num_sect);
 
 int disk_format(struct disk_addr *, void *ftable);
 int disk_verify(struct disk_addr *, void *, int num_sect);
 
+int disk_fill_sectors(struct disk_addr daddr,
+                      unsigned long num_sect,
+                      unsigned char fill_value,
+                      void (*func)(unsigned long, unsigned long));
 
 #endif

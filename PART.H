@@ -14,8 +14,6 @@
 #define WEBSITE_URL "https://codeberg.org/boeckmann/ranish"
 #define REPOSITORY_URL "https://codeberg.org/boeckmann/ranish"
 
-#define SECT_SIZE 512 /* Must not be changed */
-
 #define CHS_MAX_SECT 1024ul * 255ul * 63ul
 
 
@@ -259,6 +257,12 @@ int disk_read_rel(struct part_long *p, unsigned long sect, void *buf,
                   int num_sect);
 int disk_write_rel(struct part_long *p, unsigned long sect, void *buf,
                    int num_sect);
+int part_fill(struct part_long *p,
+              unsigned long start_sect,
+              unsigned long num_sect,
+              unsigned char fill_value,
+              void (*func)(unsigned long, unsigned long)
+              );
 
 int generic_clean(struct part_long *p);
 int generic_verify(struct part_long *p, int bbt_size, unsigned long *bbt);

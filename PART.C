@@ -11,9 +11,12 @@ char tmp3[80];
 char file_name[80];
 
 int interactive;
+
 char buf[25 * 80 * 2];
 char base_dir[256];
 char tmp[SECT_SIZE * 3];
+
+int changes_made = 0;
 
 void main(int argc, char **argv)
 {
@@ -81,6 +84,11 @@ void main(int argc, char **argv)
     } else {
         interactive = 0;
         command_line(argc, argv);
+    }
+
+    if (changes_made) {
+        printf("\nCHANGES WERE MADE.\n\n"
+            "RESTART YOUR PC TO APPLY AND AVOID DATA CORRUPTION!\n");
     }
 
     diskio_exit();
@@ -1209,7 +1217,6 @@ int setup_mbr(struct part_long *p)
             }
 
             disk_lock(dinfo.disk);
-
             mbr->magic_num = MBR_MAGIC_NUM;
 
             if (view == VIEW_ADV &&
@@ -1228,6 +1235,7 @@ int setup_mbr(struct part_long *p)
             }
 
             disk_unlock(dinfo.disk);
+            changes_made = 1;
             force_recalculate  = 1;
             force_adv_adjust   = 1;
             force_special_copy = 1;
