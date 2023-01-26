@@ -591,17 +591,12 @@ static int fat_initialize_tables(struct part_long *p,
     fat_typ = fat_type(b);
     fat_sz = fat_size(b);
 
-    /*sprintf(buf, "FAT size: %lu", fat_sz);
-    show_error(buf);*/
     for (copy = 0; copy < b->num_fats; copy++)
     {
         sprintf(buf, "^Format: writing FAT %d of %u ...", copy+1, b->num_fats);
         progress(buf);
 
-        result = part_fill_sectors(p, b->res_sects + fat_sz * copy, fat_sz, 0, write_progress, NULL);
-        if (result != OK) return result;
-
-
+        /* fill in the first cluster entries */
         if (!(fat = malloc(b->sect_size))) return FAILED;   
         memset(fat, 0, SECT_SIZE);
         if (fat_typ == FAT_32) {
@@ -619,6 +614,17 @@ static int fat_initialize_tables(struct part_long *p,
             return FAILED;
         }
         free(fat);
+
+        /* fill rest of FAT with zero */
+        result = part_fill_sectors(p,
+                    b->res_sects + fat_sz * copy + 1,
+                    fat_sz - 1,
+                    0,
+                    write_progress,
+                    NULL);
+        if (result != OK) return result;
+
+
     }
 
     return OK;
@@ -627,8 +633,6 @@ static int fat_initialize_tables(struct part_long *p,
 
 int fat_initialize_root(struct part_long *p, struct boot_ms_dos *b)
 {
-    char *buf;
-    unsigned short sector;
     unsigned short num_sectors;
     unsigned long abs_sector;
 
@@ -640,17 +644,8 @@ int fat_initialize_root(struct part_long *p, struct boot_ms_dos *b)
         num_sectors = fat_root_sectors(b);
     }
 
-    if (!(buf = malloc(b->sect_size))) return FAILED;
-    memset(buf, 0, b->sect_size);
+    part_fill_sectors(p, abs_sector, num_sectors, 0, NULL, NULL);
 
-    for (sector = 0; sector < num_sectors; sector++) {
-        if (disk_write_rel(p, abs_sector++, buf, 1) == FAILED) {
-            free(buf);
-            return FAILED;
-        }        
-    }
-
-    free(buf);
     return OK;
 }
 
@@ -816,6 +811,13 @@ int format_fat(struct part_long *p, char **argv)
         goto done;        
     }
 
+    progress("^Format: updating volume label ...");
+    result = fat_update_label_file(p, b);
+    if (result != OK) {
+        progress("Error updating volume label.");
+        goto done;        
+    }
+
     if (form_type == F_VERIFY) {
         progress("^Format: searching for bad sectors ...   you may skip this step via ESC");
         result = part_verify_sectors(p, fat_non_data_sectors(b), p->num_sect - fat_non_data_sectors(b), verify_progress, NULL);
@@ -831,14 +833,7 @@ int format_fat(struct part_long *p, char **argv)
             goto done;        
         }
     }
-
-    progress("^Format: updating volume label ...");
-    result = fat_update_label_file(p, b);
-    if (result != OK) {
-        progress("Error updating volume label.");
-        goto done;        
-    }
-
+    result = OK;
 
 done:
     fat_cache_flush();

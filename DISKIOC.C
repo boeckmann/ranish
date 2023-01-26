@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "diskio.h"
@@ -19,6 +20,9 @@ extern "C"
 {
 #endif
 
+    void __cdecl _diskio_init(void);
+    void __cdecl _diskio_exit(void);
+
     int __cdecl _get_disk_info(int hd, struct disk_info *, char *buf_4096);
 
     int __cdecl disk_op_lba(struct disk_addr *, void *, int num_sect, int operation);
@@ -32,6 +36,27 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+#ifdef DEBUG_DISKIO
+static FILE *f_diskio;
+#endif
+
+void diskio_init(void)
+{
+	_diskio_init();
+#ifdef DEBUG_DISKIO
+	f_diskio = fopen("diskdbg.txt", "w");
+#endif
+}
+
+
+void diskio_exit(void)
+{
+#ifdef DEBUG_DISKIO
+	if (f_diskio) fclose(f_diskio);
+#endif
+	_diskio_exit();
+}
 
 static void lba_to_chs(struct disk_addr *laddr, struct disk_addr_chs *chs)
 {
@@ -129,6 +154,14 @@ int disk_read(struct disk_addr *daddr, void *buf, int num_sect)
 	struct disk_addr_chs chs;
 	int result;
 
+#ifdef DEBUG_DISKIO
+	if (f_diskio)
+		fprintf(f_diskio, "r: %lu, len %d\n", daddr->sect, num_sect);
+#endif
+
+    /* uint32 overflow check */
+    if (daddr->sect + num_sect < daddr->sect) return FAILED;
+
     if (dinfo.lba) {
     	result = disk_op_lba(daddr, buf, num_sect, INT13_READ_EXT);
     } else {
@@ -144,6 +177,14 @@ int disk_write(struct disk_addr *daddr, void *buf, int num_sect)
 {
 	struct disk_addr_chs chs;
 	int result;
+
+#ifdef DEBUG_DISKIO
+	if (f_diskio)
+		fprintf(f_diskio, "W: %lu, len %d\n", daddr->sect, num_sect);
+#endif
+
+    /* uint32 overflow check */
+    if (daddr->sect + num_sect < daddr->sect) return FAILED;
 
     if (dinfo.lba) {
     	result = disk_op_lba(daddr, buf, num_sect, INT13_WRITE_EXT);
@@ -171,6 +212,9 @@ int disk_verify(struct disk_addr *daddr, void *buf, int num_sect)
 {
 	struct disk_addr_chs chs;
 	int result;
+
+    /* uint32 overflow check */
+    if (daddr->sect + num_sect < daddr->sect) return FAILED;
 
     if (dinfo.lba) {
     	result = disk_op_lba(daddr, buf, num_sect, INT13_VERIFY_EXT);
@@ -214,8 +258,8 @@ int disk_process_sectors(disk_operation op, struct disk_addr daddr,
     	memset(buf, data, sect_per_block * SECT_SIZE);
 
     if (sect_per_block > 1) {
+	    block_sect = sect_per_block - (start_sect + curr_sect) % sect_per_block;
     	while (curr_sect < num_sect) {
-	    	block_sect = sect_per_block - (start_sect + curr_sect) % sect_per_block;
 	    	
 	    	/* align to multiple of sectors per block (track) */
 	    	if (curr_sect + block_sect > num_sect) block_sect = num_sect - curr_sect;
@@ -235,9 +279,10 @@ int disk_process_sectors(disk_operation op, struct disk_addr daddr,
 	    		}
 	    	}
 	    	else {
-		    	daddr.sect += block_sect;
-	    	}
+	    		daddr.sect += block_sect;
+ 	    	}
 	    	curr_sect += block_sect;
+	    	block_sect = sect_per_block;
 
         	if (func) {
         		if ((*func)(curr_sect, num_sect) == 0) {

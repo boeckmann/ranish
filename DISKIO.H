@@ -87,9 +87,6 @@ extern "C"
 {
 #endif
 
-    void __cdecl diskio_init(void);
-    void __cdecl diskio_exit(void);
-
     void __cdecl reboot(void);
     int __cdecl flush_caches(void);
 
@@ -113,6 +110,8 @@ int get_disk_info(int hd, struct disk_info *, char *buf_4096);
 
 typedef int (*disk_operation)(struct disk_addr *, void *, int num_sect);
 
+void diskio_init(void);
+void diskio_exit(void);
 
 /* result < 0 if error occured */
 int disk_read(struct disk_addr *, void *, int num_sect);

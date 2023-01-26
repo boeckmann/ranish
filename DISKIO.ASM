@@ -59,8 +59,8 @@ ap_start_sect	dq	0
 
 section DISKIO_TEXT class=CODE align=16
 
-global _diskio_init
-global _diskio_exit
+global __diskio_init
+global __diskio_exit
 
 global _reboot
 global _flush_caches
@@ -81,7 +81,7 @@ global _disk_verify_chs
 ;----------------------------------------------------------------
 
 
-_diskio_init:
+__diskio_init:
 		push	bp
 		mov	bp, sp
 		push	es
@@ -148,7 +148,7 @@ _diskio_init:
 		retf
 
 
-_diskio_exit:
+__diskio_exit:
 		retf
 
 ;----------------------------------------------------------------

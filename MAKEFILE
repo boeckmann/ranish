@@ -22,7 +22,7 @@ part_objects     = $(part_c_objects) $(part_asm_objects)
 header_files = PART.H DISKIO.H SCREEN.H ALLOCS.H
 
 !ifdef DEBUG
-compiler_flags += -d2
+compiler_flags += -d2 -dDEBUG_DISKIO
 !endif
 
 all : PART.EXE
