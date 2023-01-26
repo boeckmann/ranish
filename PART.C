@@ -86,16 +86,17 @@ void main(int argc, char **argv)
         command_line(argc, argv);
     }
 
+    diskio_exit();
+    screen_exit();
+
     if (changes_made) {
         printf("\nCHANGES WERE MADE.\n\n"
             "RESTART YOUR PC TO APPLY AND AVOID DATA CORRUPTION!\n");
     }
 
-    diskio_exit();
-    screen_exit();
-
+    print_mem_stat();
 #ifdef DEBUG
-        print_mem_stat();
+
 #endif
 
     exit(0);

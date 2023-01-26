@@ -1,6 +1,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "diskio.h"
+#include "allocs.h"
+
+#define OK     0
+#define FAILED -1
+#define CANCEL -2
 
 struct disk_info dinfo;
 
@@ -178,61 +183,95 @@ int disk_verify(struct disk_addr *daddr, void *buf, int num_sect)
 }
 
 
-int disk_fill_sectors(struct disk_addr daddr,
-					  unsigned long num_sect,
-					  unsigned char fill_value,
-					  void (*func)(unsigned long, unsigned long))
+/* verifies sectors
+   calls callback *func for progress and *bbt_func for bad block tracking */
+int disk_process_sectors(disk_operation op, struct disk_addr daddr,
+					    unsigned long num_sect, unsigned char data,
+					    int (*func)(unsigned long, unsigned long),
+					    int (*bbt_func)(unsigned long))
 {
     char *buf;
 	int sect_per_block;
     unsigned long curr_sect = 0;
     unsigned long start_sect = daddr.sect;
     unsigned long block_sect;
+    int i, result = OK;
 
     sect_per_block = dinfo.num_sects;
     buf = malloc(sect_per_block * SECT_SIZE);
 
-    /* if we can not allocate buffer for whole track write sectors one at a time */
+    /* if we can not allocate buffer for whole track process sectors one at a time */
     if (!buf) {
         buf = malloc(SECT_SIZE);
         if (!buf) {
-            return -1;
+            return FAILED;
         } else {
             sect_per_block = 1;
         }
     }
-    memset(buf, fill_value, sect_per_block * SECT_SIZE);
+    
+    if (op == disk_write)
+    	memset(buf, data, sect_per_block * SECT_SIZE);
 
     if (sect_per_block > 1) {
     	while (curr_sect < num_sect) {
+	    	block_sect = sect_per_block - (start_sect + curr_sect) % sect_per_block;
 	    	
 	    	/* align to multiple of sectors per block (track) */
-	    	block_sect = sect_per_block - (start_sect + curr_sect) % sect_per_block;
-	    	if (block_sect + curr_sect > num_sect) block_sect = num_sect - curr_sect;
+	    	if (curr_sect + block_sect > num_sect) block_sect = num_sect - curr_sect;
 
-	    	if (disk_write(&daddr, buf, block_sect) != 0) break;
-
+	    	if ((*op)(&daddr, buf, block_sect) < 0) {
+	    		for (i = 0; i < block_sect; i++) {
+	    			if ((*op)(&daddr, buf, 1) < 0) {
+	    				if (bbt_func) {
+	    					result = FAILED;
+	    					(*bbt_func)(daddr.sect);
+	    				} else {
+	    					free(buf);
+	    					return FAILED;
+	    				}
+	    			}
+	    			daddr.sect += 1;
+	    		}
+	    	}
+	    	else {
+		    	daddr.sect += block_sect;
+	    	}
 	    	curr_sect += block_sect;
-	    	daddr.sect += block_sect;
 
-        	if (func) (*func)(curr_sect, num_sect);
+        	if (func) {
+        		if ((*func)(curr_sect, num_sect) == 0) {
+        			free(buf);
+        			return CANCEL;
+        		}
+        	}
     	}
     }
 
-    /* write all or (on error) remaining sectors one sector at a time */
+    /* test all or (on error) remaining sectors one sector at a time */
     while (curr_sect < num_sect)
     {
     	daddr.sect = start_sect + curr_sect;
-        if (disk_write(&daddr, buf, 1) != 0) {
-            free(buf);
-            return -1;
+        if ((*op)(&daddr, buf, 1) < 0) {
+            if (bbt_func) {
+            	result = FAILED;
+            	(*bbt_func)(daddr.sect);
+            } else {
+            	free(buf);
+            	return FAILED;
+            }
         }
 
         curr_sect++;
-        if (func) (*func)(curr_sect, num_sect);
+        if (func) {
+        	if ((*func)(curr_sect, num_sect) == 0) {
+        		free(buf);
+        		return CANCEL;
+        	}
+        }
     }
 
     free(buf);
 
-	return 0;
+	return result;
 }

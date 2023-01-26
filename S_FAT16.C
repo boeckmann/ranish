@@ -93,7 +93,7 @@ static unsigned long fat_non_data_sectors(struct boot_ms_dos *b)
 }
 
 
-static unsigned long fat_num_clusters(struct boot_ms_dos *b)
+static unsigned long fat_num_data_clusters(struct boot_ms_dos *b)
 {
     return (fat_num_sectors(b) - fat_non_data_sectors(b)) / b->clust_size;
 }
@@ -101,25 +101,30 @@ static unsigned long fat_num_clusters(struct boot_ms_dos *b)
 
 static int fat_type(struct boot_ms_dos *b)
 {
-    if (b->root_entr == 0 && b->total_sect == 0 && b->fat_size16 == 0) return FAT_32;
-    else if (fat_num_clusters(b) > MAX_CLUST12) return FAT_16;
+    unsigned long clusters = fat_num_data_clusters(b);
+
+    if (clusters > MAX_DATA_CLUST_16) return FAT_32;
+    else if (clusters > MAX_DATA_CLUST_12) return FAT_16;
     else return FAT_12;
 }
 
 
 /* calculates the maximum cluster count based on FAT table size */
-static unsigned long fat_max_clusters(struct boot_ms_dos *b, int fat_type)
+static unsigned long fat_max_cluster_entries(struct boot_ms_dos *b, int fat_type)
 {
-    if (fat_size(b) == 0) return 0;
+    unsigned long fat_sz;
+
+    fat_sz = fat_size(b);
+    if (fat_sz == 0) return 0;
 
     if (fat_type == FAT_32) {
-        return b->x.f32.fat_size * (b->sect_size / FAT32_ENTRY_SIZE) - 2;
+        return fat_sz * (b->sect_size / FAT32_ENTRY_SIZE) - 2;
     }
     else if (fat_type == FAT_16) {
-        return b->fat_size16 * (b->sect_size / FAT16_ENTRY_SIZE) - 2;
+        return fat_sz * (b->sect_size / FAT16_ENTRY_SIZE) - 2;
     } 
     else if (fat_type == FAT_12) {
-        return b->fat_size16 * b->sect_size * 2 / 3 - 2;
+        return fat_sz * b->sect_size * 2 / 3 - 2;
     }
 
     return 0;
@@ -132,11 +137,11 @@ static unsigned long fat_cache_sector = 0;
 static void *fat_cache_entity = NULL;
 static int fat_cache_dirty = 0; /* cache was written to */
 
-static void fat_cache_clear(struct part_long *p)
+/*static void fat_cache_reset(struct part_long *p)
 {
     fat_cache_sector = 0;
     fat_cache_entity = NULL;
-}
+}*/
 
 
 /* mark FAT cache as dirty */
@@ -170,7 +175,7 @@ static int in_fat_cache(struct part_long *p, unsigned long sector)
 
 static void * fat_cache_read(struct part_long *p, unsigned long sector)
 {
-    if (in_fat_cache(p, sector)) return OK;
+    if (in_fat_cache(p, sector)) return fat_cache;
 
     fat_cache_flush();
     if (disk_read_rel(p, sector, fat_cache, 1) == FAILED) return NULL;
@@ -181,40 +186,86 @@ static void * fat_cache_read(struct part_long *p, unsigned long sector)
 }
 
 
+/*--- FAT table routine ----------------------------------------------------*/
+
+/* find FAT table entry for cluster */
+int fat_get_table_entry(struct part_long *p, struct boot_ms_dos *b, unsigned table_num, unsigned long cluster, unsigned long *value)
+{
+    unsigned long fat_sector;
+    unsigned long fat_offset;
+    unsigned long base;
+    int fat_typ;
+    char *buf;
+
+    fat_typ = fat_type(b);
+    base = b->res_sects + fat_size(b) * table_num;
+
+    if (fat_num_data_clusters(b) + 2 < cluster) return FAILED;
+
+    if (fat_typ == FAT_32) {
+        fat_sector = base + (FAT32_ENTRY_SIZE * cluster) / b->sect_size;
+        fat_offset = (FAT32_ENTRY_SIZE * cluster) % b->sect_size;
+    } else if (fat_typ == FAT_16) {
+        fat_sector = base + (FAT16_ENTRY_SIZE * cluster) / b->sect_size;
+        fat_offset = (FAT16_ENTRY_SIZE * cluster) % b->sect_size;        
+    }
+
+    buf = fat_cache_read(p, fat_sector);
+    if (!buf) return FAILED;
+
+    if (fat_typ == FAT_32) {
+        *value = (*(unsigned long *)(buf + fat_offset));
+    } else if (fat_typ == FAT_16) {
+        *value = (*(unsigned short *)(buf + fat_offset));        
+    }
+
+    return OK;
+}
+
+
+/* set FAT table entry for cluster */
+int fat_set_table_entry(struct part_long *p, struct boot_ms_dos *b, unsigned table_num, unsigned long cluster, unsigned long value)
+{
+    unsigned long fat_sector;
+    unsigned long fat_offset;
+    unsigned long base;
+    int fat_typ;
+    char *buf;
+
+    fat_typ = fat_type(b);
+    base = b->res_sects + fat_size(b) * table_num;
+
+    if (fat_num_data_clusters(b) + 2 < cluster) return FAILED;
+
+    if (fat_typ == FAT_32) {
+        fat_sector = base + FAT32_ENTRY_SIZE * cluster / b->sect_size;
+        fat_offset = FAT32_ENTRY_SIZE * cluster % b->sect_size;
+    } else if (fat_typ == FAT_16) {
+        fat_sector = base + FAT16_ENTRY_SIZE * cluster / b->sect_size;
+        fat_offset = FAT16_ENTRY_SIZE * cluster % b->sect_size;        
+    }
+
+    buf = fat_cache_read(p, fat_sector);
+    if (!buf) return FAILED;
+
+    if (fat_typ == FAT_32) {
+        (*(unsigned long *)(buf + fat_offset)) = value;
+    } else if (fat_typ == FAT_16) {
+        (*(unsigned short *)(buf + fat_offset)) = value;        
+    }
+
+    fat_cache_mark_dirty();
+
+    return OK;
+}
+
+
 /*--- cluster routines -----------------------------------------------------*/
 
 /* calculates the data sector for the given cluster */
 static unsigned long fat_cluster_to_data_sector(struct boot_ms_dos *b, unsigned long cluster)
 {
     return fat_non_data_sectors(b) + (cluster - 2) * b->clust_size;
-}
-
-
-/* find the next cluster in chain */
-static unsigned long fat_next_cluster(struct part_long *p, struct boot_ms_dos *b, unsigned long cluster, int fat_typ)
-{
-    unsigned long fat_sector;
-    unsigned long fat_offset;
-    char *buf;
-
-    if (fat_typ == FAT_32) {
-        fat_sector = b->res_sects + 4 * cluster / b->sect_size;
-        fat_offset = b->res_sects + 4 * cluster % b->sect_size;
-    } else if (fat_typ == FAT_16) {
-        fat_sector = b->res_sects + 2 * cluster / b->sect_size;
-        fat_offset = b->res_sects + 2 * cluster % b->sect_size;        
-    }
-
-    buf = fat_cache_read(p, fat_sector);
-    if (!buf) return INVALID_CLUSTER;
-
-    if (fat_typ == FAT_32) {
-        return (*(unsigned long *)(buf + fat_offset));
-    } else if (fat_typ == FAT_16) {
-        return (*(unsigned short *)(buf + fat_offset));        
-    }
-
-    return INVALID_CLUSTER;
 }
 
 
@@ -289,13 +340,14 @@ static int fat_update_label_file(struct part_long *p, struct boot_ms_dos *b)
     unsigned long start_sect, sect;
     unsigned long data_cluster;
     unsigned long next_data_cluster = 0;
-    int fat_typ = fat_type(b);
 
+    int fat_typ = fat_type(b);
     if ((buf = malloc(SECT_SIZE)) == NULL) return FAILED;
 
     if (fat_typ == FAT_32) {
         data_cluster = b->x.f32.root_clust;
-        next_data_cluster = fat_next_cluster(p, b, data_cluster, FAT_32);
+        if (fat_get_table_entry(p, b, 0, data_cluster, &next_data_cluster) == FAILED)
+            goto failed;
         start_sect = fat_cluster_to_data_sector(b, data_cluster);
         sector_count = b->clust_size;
     } else {
@@ -336,7 +388,8 @@ static int fat_update_label_file(struct part_long *p, struct boot_ms_dos *b)
             if (fat32_eoc(next_data_cluster)) break;
             else {
                 data_cluster = next_data_cluster;
-                next_data_cluster = fat_next_cluster(p, b, data_cluster, FAT_32);
+                if (fat_get_table_entry(p, b, 0, data_cluster, &next_data_cluster) == FAILED)
+                    goto failed;
                 start_sect = fat_cluster_to_data_sector(b, data_cluster);
             }
         } else {
@@ -374,7 +427,7 @@ static int fat_calculate_table_size(struct boot_ms_dos *b, int fat_type)
     }
         
     /* decrease FAT size until it does not fit all clusters */
-    while (fat_max_clusters(b, fat_type) > fat_num_clusters(b)) {
+    while (fat_max_cluster_entries(b, fat_type) > fat_num_data_clusters(b)) {
         if (fat_type == FAT_32) {
             b->x.f32.fat_size--;
         } else {
@@ -486,220 +539,88 @@ static void fat32_initialize_ext_bootrec(struct boot_ms_dos *b,
     memset(eb, 0, sizeof(struct fat32_ext_bootrec));
     eb->lead_sig = FAT32_LEAD_SIG;
     eb->struc_sig = FAT32_STRUC_SIG;
-    eb->free_cluster_count = fat_num_clusters(b) - 1; /* root cluster */
+    eb->free_cluster_count = fat_num_data_clusters(b) - 1; /* root cluster */
     eb->next_free_cluster = 3;
     eb->trail_sig = FAT32_TRAIL_SIG;
     eb->trail2_sig = FAT32_TRAIL_SIG;
 }
 
-void format_progress(unsigned long curr, unsigned long total)
+
+int write_progress(unsigned long curr, unsigned long total)
 {
-    char buf[16];
+    char buf[24];
     static unsigned long last = 0xff;
 
     if (curr != last) {
-        sprintf(buf, "%% %lu%% written", curr * 100 / total);
+        sprintf(buf, "%% %3lu%% written", curr * 100 / total);
         last = curr;
-        progress(buf);
+        return progress(buf) != CANCEL;
     }
+
+    return 1;
 }
+
+
+int verify_progress(unsigned long curr, unsigned long total)
+{
+    char buf[32];
+    static unsigned long last = 0xff;
+
+    if (curr != last) {
+        sprintf(buf, "%% %3lu%% | 0 errors", curr * 100 / total);
+        last = curr;
+        return progress(buf) != CANCEL;
+    }
+
+    return 1;
+}
+
 
 /* initializes the FAT-16 tables */
 /* marks bad clusters for sectors given in bbt if bbt != NULL and num_bad>0 */
-static int fat32_initialize_table(struct part_long *p,
-                                  struct boot_ms_dos *b,
-                                  unsigned long *bbt,
-                                  unsigned short num_bad)
+static int fat_initialize_tables(struct part_long *p,
+                                struct boot_ms_dos *b)
 {
     unsigned long *fat;
+    unsigned long fat_sz;
+    int fat_typ;
     int copy;
-    unsigned short next_bad;
-    unsigned short table_sector;
-    unsigned long base_sector;
-    unsigned long current_sector;
-    char buf[32];
+    int result;
+    char buf[40];
 
-    if (!(fat = malloc(b->sect_size))) return FAILED;
-    current_sector = b->res_sects;
-    
+    fat_typ = fat_type(b);
+    fat_sz = fat_size(b);
+
+    /*sprintf(buf, "FAT size: %lu", fat_sz);
+    show_error(buf);*/
     for (copy = 0; copy < b->num_fats; copy++)
     {
-        sprintf(buf, "^Writing FAT %d of %u ...", copy+1, b->num_fats);
+        sprintf(buf, "^Format: writing FAT %d of %u ...", copy+1, b->num_fats);
         progress(buf);
 
-        if ((!num_bad) || (!bbt)) {
-            if (part_fill(p, b->res_sects + b->x.f32.fat_size * copy, b->x.f32.fat_size, 0, format_progress)) {
-                free(fat);
-                return FAILED;
-            }
+        result = part_fill_sectors(p, b->res_sects + fat_sz * copy, fat_sz, 0, write_progress, NULL);
+        if (result != OK) return result;
 
-            memset(fat, 0, SECT_SIZE);
+
+        if (!(fat = malloc(b->sect_size))) return FAILED;   
+        memset(fat, 0, SECT_SIZE);
+        if (fat_typ == FAT_32) {
             fat[0] = 0xFFFFFFF8;
             fat[1] = 0xFFFFFFFF;
             fat[2] = 0xFFFFFFFF;
+        } else if (fat_typ == FAT_16) {
+            fat[0] = 0xFFFFFFF8;    /* FAT-16 0xFFF8, 0xFFFF */
+        } else if(fat_typ == FAT_12) {
+            fat[0] = 0x00FFFFF8;
+        }
 
-            if (disk_write_rel(p, b->res_sects + b->x.f32.fat_size * copy, fat, 1)) {
-                free(fat);
-                return FAILED;
-            }
+        if (disk_write_rel(p, b->res_sects + fat_sz * copy, fat, 1) == FAILED) {
+            free(fat);
+            return FAILED;
         }
-        else {
-            next_bad  = 0;
-            base_sector = fat_non_data_sectors(b);
-    
-            for (table_sector = 0; table_sector < b->x.f32.fat_size; table_sector++) {
-                memset(fat, 0, b->sect_size);
-                if (table_sector == 0) {
-                    fat[0] = 0xFFFFFFF8;
-                    fat[1] = 0xFFFFFFFF;
-                    fat[2] = 0xFFFFFFFF;
-                    while (bbt && next_bad != num_bad &&
-                           bbt[next_bad] < base_sector + b->clust_size * 125)
-                        fat[(bbt[next_bad++] - base_sector) / b->clust_size + 3] =
-                            0xFFFFFFF7;
-                    base_sector += b->clust_size * 125;
-                } else {
-                    while (bbt && next_bad != num_bad &&
-                           bbt[next_bad] < base_sector + b->clust_size * 128)
-                        fat[(bbt[next_bad++] - base_sector) / b->clust_size] =
-                            0xFFFFFFF7;
-                    base_sector += b->clust_size * 128;
-                }
-                if (disk_write_rel(p, current_sector++, fat, 1) == FAILED) {
-                    free(fat);
-                    return FAILED;
-                }
-            }
-        }
+        free(fat);
     }
 
-    free(fat);
-    return OK;
-}
-
-
-/* initializes the FAT-16 tables */
-/* marks bad clusters for sectors given in bbt if bbt != NULL and num_bad>0 */
-static int fat16_initialize_table(struct part_long *p,
-                                  struct boot_ms_dos *b,
-                                  unsigned long *bbt,
-                                  unsigned short num_bad)
-{
-    unsigned short *fat;
-    int copy;
-    unsigned short next_bad;
-    unsigned short table_sector;
-    unsigned long base_sector;
-    unsigned long current_sector;
-
-    if (!(fat = malloc(b->sect_size))) return FAILED;
-    current_sector = b->res_sects;
-   
-    for (copy = 0; copy < b->num_fats; copy++)
-    {
-        sprintf(buf, "^Writing FAT %d of %u ...", copy+1, b->num_fats);
-        progress(buf);
-
-        if ((!num_bad) || (!bbt)) {
-            if (part_fill(p, b->res_sects + b->fat_size16 * copy, b->fat_size16, 0, format_progress)) {
-                free(fat);
-                return FAILED;
-            }
-
-            memset(fat, 0, SECT_SIZE);
-            fat[0] = 0xFFF8;
-            fat[1] = 0xFFFF;
-
-            if (disk_write_rel(p, b->res_sects + b->fat_size16 * copy, fat, 1)) {
-                free(fat);
-                return FAILED;
-            }
-        }
-        else {
-            next_bad  = 0;
-            base_sector = fat_non_data_sectors(b);
-            for (table_sector = 0; table_sector < b->fat_size16; table_sector++) {
-                memset(fat, 0, SECT_SIZE);
-                if (table_sector == 0) {
-                    fat[0] = 0xFFF8;
-                    fat[1] = 0xFFFF;
-                    while (bbt && next_bad != num_bad &&
-                           bbt[next_bad] < base_sector + b->clust_size * 254)
-                        fat[(bbt[next_bad++] - base_sector) / b->clust_size + 2] =
-                            0xFFF7;
-                    base_sector += b->clust_size * 254;
-                } else {
-                    while (bbt && next_bad != num_bad &&
-                           bbt[next_bad] < base_sector + b->clust_size * 256)
-                        fat[(bbt[next_bad++] - base_sector) / b->clust_size] =
-                            0xFFF7;
-                    base_sector += b->clust_size * 256;
-                }
-                if (disk_write_rel(p, current_sector++, fat, 1) == FAILED) {
-                    free(fat);
-                    return FAILED;
-                }
-            }
-        }
-    }
-
-    free(fat);
-    return OK;
-}
-
-
-/* initializes the FAT-12 tables */
-/* marks bad clusters for sectors given in bbt if bbt != NULL and num_bad>0 */
-static int fat12_initialize_table(struct part_long *p,
-                                  struct boot_ms_dos *b,
-                                  unsigned long *bbt,
-                                  unsigned short num_bad)
-{
-    int copy;
-    unsigned short next_bad;
-    unsigned short bad_cluster;
-    unsigned short table_sector;
-    unsigned long base_sector;
-    unsigned long current_sector;
-    char *fat;
-
-    struct fat12
-    {
-        unsigned c0 : 12;
-        unsigned c1 : 12;
-    } *fat12;
-
-    if (!(fat = malloc(FAT12_MAX_TABLE_SIZE))) return FAILED;
-    memset(fat, 0, FAT12_MAX_TABLE_SIZE);
-
-    fat12 = (struct fat12 *)fat;
-    fat12[0].c0 = 0xFF8;
-    fat12[0].c1 = 0xFFF;
-
-    next_bad  = 0;
-    current_sector = b->res_sects;
-    base_sector = fat_non_data_sectors(b);
-
-    while (bbt && next_bad != num_bad) {
-        bad_cluster = (bbt[next_bad++] - base_sector) / b->clust_size + 2;
-        if (bad_cluster % 2 == 0)
-            fat12[bad_cluster / 2].c0 = 0xFF7;
-        else
-            fat12[bad_cluster / 2].c1 = 0xFF7;
-    }
-    for (copy = 0; copy < b->num_fats; copy++) {
-        sprintf(buf, "^Writing FAT %d of %u ...", copy+1, b->num_fats);
-        progress(buf);
-
-        for (table_sector = 0; table_sector < b->fat_size16; table_sector++) {
-            if (disk_write_rel(p, current_sector++, fat + table_sector * b->sect_size, 1) == FAILED) {
-                free(fat);
-                return FAILED;
-            }
-        }
-    }
-
-    free(fat);
     return OK;
 }
 
@@ -730,9 +651,13 @@ int fat_initialize_root(struct part_long *p, struct boot_ms_dos *b)
     }
 
     free(buf);
-    return fat_update_label_file(p, b);
+    return OK;
 }
 
+
+int fat_bad_block_check(struct part_long *p) {
+    return OK;
+}
 
 /*   0x01, "DOS FAT-12"			*/
 /*   0x04, "DOS FAT-16 (<=32Mb)"	*/
@@ -743,34 +668,30 @@ int format_fat(struct part_long *p, char **argv)
     char *data_pool;
     struct boot_ms_dos *b;
     struct fat32_ext_bootrec *eb;
-
     unsigned long sys_type;
-    unsigned long *bbt;
+
     char label[FAT_LABEL_LEN + 1] = "";
+    unsigned int form_type  = F_VERIFY;
 
-    unsigned short num_bad    = 0;
-    unsigned int form_type  = F_NORM;
-
-    if ((data_pool = malloc(sizeof(struct boot_ms_dos) + sizeof(struct fat32_ext_bootrec)
-         + BBT_SIZE * sizeof(long))) == 0) {
+    if ((data_pool = malloc(sizeof(struct boot_ms_dos) + sizeof(struct fat32_ext_bootrec))) == 0) {
         show_error(ERROR_MALLOC);
         return FAILED;
     }
 
     b   = (struct boot_ms_dos *) data_pool;
     eb  = (struct fat32_ext_bootrec *) (data_pool + sizeof(struct boot_ms_dos));
-    bbt = (unsigned long *)(data_pool + sizeof(struct boot_ms_dos) + sizeof(struct fat32_ext_bootrec));
-
 
     if (QUICK_BASE(p) > QUICK_BASE(p) + p->num_sect) {
         progress("^Partition crosses 2TiB boundary. Refusing to format.");
-        goto failed;
+        result = FAILED;
+        goto done;
     }
 
     /* make test read to check if whole partition is accessible */
     if (disk_read_rel(p, p->num_sect-1, data_pool, 1) == FAILED) {
         progress(TEXT("^Can not access last sector of partition. Refusing to format!"));
-        goto failed;
+        result = FAILED;
+        goto done;
     }
 
     /* parse arguments */
@@ -785,7 +706,8 @@ int format_fat(struct part_long *p, char **argv)
         } else {
             progress("^Unknown option:");
             progress(*argv);
-            goto failed;
+            result = FAILED;
+            goto done;
         }
         argv++;
     }
@@ -810,21 +732,24 @@ int format_fat(struct part_long *p, char **argv)
         
         if (result == FAT_ERR_TOO_SMALL) {
             progress(TEXT("^FAT-32 partition too small. Use FAT-16 instead!"));
-            goto failed;
+            result = FAILED;
+            goto done;
         }
 
         fat32_initialize_ext_bootrec(b, eb);       
     }
-    if (sys_type == FAT_16) {
+    else if (sys_type == FAT_16) {
         result = fat_initialize_bootrec(p, b, 512, FAT_16, label);
         
         if (result == FAT_ERR_TOO_SMALL) {
             progress(TEXT("^FAT-16 partition too small. Use FAT-12 instead!"));
-            goto failed;
+            result = FAILED;
+            goto done;
         }
         if (result == FAT_ERR_TOO_LARGE) {
             progress(TEXT("^FAT-16 partition too large. Use FAT-32 instead!"));
-            goto failed;
+            result = FAILED;
+            goto done;
         }
     }
     else if (sys_type == FAT_12) {
@@ -832,87 +757,96 @@ int format_fat(struct part_long *p, char **argv)
 
         if (result == FAT_ERR_TOO_SMALL) {
             progress(TEXT("^FAT-12 partition too small!"));
-            goto failed;
+            result = FAILED;
+            goto done;
         }
         if (result == FAT_ERR_TOO_LARGE) {
             progress(TEXT("^FAT-12 partition too large. Use FAT-16 or FAT-32 instead!"));
-            goto failed;
+            goto done;
         }
     }
 
     flush_caches();
 
-    if (form_type == F_DESTR)
+    /*if (form_type == F_DESTR)
         result = generic_format(p, BBT_SIZE, bbt);
-    else if (form_type == F_VERIFY)
-        result = generic_verify(p, BBT_SIZE, bbt);
     else
         result = 0;
-
+    */
     if (result < 0) /* format failed or canceled */
     {
-        free(data_pool);
-        return result;
+        goto done;
     }
 
     disk_lock(dinfo.disk);
+
     progress("^Initializing file system ...");
+    /*if (form_type == F_VERIFY) {
+        progress("^Format: checking FAT area for bad sectors ...");
+        result = part_verify_sectors(p, 0, fat_non_data_sectors(b), verify_progress, NULL);
 
-    num_bad = result;
-    if (num_bad != 0 && bbt[0] < fat_non_data_sectors(b)) {
-        progress(
-            "Beginning of the partition is unusable. Try to move it forward.");
-        goto failed;
-    }
+        if (result != OK) {
+            goto done;
+        }
+    }*/
 
-    progress("^Writing boot sector ...");
+    progress("^Format: writing boot sector ...");
     if (sys_type == FAT_32) {
         result = disk_write_rel(p, 0, b, 3);
         result |= disk_write_rel(p, FAT32_BACKUP_SECTOR, b, 3);
     } else {
         result = disk_write_rel(p, 0, b, 1);
     }
-    if (result == FAILED) {
+    if (result != OK) {
         progress("Error writing boot sector.");
-        goto failed;        
+        goto done;        
     }
 
-    if (sys_type == FAT_32) {
-        result = fat32_initialize_table(p, b, bbt, num_bad);        
-    }
-    else if (sys_type == FAT_16) {
-        result = fat16_initialize_table(p, b, bbt, num_bad);
-    }    /* fat16 */
-    else if (sys_type == FAT_12)/* Writing two copies of FAT12 */
-    {
-        result = fat12_initialize_table(p, b, bbt, num_bad);
-    } else {
-        result = FAILED;
-    }
+    result = fat_initialize_tables(p, b);        
 
     if (result != OK) {
         progress("Error writing FAT.");
-        goto failed;
+        goto done;
     }
 
-    progress("Writing root directory and volume label...");
+    progress("^Format: writing root directory ...");
     result = fat_initialize_root(p, b);
     if (result != OK) {
         progress("Error writing root directory.");
-        goto failed;        
+        goto done;        
     }
 
-    goto done;
+    if (form_type == F_VERIFY) {
+        progress("^Format: searching for bad sectors ...   you may skip this step via ESC");
+        result = part_verify_sectors(p, fat_non_data_sectors(b), p->num_sect - fat_non_data_sectors(b), verify_progress, NULL);
+        if (result == FAILED) {
+            progress("Error checking for bad clusters.");
+            goto done;        
+        }
+    } else if (form_type == F_DESTR) {
+        progress("^Format: overwriting old data ...        you may skip this step via ESC");
+        result = part_fill_sectors(p, fat_non_data_sectors(b), p->num_sect - fat_non_data_sectors(b), 0, write_progress, NULL);
+        if (result == FAILED) {
+            progress("Error cleaning data area.");
+            goto done;        
+        }
+    }
+
+    progress("^Format: updating volume label ...");
+    result = fat_update_label_file(p, b);
+    if (result != OK) {
+        progress("Error updating volume label.");
+        goto done;        
+    }
+
+
 done:
+    fat_cache_flush();
     disk_unlock(dinfo.disk);
     free(data_pool);
-    return OK;
 
-failed:
+    return result;
 
-    disk_unlock(dinfo.disk);
-    free(data_pool);
-    return FAILED;
 } /* format_fat */
 
 
@@ -1074,8 +1008,8 @@ int setup_fat(struct part_long *p)
     max_clust =
         (syst == 0) ? (0) : ((long)SECT_SIZE * 8u * b->fat_size16 / syst - 2u);
 
-    if (syst == 12 && max_clust > MAX_CLUST12) max_clust = MAX_CLUST12;
-    if (syst == 16 && max_clust > MAX_CLUST16) max_clust = MAX_CLUST16;
+    if (syst == 12 && max_clust > MAX_DATA_CLUST_12) max_clust = MAX_DATA_CLUST_12;
+    if (syst == 16 && max_clust > MAX_DATA_CLUST_16) max_clust = MAX_DATA_CLUST_16;
 
     write_string(TEXT_COLOR, StX, StY + 1, "                  System id:");
     write_string(TEXT_COLOR,

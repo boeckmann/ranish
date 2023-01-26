@@ -257,12 +257,19 @@ int disk_read_rel(struct part_long *p, unsigned long sect, void *buf,
                   int num_sect);
 int disk_write_rel(struct part_long *p, unsigned long sect, void *buf,
                    int num_sect);
-int part_fill(struct part_long *p,
+
+int part_verify_sectors(struct part_long *p,
+                        unsigned long start_sect,
+                        unsigned long num_sect,
+                        int (*func)(unsigned long, unsigned long),
+                        int (*bbt_func)(unsigned long));
+
+int part_fill_sectors(struct part_long *p,
               unsigned long start_sect,
               unsigned long num_sect,
               unsigned char fill_value,
-              void (*func)(unsigned long, unsigned long)
-              );
+              int (*func)(unsigned long, unsigned long),
+              int (*bbt_func)(unsigned long));
 
 int generic_clean(struct part_long *p);
 int generic_verify(struct part_long *p, int bbt_size, unsigned long *bbt);

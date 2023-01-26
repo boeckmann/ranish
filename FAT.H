@@ -3,8 +3,8 @@
 
 #define FAT_LABEL_LEN (sizeof ((struct boot_ms_dos *)(0))->x.f16.label)
 
-#define MAX_CLUST12 4084  /* Maximum number of clusters in FAT12 system */
-#define MAX_CLUST16 65524 /* Maximum number of clusters in FAT16 system */
+#define MAX_DATA_CLUST_12 4084 
+#define MAX_DATA_CLUST_16 65524
 
 #define FAT12_MAX_TABLE_SECTS 12
 #define FAT12_MAX_TABLE_SIZE  6144

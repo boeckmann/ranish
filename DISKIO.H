@@ -107,6 +107,13 @@ extern unsigned char diskio_errno;
 
 int get_disk_info(int hd, struct disk_info *, char *buf_4096);
 
+
+#define DISK_OP_WRITE 1
+#define DISK_OP_VERIFY 2
+
+typedef int (*disk_operation)(struct disk_addr *, void *, int num_sect);
+
+
 /* result < 0 if error occured */
 int disk_read(struct disk_addr *, void *, int num_sect);
 int disk_write(struct disk_addr *, void *, int num_sect);
@@ -114,9 +121,10 @@ int disk_write(struct disk_addr *, void *, int num_sect);
 int disk_format(struct disk_addr *, void *ftable);
 int disk_verify(struct disk_addr *, void *, int num_sect);
 
-int disk_fill_sectors(struct disk_addr daddr,
+int disk_process_sectors(disk_operation op, struct disk_addr daddr,
                       unsigned long num_sect,
-                      unsigned char fill_value,
-                      void (*func)(unsigned long, unsigned long));
+                      unsigned char data,
+                      int (*func)(unsigned long, unsigned long),
+                      int (*bbt_func)(unsigned long));
 
 #endif

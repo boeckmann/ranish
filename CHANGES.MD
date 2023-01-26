@@ -4,6 +4,9 @@
 
 ### Enhancements
  * Rewrote the FAT-12/16/32 format routines. Instead of three routines only one handling all cases is left.
+ * Speed up creation of FAT-32 file systems.
+ * Show progress when writing FAT-32 tables.
+ * Show reboot warning on quit if changes were made.
 
 ### Critical Bug Fixe
  * Fix a bug leading to partitions exceeding the end of the disk. The error occured when operating on disks not ending on a cylinder boundary, working in LBA mode under CHS view and creating a partition up to the end of the disk. Then the cylinder value the partition was aligned to was not rounded down but up beyond the end of the disk.

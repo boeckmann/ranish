@@ -73,10 +73,7 @@ _screen_init:
 
       cmp   al,07h
       je .Mono
-      cmp   al,03h
-      je .Color
-    .Reset:
-      mov   ax,03    ; If unknown set Color 80x25
+      mov   ax,03    ; If not mono set Color 80x25
       int   10h
     .Color:  
       mov   word [_ScreenSegment], 0B800h

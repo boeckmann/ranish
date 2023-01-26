@@ -55,7 +55,7 @@ int generic_verify(struct part_long *p, int bbt_size, unsigned long *bbt)
             for (sect = curr_sect; sect <= end_sect; sect++) {
                 daddr.sect = sect;
 
-                if (disk_verify(&daddr, z, sect_count) < 0) {
+                if (disk_verify(&daddr, z, 1) < 0) {
                     if (bbt_size != -1) {
                         if (num_bad == bbt_size) {
                             disk_unlock(hd);
@@ -158,7 +158,7 @@ int generic_format(struct part_long *p, int bbt_size, unsigned long *bbt)
             for (sect = curr_sect; sect <= end_sect; sect++) {
                 daddr.sect = sect;
 
-                if (disk_verify(&daddr, z, sect_count) < 0) {
+                if (disk_verify(&daddr, z, 1) < 0) {
                     if (bbt_size != -1) {
                         if (num_bad == bbt_size) {
                             disk_unlock(hd);

@@ -32,18 +32,33 @@ int disk_write_rel(struct part_long *p, unsigned long rel_sect, void *buf,
 } /* disk_write_rel */
 
 
-int part_fill(struct part_long *p,
-              unsigned long start_sect,
-              unsigned long num_sect,
-              unsigned char fill_value,
-              void (*func)(unsigned long, unsigned long)
-              )
+
+int part_verify_sectors(struct part_long *p,
+                        unsigned long start_sect,
+                        unsigned long num_sect,
+                        int (*func)(unsigned long, unsigned long),
+                        int (*bbt_func)(unsigned long))
 {
     struct disk_addr daddr;
 
     part_to_disk_addr(p, start_sect, &daddr);
 
-    return disk_fill_sectors(daddr, num_sect, fill_value, func);    
+    return disk_process_sectors(disk_verify, daddr, num_sect, 0, func, bbt_func);
+}
+
+
+int part_fill_sectors(struct part_long *p,
+              unsigned long start_sect,
+              unsigned long num_sect,
+              unsigned char fill_value,
+              int (*func)(unsigned long, unsigned long),
+              int (*bbt_func)(unsigned long))
+{
+    struct disk_addr daddr;
+
+    part_to_disk_addr(p, start_sect, &daddr);
+
+    return disk_process_sectors(disk_write, daddr, num_sect, fill_value, func, bbt_func);    
 }
 
 
