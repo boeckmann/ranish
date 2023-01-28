@@ -1064,7 +1064,7 @@ int setup_mbr(struct part_long *p)
                     start_cyl = p->start_cyl;
                     end_cyl   = part[row].container->end_cyl;
                     /* partial end cylinder (LBA) */
-                    if (ABS_END_SECT(part[row].container) > part[row].container->num_sect) {
+                    if (ABS_END_SECT(&p[row]) >= p[row].container->num_sect) {
                         end_cyl--;
                     }
                     start_head = (row == 0) ? 1 : 0;
