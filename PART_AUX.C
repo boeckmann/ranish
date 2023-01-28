@@ -89,7 +89,6 @@ void pack_part_tab(struct part_long *part, struct part_rec *part_rec, int n)
 
         part_rec[i].os_id = part[i].os_id >> 8;
 
-
         /* check if partition is out of 1024/255/63 bounds */
         /* if that is the case adjust CHS values */
         if ((num_sect > 0) && (part[i].start_cyl > 1023)) {
@@ -184,11 +183,11 @@ char * unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
 
         part[i].container_base = QUICK_BASE(part[i].container);
 
+
         if (part[i].rel_sect != 0 || part[i].num_sect != 0) {
             start_sect = part[i].container_base + part[i].rel_sect;
             end_sect = start_sect + part[i].num_sect - 1;
 
-            /* start is out of CHS bounds */
             start_chs_marker =
                 start_sect != ABS_REL_SECT(&part[i]) &&
                 is_lba_chs_marker(
@@ -215,7 +214,6 @@ char * unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
                 part[i].end_sect,
                 end_sect);
 
-            /* adjust CHS value if cylinder wrapped or LBA CHS marker found. */
             if (start_chs_marker || start_cyl_wrapped || end_chs_marker || end_cyl_wrapped) {
                 recalculate_part(&part[i], MODE_LBA);
             }
@@ -486,7 +484,8 @@ int validate_table(struct part_long *part, int n, struct part_long *container2)
 
     for (i = 0; i < n; i++)
         if (container2->level > 1 && part[i].os_id == OS_EXT &&
-            part[i].start_cyl < container2->end_cyl + 1) {
+            (QUICK_BASE(&part[i]) < QUICK_BASE(container2) + QUICK_SIZE(container2))) {
+            /*part[i].start_cyl < container2->end_cyl + 1) {*/
             part[i].range_err = 1;
             part[i].valid     = 0;
         }
