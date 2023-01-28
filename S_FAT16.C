@@ -650,13 +650,6 @@ int fat_initialize_root(struct part_long *p, struct boot_ms_dos *b)
 }
 
 
-int fat_bad_block_check(struct part_long *p) {
-    return OK;
-}
-
-/*   0x01, "DOS FAT-12"			*/
-/*   0x04, "DOS FAT-16 (<=32Mb)"	*/
-/*   0x06, "BIGDOS FAT-16 (>=32Mb)"	*/
 int format_fat(struct part_long *p, char **argv)
 {
     int result;
@@ -706,6 +699,9 @@ int format_fat(struct part_long *p, char **argv)
         }
         argv++;
     }
+
+    flush_caches();
+    disk_lock(dinfo.disk);
 
     /* set FAT type */
     switch(p->os_id) {
@@ -760,30 +756,6 @@ int format_fat(struct part_long *p, char **argv)
             goto done;
         }
     }
-
-    flush_caches();
-
-    /*if (form_type == F_DESTR)
-        result = generic_format(p, BBT_SIZE, bbt);
-    else
-        result = 0;
-    */
-    if (result < 0) /* format failed or canceled */
-    {
-        goto done;
-    }
-
-    disk_lock(dinfo.disk);
-
-    progress("^Initializing file system ...");
-    /*if (form_type == F_VERIFY) {
-        progress("^Format: checking FAT area for bad sectors ...");
-        result = part_verify_sectors(p, 0, fat_non_data_sectors(b), verify_progress, NULL);
-
-        if (result != OK) {
-            goto done;
-        }
-    }*/
 
     progress("^Format: writing boot sector ...");
     if (sys_type == FAT_32) {

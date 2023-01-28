@@ -204,7 +204,8 @@ struct os_desc
     int (*print)(struct part_long *);
 };
 
-#define OS_EXT    0x0500
+#define OS_EXT     0x0500
+#define OS_EXT_LBA 0x0F00
 #define OS_HIDDEN 0xFF80
 #define OS_ADV    0xFF81
 #define OS_UNKN   0xFFFF

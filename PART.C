@@ -173,6 +173,7 @@ void start_gui(void)
 } /* start_gui */
 
 
+
 int setup_mbr(struct part_long *p)
 {
     int i, j, n, top, row, field, scr_rows, num_rows;
@@ -187,8 +188,8 @@ int setup_mbr(struct part_long *p)
 
     int data_size;
     struct mbr *mbr;
-    struct adv *adv;
     struct part_long *part;
+    struct adv *adv;
 
     static struct field_desc
     {
@@ -225,7 +226,7 @@ int setup_mbr(struct part_long *p)
         return FAILED;
     }
 
-    memset(data, 0, 2 * data_size);
+    memset(data, 0, 2  * data_size);
 
     data_orig = data + data_size;
 
@@ -724,7 +725,7 @@ int setup_mbr(struct part_long *p)
             (ev.scan == 0x51E0 || ev.scan == 0x5100)) /* PgDn */
         {
             for (i = 0; i < num_rows; i++)
-                if (part[i].os_id == OS_EXT)
+                if (part[i].os_id == OS_EXT || part[i].os_id == OS_EXT_LBA)
                     break;
 
             if (i != num_rows) {
