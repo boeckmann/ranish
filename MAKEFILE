@@ -35,6 +35,7 @@ PART.LNK : $(part_objects)
    @echo SYSTEM DOS >>$^@
    @echo OPTION QUIET >>$^@
    @echo OPTION MAP >>$^@
+   @echo OPTION STACK=4096 >>$^@
 !ifdef DEBUG
    @echo DEBUG ALL>>$^@
 !endif
