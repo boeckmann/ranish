@@ -2,14 +2,19 @@
 
 ## Version 2.90.12 alpha
 
+### Critical Bug Fixes
+ * Since v2.90.03: Fix a bug which results in the starting address of extended partitions nested two or more levels deep being calculated from the wrong base address.
+ * Since v2.90.03: Fix a bug leading to partitions exceeding the end of the disk. The error occured when operating on disks not ending on a cylinder boundary, working in LBA mode under CHS view and creating a partition up to the end of the disk. Then the cylinder value the partition was aligned to was not rounded down but up beyond the end of the disk.
+
+### Non-critical Bug Fixes
+ * Since v2.37.11: Fix a false positive range error message regarding nested partitions two or more levels deep if partitions are not aligned to cylinder boundaries.
+
 ### Enhancements
  * Rewrote the FAT-12/16/32 format routines. Instead of three routines only one handling all cases is left.
+ * Remember view mode when switching between partition tables.
  * Speed up creation of FAT-32 file systems.
  * Show progress when writing FAT-32 tables.
  * Show reboot warning on quit if changes were made.
-
-### Critical Bug Fixe
- * Fix a bug leading to partitions exceeding the end of the disk. The error occured when operating on disks not ending on a cylinder boundary, working in LBA mode under CHS view and creating a partition up to the end of the disk. Then the cylinder value the partition was aligned to was not rounded down but up beyond the end of the disk.
 
 
 ## Version 2.90.11 alpha
