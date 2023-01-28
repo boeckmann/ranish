@@ -135,6 +135,7 @@ static int truncated_chs_equals_lba(unsigned long cyl,
     ;
 }
 
+
 char * unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
                      struct part_long *container)
 {
@@ -148,6 +149,32 @@ char * unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
     char * message = NULL;
 
     for (i = 0; i < n; i++) {
+        part[i].active = (part_rec[i].boot_flag == 0) ? 0 : 1;
+
+        part[i].start_cyl = part_rec[i].start_cylL |
+                            ((part_rec[i].start_sectCylH & 0xc0) << 2);
+        part[i].start_head = part_rec[i].start_head;
+        part[i].start_sect = part_rec[i].start_sectCylH & 0x3f;
+
+        part[i].end_cyl =
+            part_rec[i].end_cylL | ((part_rec[i].end_sectCylH & 0xc0) << 2);
+        part[i].end_head = part_rec[i].end_head;
+        part[i].end_sect = part_rec[i].end_sectCylH & 0x3f;
+
+        part[i].rel_sect = part_rec[i].rel_sect;
+        part[i].num_sect = part_rec[i].num_sect;
+
+        part[i].os_id = part_rec[i].os_id << 8;
+
+        if (i > 0 &&
+            (part[i - 1].os_id == 0x8100 || /* Linux */
+             part[i - 1].os_id == 0x8300)   /* Linux ext2fs */
+            && (part[i].os_id >> 8) == 0x82 /* Linux swap */) {
+            part[i].os_id = 0x8201; /* Linux Swap */
+        }
+
+        determine_os_num(&part[i]);
+
         part[i].level = container->level + 1;
 
         if (part[i].level > 2 && part[i].os_id == OS_EXT)
@@ -157,28 +184,10 @@ char * unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
 
         part[i].container_base = QUICK_BASE(part[i].container);
 
-        rel_sect = part_rec[i].rel_sect;
-        start_sect = rel_sect + part[i].container_base;
-        num_sect = part_rec[i].num_sect;
-        end_sect = start_sect + num_sect - 1;
+        if (part[i].rel_sect != 0 || part[i].num_sect != 0) {
+            start_sect = part[i].container_base + part[i].rel_sect;
+            end_sect = start_sect + part[i].num_sect - 1;
 
-        part[i].rel_sect = rel_sect;
-        part[i].num_sect = part_rec[i].num_sect;
-
-        part[i].active = (part_rec[i].boot_flag == 0) ? 0 : 1;
-        part[i].os_id = part_rec[i].os_id << 8;
-
-        part[i].start_cyl = part_rec[i].start_cylL |
-                            ((part_rec[i].start_sectCylH & 0xc0) << 2);
-        part[i].start_head = part_rec[i].start_head;
-        part[i].start_sect = part_rec[i].start_sectCylH & 0x3f; 
-
-        part[i].end_cyl =
-            part_rec[i].end_cylL | ((part_rec[i].end_sectCylH & 0xc0) << 2);
-        part[i].end_head = part_rec[i].end_head;
-        part[i].end_sect = part_rec[i].end_sectCylH & 0x3f;
-
-        if (num_sect > 0) {
             /* start is out of CHS bounds */
             start_chs_marker =
                 start_sect != ABS_REL_SECT(&part[i]) &&
@@ -207,47 +216,28 @@ char * unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
                 end_sect);
 
             /* adjust CHS value if cylinder wrapped or LBA CHS marker found. */
-            if (start_chs_marker || start_cyl_wrapped) {
-                part[i].start_cyl = CYL(start_sect);
-                part[i].start_head = HEAD(start_sect);
-                part[i].start_sect = SECT(start_sect);
-
-            } 
-
-            if (end_chs_marker || end_cyl_wrapped) {
-                part[i].end_cyl = CYL(end_sect);
-                part[i].end_head = HEAD(end_sect);
-                part[i].end_sect = SECT(end_sect);
+            if (start_chs_marker || start_cyl_wrapped || end_chs_marker || end_cyl_wrapped) {
+                recalculate_part(&part[i], MODE_LBA);
             }
 
             if (start_cyl_wrapped || end_cyl_wrapped) {
                 message = TEXT("CHS cylinder wrap-around detected."
                     " Replaced by LBA marker on next save.");
             }
-        }
-
-        else {
-            part[i].start_cyl = 0;
+        } else {
+            part[i].start_cyl  = 0;
+            part[i].end_cyl    = 0;
             part[i].start_head = 0;
+            part[i].end_head   = 0;
             part[i].start_sect = 0;
-            part[i].end_cyl = 0;
-            part[i].end_head = 0;
-            part[i].end_sect = 0;
+            part[i].end_sect   = 0;
         }
-
-        if (i > 0 &&
-            (part[i - 1].os_id == 0x8100 || /* Linix */
-             part[i - 1].os_id == 0x8300)   /* Linix ext2fs */
-            && (part[i].os_id >> 8) == 0x82 /* Linix swap */) {
-            part[i].os_id = 0x8201; /* Linux Swap */
-        }
-
-        determine_os_num(&part[i]);
-
     }
 
     return message;
 } /* unpack_part_tab */
+
+
 
 void pack_adv_part_tab(struct part_long *part, struct adv_part_rec *part_rec,
                        int n)
