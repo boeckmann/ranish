@@ -159,6 +159,10 @@ void start_gui(void)
 
         select_target = 0;
 
+        if (dinfo.lba) {
+            mode = MODE_LBA;
+        }
+
         setup_mbr(p);
 
         if (select_target == 0)
@@ -211,10 +215,6 @@ int setup_mbr(struct part_long *p)
     view      = (p->level == 0) ? VIEW_MBR : VIEW_EMBR;
     num_rows  = (p->level == 0) ? MAX_PART_ROWS : 4;
     data_size = (p->level == 0) ? SECT_SIZE + ADV_DATA_SIZE : SECT_SIZE;
-
-    if (dinfo.lba) {
-        mode = MODE_LBA;
-    }
 
     if ((data = malloc(2 * data_size)) == 0) {
         show_error(ERROR_MALLOC);
