@@ -18,11 +18,24 @@ char tmp[SECT_SIZE * 3];
 
 int changes_made = 0;
 
+FILE *dbgf;
+
+#define DEBUG_MAIN
+
+void dump_part(struct part_long *p)
+{
+    fprintf(dbgf, "%d %lu/%lu/%lu\n", p->level, p->end_cyl, p->end_head, p->end_sect);
+}
+
 void main(int argc, char **argv)
 {
     int i;
     unsigned cyls,heads,sects;
     hd = 0x80;
+
+#ifdef DEBUG_MAIN
+    dbgf = fopen("partdbg.txt", "w");
+#endif
 
     set_messages();
 
@@ -94,9 +107,12 @@ void main(int argc, char **argv)
             "RESTART YOUR PC TO APPLY AND AVOID DATA CORRUPTION!\n");
     }
 
-    print_mem_stat();
-#ifdef DEBUG
+#ifdef DEBUG_MAIN
+    fclose(dbgf);
+#endif
 
+#ifdef DEBUG
+    print_mem_stat();
 #endif
 
     exit(0);
@@ -148,11 +164,8 @@ void start_gui(void)
         p->container_base = 0;
 
         p->start_cyl  = 0;
-        p->end_cyl    = dinfo.num_cyls - 1;
         p->start_head = 0;
-        p->end_head   = dinfo.num_heads - 1;
         p->start_sect = 1;
-        p->end_sect   = dinfo.num_sects;
 
         p->rel_sect = 0;
         p->num_sect = dinfo.total_sects;
@@ -161,6 +174,13 @@ void start_gui(void)
 
         if (dinfo.lba) {
             mode = MODE_LBA;
+            p->end_cyl    = CYL(p->num_sect - 1);
+            p->end_head   = HEAD(p->num_sect - 1);
+            p->end_sect   = SECT(p->num_sect - 1);
+        } else {
+            p->end_cyl = dinfo.num_cyls - 1;
+            p->end_head = dinfo.num_heads - 1;
+            p->end_sect = dinfo.num_sects;
         }
 
         setup_mbr(p);
@@ -354,6 +374,10 @@ int setup_mbr(struct part_long *p)
             force_adv_adjust   = 1;
             force_recalculate  = 0;
         }
+
+#ifdef DEBUG_MAIN
+        /*dump_part(p);*/
+#endif
 
         if (view == VIEW_ADV && force_adv_adjust == 1) {
             struct part_long tmp;
@@ -1063,11 +1087,12 @@ int setup_mbr(struct part_long *p)
 
                     start_cyl = p->start_cyl;
                     end_cyl   = part[row].container->end_cyl;
-                    /* partial end cylinder (LBA) */
-                    if (ABS_END_SECT(&p[row]) >= p[row].container->num_sect) {
-                        end_cyl--;
-                    }
+
                     start_head = (row == 0) ? 1 : 0;
+                    part[row].start_head = start_head;
+                    part[row].start_sect = 1;
+                    part[row].end_head   = dinfo.num_heads - 1;
+                    part[row].end_sect   = dinfo.num_sects;
 
                     if (row > 0 && !part[row - 1].empty) {
                         start_cyl = part[row - 1].end_cyl + 1;
@@ -1080,11 +1105,16 @@ int setup_mbr(struct part_long *p)
                     }
 
                     part[row].start_cyl  = start_cyl;
-                    part[row].start_head = start_head;
-                    part[row].start_sect = 1;
                     part[row].end_cyl    = end_cyl;
-                    part[row].end_head   = dinfo.num_heads - 1;
-                    part[row].end_sect   = dinfo.num_sects;
+
+                    /* partial end cylinder (LBA) adjustments */
+                    if (ABS_REL_SECT(&part[row]) < ABS_REL_SECT(part[row].container)) {
+                        part[row].start_cyl = part[row].container->start_cyl+1;
+                    }
+                    if (ABS_END_SECT(&part[row]) > ABS_END_SECT(part[row].container)) {
+                        part[row].end_cyl = part[row].container->end_cyl-1;
+                    }
+
                 } else {
                     if (row > 0 && !part[row - 1].empty)
                         part[row].rel_sect =
