@@ -20,8 +20,6 @@ int changes_made = 0;
 
 FILE *dbgf;
 
-#define DEBUG_MAIN
-
 void dump_part(struct part_long *p)
 {
     fprintf(dbgf, "%d %lu/%lu/%lu\n", p->level, p->end_cyl, p->end_head, p->end_sect);

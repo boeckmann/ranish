@@ -139,9 +139,7 @@ char * unpack_part_tab(struct part_rec *part_rec, struct part_long *part, int n,
                      struct part_long *container)
 {
     int i;
-    unsigned long rel_sect;
     unsigned long start_sect;
-    unsigned long num_sect;
     unsigned long end_sect;
     int start_chs_marker, end_chs_marker;
     int start_cyl_wrapped, end_cyl_wrapped;

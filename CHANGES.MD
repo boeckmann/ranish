@@ -16,6 +16,9 @@
  * Show progress when writing FAT-32 tables.
  * Show reboot warning on quit if changes were made.
 
+### Regressions
+ * Bad clusters are not written to FAT when scanning for bad sectors. Will be reimplemented shortly.
+
 
 ## Version 2.90.11 alpha
 ### Enhancements

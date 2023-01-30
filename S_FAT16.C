@@ -550,9 +550,11 @@ int write_progress(unsigned long curr, unsigned long total)
 {
     char buf[24];
     static unsigned long last = 0xff;
+    unsigned long long t;
 
     if (curr != last) {
-        sprintf(buf, "%% %3lu%% written", curr * 100 / total);
+        t = (unsigned long long)curr * 100 / (unsigned long long)total;
+        sprintf(buf, "%% %3d%% written", (int)t);
         last = curr;
         return progress(buf) != CANCEL;
     }
@@ -565,9 +567,11 @@ int verify_progress(unsigned long curr, unsigned long total)
 {
     char buf[32];
     static unsigned long last = 0xff;
+    unsigned long long t;
 
     if (curr != last) {
-        sprintf(buf, "%% %3lu%% | 0 errors", curr * 100 / total);
+        t = (unsigned long long)curr * 100 / (unsigned long long)total;
+        sprintf(buf, "%% %3d%% | 0 errors", (int)t);
         last = curr;
         return progress(buf) != CANCEL;
     }

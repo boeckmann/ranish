@@ -81,6 +81,7 @@ int get_disk_info(int hd, struct disk_info *di, char *buf_4096)
 		/* comment out to force disk to 2TB size for testing */
 		/* di->total_sects = 0xffffffff; */
 
+		/* use BIOS assisten LBA setup */
 		if ((di->num_heads <= 16) && 
 			(di->total_sects > 63ul * 16ul * 1024ul) &&
 			(force_num_heads == 0)) {
@@ -99,7 +100,7 @@ int get_disk_info(int hd, struct disk_info *di, char *buf_4096)
 			}
 			else {
 				di->num_heads = 16;			
-			}			
+			}
 		}
 
         addr.disk = dinfo.disk;
