@@ -22,7 +22,7 @@
 #define SiH 6
 
 #define FmX 4
-#define FmY 14
+#define FmY 10
 #define FmW 74
 #define FmH 5
 
@@ -348,12 +348,12 @@ int get_keys(unsigned short *keys, int num_keys)
 } /* get_keys */
 
 
-int two_btn_dialog(char *msg, char *btn1, char *btn2)
+int two_btn_dialog(char *msg, char *btn1, int res1, char *btn2, int res2)
 {
-    int x, y = 8, w, h = 4, pressed;
+    int x, y = FmY, w, h = 4, pressed;
     struct event ev;
     static char buf[4 * 80 * 2];
-    int result = 1;
+    int result = res1;
     int b1l, b2l;
 
     b1l = strlen(btn1);
@@ -372,19 +372,19 @@ int two_btn_dialog(char *msg, char *btn1, char *btn2)
     pressed = 0;
 
     while (1) {
-        if (result) {
+        if (result == res1) {
             move_cursor(38-b1l, y+2);
         }
-        else {
+        else if (result == res2) {
             move_cursor(42, y+2);
         }
-        write_string(result ? BrWhite + BakBlack : Black + BakWhite, 38 - b1l - 1, y + 2, " ");
-        write_string(result ? BrWhite + BakBlack : Black + BakWhite, 38 - b1l, y + 2, btn1);
-        write_string(result ? BrWhite + BakBlack : Black + BakWhite, 38, y + 2, " ");
+        write_string((result == res1) ? BrWhite + BakBlack : Black + BakWhite, 38 - b1l - 1, y + 2, " ");
+        write_string((result == res1) ? BrWhite + BakBlack : Black + BakWhite, 38 - b1l, y + 2, btn1);
+        write_string((result == res1) ? BrWhite + BakBlack : Black + BakWhite, 38, y + 2, " ");
 
-        write_string(result ? Black + BakWhite : BrWhite + BakBlack, 41, y + 2, " ");
-        write_string(result ? Black + BakWhite : BrWhite + BakBlack, 42, y + 2, btn2);
-        write_string(result ? Black + BakWhite : BrWhite + BakBlack, 42 + b2l, y + 2, " ");
+        write_string((result == res1) ? Black + BakWhite : BrWhite + BakBlack, 41, y + 2, " ");
+        write_string((result == res1) ? Black + BakWhite : BrWhite + BakBlack, 42, y + 2, btn2);
+        write_string((result == res1) ? Black + BakWhite : BrWhite + BakBlack, 42 + b2l, y + 2, " ");
 
         get_event(&ev, EV_KEY | EV_MOUSE);
 
@@ -396,17 +396,17 @@ int two_btn_dialog(char *msg, char *btn1, char *btn2)
             break;
         }
         else if (ev.key == 'y' || ev.key == 'Y') {
-            result = 1;
+            result = res1;
             break;
         }
         else if (ev.key == 'n' || ev.key == 'N') {
-            result = 0;
+            result = res2;
             break;
         }        
         if (ev.scan == 0x4BE0 || ev.scan == 0x4B00 /* left */
             || ev.scan == 0x4DE0 || ev.scan == 0x4D00 /* right */
             || ev.scan == 0x0F09) /* TAB */ {
-            result = !result;
+            result = (result == res1) ? res2 : res1;
         }
 
         else if (ev.ev_type & EV_MOUSE)
@@ -415,7 +415,7 @@ int two_btn_dialog(char *msg, char *btn1, char *btn2)
                 if (ev.left == 1)
                     pressed = 1;
                 if (ev.left == 0 && pressed == 1) {
-                    result = 0;
+                    result = res2;
                     break;
                 }
             } else if (ev.x >= 37 - b1l && ev.x <= 38 &&
@@ -423,7 +423,7 @@ int two_btn_dialog(char *msg, char *btn1, char *btn2)
                 if (ev.left == 1)
                     pressed = 1;
                 if (ev.left == 0 && pressed == 1) {
-                    result = 1;
+                    result = res1;
                     break;
                 }
             } else
@@ -1064,7 +1064,7 @@ int enter_string(int x, int y, char *prompt, int maxlen, char *str, char *help)
 
 void show_error(char *msg)
 {
-    int x, y = 8, w, h = 4, pressed;
+    int x, y = 10, w, h = 4, pressed;
     struct event ev;
     static char buf[4 * 80 * 2];
 

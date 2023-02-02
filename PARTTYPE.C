@@ -5,7 +5,7 @@ struct os_desc os_desc_tbl[] = {
     /*   os_id,  "123456789 123456789 123",	flags, 	setup,		format,
        print */
 
-    {0x0000, "Unused", 1, 0, format_unused, 0},
+    {0x0000, "Unused", 1, 0, 0, 0},
     {0x0100, "FAT-12", 0, setup_fat, format_fat, print_fat},
     {0x0400, "FAT-16 (< 32 MiB)", 0, setup_fat, format_fat, print_fat},
     {0x0600, "FAT-16", 1, setup_fat, format_fat, print_fat},

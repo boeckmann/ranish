@@ -1,5 +1,6 @@
 #include "part.h"
 #include "fat.h"
+#include "cache.h"
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
@@ -13,6 +14,12 @@
 
 #define FAT12_MAX_SIZE 6144   /* 4096 12-bit entries */
 #define MAX_TABLE_SECT_FAT12 12
+
+static char fat_format_msg[80];
+static unsigned long fat_bad_sectors;
+
+/* block cache for two FAT tables */
+static cache_block_t fat_table_cache[2];
 
 
 /* according to Microsoft FAT specification */
@@ -130,61 +137,6 @@ static unsigned long fat_max_cluster_entries(struct boot_ms_dos *b, int fat_type
     return 0;
 }
 
-/*--- cache routines -------------------------------------------------------*/
-
-static char fat_cache[SECT_SIZE];
-static unsigned long fat_cache_sector = 0;
-static void *fat_cache_entity = NULL;
-static int fat_cache_dirty = 0; /* cache was written to */
-
-/*static void fat_cache_reset(struct part_long *p)
-{
-    fat_cache_sector = 0;
-    fat_cache_entity = NULL;
-}*/
-
-
-/* mark FAT cache as dirty */
-static void fat_cache_mark_dirty()
-{
-    fat_cache_dirty = 1;
-}
-
-
-static int fat_cache_flush()
-{
-    struct part_long *p;
-
-    if (fat_cache_entity == NULL) return OK;
-
-    if (fat_cache_dirty) {
-        p = (struct part_long *)fat_cache_entity;
-        if (disk_write_rel(p, fat_cache_sector, fat_cache, 1) == FAILED) return FAILED;
-        fat_cache_dirty = 0;
-    }
-
-    return OK;
-}
-
-
-static int in_fat_cache(struct part_long *p, unsigned long sector)
-{
-    return fat_cache_sector == sector && fat_cache_entity == p;
-}
-
-
-static void * fat_cache_read(struct part_long *p, unsigned long sector)
-{
-    if (in_fat_cache(p, sector)) return fat_cache;
-
-    fat_cache_flush();
-    if (disk_read_rel(p, sector, fat_cache, 1) == FAILED) return NULL;
-
-    fat_cache_sector = sector;
-    fat_cache_entity = p;
-    return fat_cache;
-}
-
 
 /*--- FAT table routine ----------------------------------------------------*/
 
@@ -210,7 +162,7 @@ int fat_get_table_entry(struct part_long *p, struct boot_ms_dos *b, unsigned tab
         fat_offset = (FAT16_ENTRY_SIZE * cluster) % b->sect_size;        
     }
 
-    buf = fat_cache_read(p, fat_sector);
+    buf = cache_read(p, &fat_table_cache[table_num], fat_sector);
     if (!buf) return FAILED;
 
     if (fat_typ == FAT_32) {
@@ -245,7 +197,7 @@ int fat_set_table_entry(struct part_long *p, struct boot_ms_dos *b, unsigned tab
         fat_offset = FAT16_ENTRY_SIZE * cluster % b->sect_size;        
     }
 
-    buf = fat_cache_read(p, fat_sector);
+    buf = cache_read(p, &fat_table_cache[table_num], fat_sector);
     if (!buf) return FAILED;
 
     if (fat_typ == FAT_32) {
@@ -254,7 +206,7 @@ int fat_set_table_entry(struct part_long *p, struct boot_ms_dos *b, unsigned tab
         (*(unsigned short *)(buf + fat_offset)) = value;        
     }
 
-    fat_cache_mark_dirty();
+    cache_mark_dirty(&fat_table_cache[table_num]);
 
     return OK;
 }
@@ -340,6 +292,8 @@ static int fat_update_label_file(struct part_long *p, struct boot_ms_dos *b)
     unsigned long start_sect, sect;
     unsigned long data_cluster;
     unsigned long next_data_cluster = 0;
+
+
 
     int fat_typ = fat_type(b);
     if ((buf = malloc(SECT_SIZE)) == NULL) return FAILED;
@@ -476,11 +430,15 @@ static int fat_initialize_bootrec(struct part_long *p,
     b->track_size = dinfo.num_sects;
     b->num_sides = dinfo.num_heads;
 
+    b->hid_sects  = fat_calc_hidden_sectors(p);
+    b->total_sect = (p->num_sect < 65536L) ? p->num_sect : 0;
+    b->big_total  = (p->num_sect < 65536L) ? 0 : p->num_sect;
+
     fat_canonicalize_label(label);
 
     if (fat_type == FAT_32) {
         memmove(b->x.f32.fs_id, "FAT32   ", sizeof b->x.f32.fs_id);      
-        cluster_size = fat32_cluster_size(p->num_sect);
+        cluster_size = fat32_cluster_size(fat_num_sectors(b));
 
         b->x.f32.fs_info_sect_num = 1;
         b->x.f32.root_clust = 2;
@@ -499,11 +457,11 @@ static int fat_initialize_bootrec(struct part_long *p,
 
         if (fat_type == FAT_16) {
             memmove(b->x.f16.fs_id, "FAT16   ", sizeof b->x.f16.fs_id);      
-            cluster_size = fat16_cluster_size(p->num_sect);
+            cluster_size = fat16_cluster_size(fat_num_sectors(b));
         }
         else if (fat_type == FAT_12) {
             memmove(b->x.f16.fs_id, "FAT12   ", sizeof b->x.f16.fs_id);
-            cluster_size = fat12_cluster_size(p->num_sect);
+            cluster_size = fat12_cluster_size(fat_num_sectors(b));
         }
 
         b->x.f16.drive_num = dinfo.disk;
@@ -518,10 +476,6 @@ static int fat_initialize_bootrec(struct part_long *p,
         strncpy(b->x.f16.xcode + EMP_IPL_SIZE, MESG_NON_SYSTEM, sizeof(b->x.f32.xcode) - EMP_IPL_SIZE);
 
     }
-
-    b->hid_sects  = fat_calc_hidden_sectors(p);
-    b->total_sect = (p->num_sect < 65536L) ? p->num_sect : 0;
-    b->big_total  = (p->num_sect < 65536L) ? 0 : p->num_sect;
 
     if (cluster_size == 0) return FAT_ERR_TOO_SMALL;
     if (cluster_size == 0xffff) return FAT_ERR_TOO_LARGE;
@@ -546,15 +500,16 @@ static void fat32_initialize_ext_bootrec(struct boot_ms_dos *b,
 }
 
 
+
 int write_progress(unsigned long curr, unsigned long total)
 {
     char buf[24];
-    static unsigned long last = 0xff;
-    unsigned long long t;
+    static unsigned long last = 0;
+    unsigned int t;
 
-    if (curr != last) {
+    if (curr - last > 16 * 63) {
         t = (unsigned long long)curr * 100 / (unsigned long long)total;
-        sprintf(buf, "%% %3d%% written", (int)t);
+        sprintf(buf, "%% %3u%% written", t);
         last = curr;
         return progress(buf) != CANCEL;
     }
@@ -566,12 +521,12 @@ int write_progress(unsigned long curr, unsigned long total)
 int verify_progress(unsigned long curr, unsigned long total)
 {
     char buf[32];
-    static unsigned long last = 0xff;
-    unsigned long long t;
+    static unsigned long last = 0;
+    unsigned int t;
 
-    if (curr != last) {
+    if (curr - last > 16 * 63) {
         t = (unsigned long long)curr * 100 / (unsigned long long)total;
-        sprintf(buf, "%% %3d%% | 0 errors", (int)t);
+        sprintf(buf, "%% %3u%% | %lu errors", t, fat_bad_sectors);
         last = curr;
         return progress(buf) != CANCEL;
     }
@@ -653,8 +608,13 @@ int fat_initialize_root(struct part_long *p, struct boot_ms_dos *b)
     return OK;
 }
 
+int fat_bbt_track(unsigned long sector)
+{
+    fat_bad_sectors++;
+    return 1;
+}
 
-int format_fat(struct part_long *p, char **argv)
+int format_fat(struct part_long *p, char **argv, char **msg)
 {
     int result;
     char *data_pool;
@@ -664,27 +624,16 @@ int format_fat(struct part_long *p, char **argv)
 
     char label[FAT_LABEL_LEN + 1] = "";
     unsigned int form_type  = F_VERIFY;
+    fat_bad_sectors = 0;
 
-    if ((data_pool = malloc(sizeof(struct boot_ms_dos) + sizeof(struct fat32_ext_bootrec))) == 0) {
+    if ((data_pool = malloc(sizeof(struct boot_ms_dos) 
+        + sizeof(struct fat32_ext_bootrec))) == 0) {
         show_error(ERROR_MALLOC);
         return FAILED;
     }
 
     b   = (struct boot_ms_dos *) data_pool;
     eb  = (struct fat32_ext_bootrec *) (data_pool + sizeof(struct boot_ms_dos));
-
-    if (QUICK_BASE(p) > QUICK_BASE(p) + p->num_sect) {
-        progress("^Partition crosses 2TiB boundary. Refusing to format.");
-        result = FAILED;
-        goto done;
-    }
-
-    /* make test read to check if whole partition is accessible */
-    if (disk_read_rel(p, p->num_sect-1, data_pool, 1) == FAILED) {
-        progress(TEXT("^Can not access last sector of partition. Refusing to format!"));
-        result = FAILED;
-        goto done;
-    }
 
     /* parse arguments */
     while (*argv != 0) {
@@ -696,8 +645,9 @@ int format_fat(struct part_long *p, char **argv)
             strncpy(label, (*argv) + 3, FAT_LABEL_LEN);
             label[FAT_LABEL_LEN] = 0;
         } else {
-            progress("^Unknown option:");
-            progress(*argv);
+            snprintf(fat_format_msg, sizeof(fat_format_msg)-1,
+                TEXT("unknown option: %s"), *argv);
+            *msg = fat_format_msg;
             result = FAILED;
             goto done;
         }
@@ -726,7 +676,7 @@ int format_fat(struct part_long *p, char **argv)
         result = fat_initialize_bootrec(p, b, 512, FAT_32, label);
         
         if (result == FAT_ERR_TOO_SMALL) {
-            progress(TEXT("^FAT-32 partition too small. Use FAT-16 instead!"));
+            *msg = TEXT("^FAT-32 partition too small. Use FAT-16 instead!");
             result = FAILED;
             goto done;
         }
@@ -737,12 +687,12 @@ int format_fat(struct part_long *p, char **argv)
         result = fat_initialize_bootrec(p, b, 512, FAT_16, label);
         
         if (result == FAT_ERR_TOO_SMALL) {
-            progress(TEXT("^FAT-16 partition too small. Use FAT-12 instead!"));
+            *msg = TEXT("FAT-16 partition too small. Use FAT-12 instead!");
             result = FAILED;
             goto done;
         }
         if (result == FAT_ERR_TOO_LARGE) {
-            progress(TEXT("^FAT-16 partition too large. Use FAT-32 instead!"));
+            *msg = TEXT("FAT-16 partition too large. Use FAT-32 instead!");
             result = FAILED;
             goto done;
         }
@@ -751,12 +701,12 @@ int format_fat(struct part_long *p, char **argv)
         result = fat_initialize_bootrec(p, b, 224, FAT_12, label);
 
         if (result == FAT_ERR_TOO_SMALL) {
-            progress(TEXT("^FAT-12 partition too small!"));
+            *msg = TEXT("FAT-12 partition too small!");
             result = FAILED;
             goto done;
         }
         if (result == FAT_ERR_TOO_LARGE) {
-            progress(TEXT("^FAT-12 partition too large. Use FAT-16 or FAT-32 instead!"));
+            *msg = TEXT("FAT-12 partition too large. Use FAT-16 or FAT-32 instead!");
             goto done;
         }
     }
@@ -769,50 +719,54 @@ int format_fat(struct part_long *p, char **argv)
         result = disk_write_rel(p, 0, b, 1);
     }
     if (result != OK) {
-        progress("Error writing boot sector.");
+        *msg = TEXT("error writing boot sector.");
         goto done;        
     }
 
     result = fat_initialize_tables(p, b);        
 
     if (result != OK) {
-        progress("Error writing FAT.");
+        *msg = TEXT("error writing FAT");
         goto done;
     }
 
     progress("^Format: writing root directory ...");
     result = fat_initialize_root(p, b);
     if (result != OK) {
-        progress("Error writing root directory.");
+        *msg = TEXT("error writing root directory");
         goto done;        
     }
 
     progress("^Format: updating volume label ...");
     result = fat_update_label_file(p, b);
     if (result != OK) {
-        progress("Error updating volume label.");
+        *msg = TEXT("error updating volume label");
         goto done;        
     }
 
     if (form_type == F_VERIFY) {
         progress("^Format: searching for bad sectors ...   you may skip this step via ESC");
-        result = part_verify_sectors(p, fat_non_data_sectors(b), p->num_sect - fat_non_data_sectors(b), verify_progress, NULL);
+        result = part_verify_sectors(p, fat_non_data_sectors(b), fat_num_sectors(b) - fat_non_data_sectors(b), verify_progress, fat_bbt_track);
         if (result == FAILED) {
-            progress("Error checking for bad clusters.");
+            result = WARN;
+            *msg = TEXT("bad clusters found");
             goto done;        
         }
     } else if (form_type == F_DESTR) {
-        progress("^Format: overwriting old data ...        you may skip this step via ESC");
-        result = part_fill_sectors(p, fat_non_data_sectors(b), p->num_sect - fat_non_data_sectors(b), 0, write_progress, NULL);
+        progress("^Format: cleaning data area...           you may skip this step via ESC");
+        result = part_fill_sectors(p, fat_non_data_sectors(b), fat_num_sectors(b) - fat_non_data_sectors(b), 0, write_progress, NULL);
         if (result == FAILED) {
-            progress("Error cleaning data area.");
+            *msg = TEXT("error cleaning data area");
             goto done;        
         }
     }
     result = OK;
 
 done:
-    fat_cache_flush();
+    /* flush FAT cache to disk */
+    cache_flush(&fat_table_cache[0]);
+    cache_flush(&fat_table_cache[1]);
+
     disk_unlock(dinfo.disk);
     free(data_pool);
 
@@ -821,7 +775,7 @@ done:
 } /* format_fat */
 
 
-int format_embr(struct part_long *p, char **argv)
+int format_embr(struct part_long *p, char **argv, char **msg)
 {
     struct mbr *mbr;
     (void)argv;
@@ -843,7 +797,7 @@ int format_embr(struct part_long *p, char **argv)
     mbr->magic_num = MBR_MAGIC_NUM;
 
     if (disk_write_rel(p, 0, mbr, 1) == FAILED) {
-        progress("Error Writing Extended Master Boot Record.");
+        *msg = TEXT("error writing Extended MBR");
         disk_unlock(dinfo.disk);
         free(mbr);
         return FAILED;

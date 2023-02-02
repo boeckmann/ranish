@@ -10,6 +10,13 @@ void part_set_id(struct part_long *part, unsigned short id)
     part->os_num = i;
 }
 
+int part_is_fat_type(struct part_long *p)
+{
+    return p->os_id == 0x0400 || p->os_id == 0x0600 || p->os_id == 0x0b00
+        || p->os_id == 0x0c00 || p->os_id == 0x0e00 || p->os_id == 0x0100
+        || p->os_id == 0x1400 || p->os_id == 0x1600 || p->os_id == 0x1b00
+        || p->os_id == 0x1c00 || p->os_id == 0x1e00 || p->os_id == 0x1100;
+}
 
 void adjust_part_type(struct part_long *p, int interactive)
 {
@@ -17,12 +24,12 @@ void adjust_part_type(struct part_long *p, int interactive)
     if (QUICK_END(p) >= 1024ul * 255ul * 63ul && p->level == 1) {
 
         if (p->os_id == 0x0500 || p->os_id == 0x1500) {
-            if(!interactive || two_btn_dialog("Partition type should be Extend LBA", "change", "ignore")) {
+            if(!interactive || two_btn_dialog("Partition type should be Extend LBA", "change", 1, "ignore", 0)) {
                 part_set_id(p, p->os_id + 0x0A00);
             }
         }
         if (p->os_id == 0x0B00 || p->os_id == 0x1B00) {
-            if(!interactive || two_btn_dialog("Partition type should be FAT-32 LBA", "change", "ignore")) {
+            if(!interactive || two_btn_dialog("Partition type should be FAT-32 LBA", "change", 1, "ignore", 0)) {
                 part_set_id(p, p->os_id + 0x0100);
             }                            
         }
@@ -30,12 +37,12 @@ void adjust_part_type(struct part_long *p, int interactive)
 
     if (QUICK_END(p) < 1024ul * 255ul * 63ul || p->level > 1) {
         if (p->os_id == 0x0F00 || p->os_id == 0x1F00) {
-            if(!interactive || two_btn_dialog("Partition type should be Extend non-LBA", "change", "ignore")) {
+            if(!interactive || two_btn_dialog("Partition type should be Extend non-LBA", "change", 1, "ignore", 0)) {
                 part_set_id(p, p->os_id - 0x0A00);
             }
         }
         if (p->os_id == 0x0C00 || p->os_id == 0x1C00) {
-            if(!interactive || two_btn_dialog("Partition type should be FAT-32 non-LBA", "change", "ignore")) {
+            if(!interactive || two_btn_dialog("Partition type should be FAT-32 non-LBA", "change", 1, "ignore", 0)) {
                 part_set_id(p, p->os_id - 0x0100);
             }                            
         }        

@@ -200,7 +200,7 @@ struct os_desc
     char *name;
     unsigned short flags;
     int (*setup)(struct part_long *);
-    int (*format)(struct part_long *, char **argv);
+    int (*format)(struct part_long *, char **argv, char **msg);
     int (*print)(struct part_long *);
 };
 
@@ -220,6 +220,7 @@ struct os_desc
 #define OK     0
 #define FAILED -1
 #define CANCEL -2
+#define WARN   -3
 
 #define BORDER_COLOR (Yellow + BakBlue)
 #define HEADER_COLOR (BrCyan + BakBlue)
@@ -260,6 +261,8 @@ int disk_write_rel(struct part_long *p, unsigned long sect, void *buf,
                    int num_sect);
 
 void part_set_id(struct part_long *part, unsigned short id);
+int part_is_fat_type(struct part_long *part);
+
 void adjust_part_type(struct part_long *p, int interactive);
 
 int part_verify_sectors(struct part_long *p,
@@ -309,7 +312,7 @@ void pack_adv_part_tab(struct part_long *part, struct adv_part_rec *part_rec,
 void unpack_adv_part_tab(struct adv_part_rec *part_rec, struct part_long *part,
                          int n, struct part_long *container);
 void show_error(char *);
-int two_btn_dialog(char *msg, char *btn1, char *btn2);
+int two_btn_dialog(char *msg, char *btn1, int res1, char *btn2, int res2);
 void setup_ipl(struct mbr *);
 void edit_boot_menu(struct adv *adv, int p, int flag);
 void select_system_type(struct part_long *p);
@@ -338,17 +341,17 @@ void cmd_error(char *msg);
 int print_unknown(struct part_long *p);
 
 int print_embr(struct part_long *p);
-int format_embr(struct part_long *p, char **argv);
+int format_embr(struct part_long *p, char **argv, char **msg);
 
 int setup_fat(struct part_long *p);
 int print_fat(struct part_long *p);
-int format_fat(struct part_long *p, char **argv);
+int format_fat(struct part_long *p, char **argv, char **msg);
 
 int setup_fat32(struct part_long *p);
 int print_fat32(struct part_long *p);
 int format_fat32(struct part_long *p, char **argv);
 
-int format_unused(struct part_long *p, char **argv);
+int format_unused(struct part_long *p, char **argv, char **msg);
 
 void set_messages(void);
 

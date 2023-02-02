@@ -15,8 +15,13 @@ int interactive;
 char buf[25 * 80 * 2];
 char base_dir[256];
 char tmp[SECT_SIZE * 3];
+static char *format_msg;
+static int format_type;
+static char msg_buf[80];
 
 int changes_made = 0;
+
+char scratch_sector[SECT_SIZE];
 
 FILE *dbgf;
 
@@ -906,6 +911,8 @@ int setup_mbr(struct part_long *p)
 
             char *argv[NUM_ARGS];
 
+            format_msg = NULL;
+
             if (part[row].empty)
                 continue;
 
@@ -924,22 +931,68 @@ int setup_mbr(struct part_long *p)
                 continue;
             }
 
+            if (QUICK_BASE(p) > QUICK_BASE(p) + p->num_sect) {
+                show_error(TEXT("^Partition crosses 2TiB boundary. Refusing to format!"));
+                continue;
+            }
+        
+            /* make test read to check if whole partition is accessible */
+            if (disk_read_rel(p, p->num_sect-1, scratch_sector, 1) == FAILED) {
+                show_error(TEXT("^Can not access last sector of partition. Refusing to format!"));
+                continue;
+            }
+
             sprintf(tmp2, "#0x%04X", part[row].os_id);
 
-            if (enter_string(
-                    4, hint_y, PROMPT_FORMAT, sizeof(tmp), tmp, tmp2) == 0)
-                continue;
+            if (part_is_fat_type(&part[row])) {
+                msg_buf[0] = '\0';
 
-            parse_arg(tmp, argv, NUM_ARGS);
+                format_type = two_btn_dialog("Shall I do a quick format or overwrite data with zeros (slow)?",
+                    "quick", 2, "zero", 1);
+                if (!format_type) {
+                    mesg = WARN_FORMAT_CANCEL;
+                    continue;                   
+                } else if (format_type == 1) {
+                    strncat(msg_buf, "/destructive ", sizeof(msg_buf));
+                }
+                if (enter_string(
+                        4, 10, TEXT("Volume name:"), sizeof(tmp), tmp, tmp2) == 0) {
+                    mesg = WARN_FORMAT_CANCEL;
+                    continue;
+                }
 
-            fstatus = os_desc[part[row].os_num].format(&part[row], argv);
+                if (tmp && (*tmp != '\0')) {
+                    strncat(msg_buf, "/l:", sizeof(msg_buf));
+                    strncat(msg_buf, tmp, sizeof(msg_buf));
+                }
+            }
+            else {
+                if (enter_string(
+                        4, hint_y, PROMPT_FORMAT, sizeof(msg_buf), msg_buf, tmp2) == 0)
+                    continue;
+            }
+
+            parse_arg(msg_buf, argv, NUM_ARGS);
+
+            fstatus = os_desc[part[row].os_num].format(&part[row], argv, &format_msg);
 
             if (fstatus == OK)
                 mesg = MESG_FORMAT_OK;
             else if (fstatus == CANCEL)
                 mesg = WARN_FORMAT_CANCEL;
-            else if (fstatus == FAILED)
-                show_error(ERROR_FORMAT_FAILED);
+            else if (fstatus == WARN) {
+                snprintf(msg_buf, sizeof(msg_buf) - 1, 
+                    TEXT("Format completed with warnings: %s"), format_msg);
+                mesg = msg_buf;                
+            }
+            else if (fstatus == FAILED) {
+                if (format_msg) {
+                    snprintf(msg_buf, sizeof(msg_buf), TEXT("Format error: %s"), format_msg);
+                } else {
+                    snprintf(msg_buf, sizeof(msg_buf), TEXT("Format failed!"));
+                }
+                show_error(msg_buf);
+            }
 
             force_redraw_header = 1;
             force_redraw_table  = 1;
@@ -994,11 +1047,8 @@ int setup_mbr(struct part_long *p)
                 continue;
             }            
 
-            if (enter_string(
-                    4, hint_y, "Type \"yes\" to erase data", sizeof(tmp), tmp, NULL) == 0)
-                continue;
-
-            if (strcmp(tmp, "yes") != 0) {
+            if (!two_btn_dialog("This will overwrite the whole parition with zeros. All data is lost!",
+                    "proceed", 1, "cancel", 0)) {
                 mesg = TEXT("Erase canceled by user.");
                 continue;
             }
@@ -1202,7 +1252,7 @@ int setup_mbr(struct part_long *p)
             
             if (part[row].os_id == 0x0500 || part[row].os_id == 0x0F00 || 
                 part[row].os_id == 0x1F00) {
-               if (!two_btn_dialog("Delete this extended and all nested partitions?", "yes", "no")) {
+               if (!two_btn_dialog("Delete this extended and all nested partitions?", "yes", 1, "no", 0)) {
                    mesg = TEXT("Deletion canceled by user.");
                    continue;
                }
@@ -2060,7 +2110,16 @@ void command_line(int argc, char **argv)
         if (os_desc[part[i].os_num].format == 0)
             cmd_error(ERROR_NO_FORMAT);
 
-        x = os_desc[part[i].os_num].format(&part[i], argv + 2);
+        if (QUICK_BASE(p) > QUICK_BASE(p) + p->num_sect) {
+            cmd_error(TEXT("^Partition crosses 2TiB boundary. Refusing to format!"));
+        }
+    
+        /* make test read to check if whole partition is accessible */
+        if (disk_read_rel(p, p->num_sect-1, scratch_sector, 1) == FAILED) {
+            cmd_error(TEXT("^Can not access last sector of partition. Refusing to format!"));
+        }
+
+        x = os_desc[part[i].os_num].format(&part[i], argv + 2, &format_msg);
         if (x == FAILED)
             cmd_error(ERROR_FORMAT_FAILED);
         else if (x == CANCEL)

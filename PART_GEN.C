@@ -194,33 +194,7 @@ int generic_format(struct part_long *p, int bbt_size, unsigned long *bbt)
     return num_bad;
 } /* generic_format */
 
-int format_unused(struct part_long *p, char **argv)
-{
-    int x;
 
-    if (argv == 0 || *argv == 0 ||
-        _stricmp(*argv, "/clean") != 0 &&
-            _stricmp(*argv, "/destructive") != 0) {
-        progress("^I will not do that.");
-        progress(
-            "To enforce operation use option \"/clean\" or \"/destructive\" ");
-        return FAILED;
-    }
-
-    flush_caches();
-
-    if (_stricmp(*argv, "/clean") == 0) {
-        x = generic_clean(p);
-    } else /* /destructive */
-    {
-        x = generic_format(p, -1, 0);
-    }
-
-    if (x < 0)
-        return x;
-
-    return OK;
-} /* format_unused */
 
 int generic_clean(struct part_long *p)
 {
