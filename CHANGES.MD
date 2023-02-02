@@ -1,7 +1,13 @@
 # Change Log
 
-## Version 2.90.12 alpha
+## Version 2.90.13 alpha
+### Enhancements
+ * Automatically adjust extended and FAT partitions to LBA / non-LBA type.
 
+### Bug Fixes
+ * Prevent overlapping of logical partition with extended if extended is the first entry in MBR.
+ 
+## Version 2.90.12 alpha
 ### Critical Bug Fixes
  * Since v2.90.03: Fix a bug which results in the starting address of extended partitions nested two or more levels deep being calculated from the wrong base address.
  * Since v2.90.03: Fix a bug leading to partitions exceeding the end of the disk. The error occured when operating on disks not ending on a cylinder boundary, working in LBA mode under CHS view and creating a partition up to the end of the disk. Then the cylinder value the partition was aligned to was not rounded down but up beyond the end of the disk.
@@ -62,7 +68,6 @@
 
 
 ## Version 2.90.07 alpha
-
 ### Enhancements
  * Allow hiding and unhiding of partition type 0F.
 

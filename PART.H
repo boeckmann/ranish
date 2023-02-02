@@ -259,6 +259,9 @@ int disk_read_rel(struct part_long *p, unsigned long sect, void *buf,
 int disk_write_rel(struct part_long *p, unsigned long sect, void *buf,
                    int num_sect);
 
+void part_set_id(struct part_long *part, unsigned short id);
+void adjust_part_type(struct part_long *p, int interactive);
+
 int part_verify_sectors(struct part_long *p,
                         unsigned long start_sect,
                         unsigned long num_sect,
@@ -306,6 +309,7 @@ void pack_adv_part_tab(struct part_long *part, struct adv_part_rec *part_rec,
 void unpack_adv_part_tab(struct adv_part_rec *part_rec, struct part_long *part,
                          int n, struct part_long *container);
 void show_error(char *);
+int two_btn_dialog(char *msg, char *btn1, char *btn2);
 void setup_ipl(struct mbr *);
 void edit_boot_menu(struct adv *adv, int p, int flag);
 void select_system_type(struct part_long *p);

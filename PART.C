@@ -366,6 +366,7 @@ int setup_mbr(struct part_long *p)
 
         if (force_recalculate == 1) {
             recalculate_part(&part[row], mode);
+            adjust_part_type(&part[row], 0);
             valid = validate_table(part, num_rows, p);
 
             force_redraw_table = 1;
@@ -1106,7 +1107,7 @@ int setup_mbr(struct part_long *p)
                     part[row].end_cyl    = end_cyl;
 
                     /* partial end cylinder (LBA) adjustments */
-                    if (ABS_REL_SECT(&part[row]) < ABS_REL_SECT(part[row].container)) {
+                    if (ABS_REL_SECT(&part[row]) <= ABS_REL_SECT(part[row].container)) {
                         part[row].start_cyl = part[row].container->start_cyl+1;
                     }
                     if (ABS_END_SECT(&part[row]) > ABS_END_SECT(part[row].container)) {
@@ -1135,11 +1136,14 @@ int setup_mbr(struct part_long *p)
                 }
                 field             = 2;
                 force_recalculate = 1;
+            
             }
 
             if (prev_os_id == 0 && part[row].os_num != 0) {
                 field = 2;
             }
+
+            adjust_part_type(&part[row], 0);
 
             force_redraw_header = 1;
             force_redraw_table  = 1;
@@ -1198,11 +1202,7 @@ int setup_mbr(struct part_long *p)
             
             if (part[row].os_id == 0x0500 || part[row].os_id == 0x0F00 || 
                 part[row].os_id == 0x1F00) {
-               if (enter_string(
-                       4, hint_y, "This will delete all nested partitions. Type \"yes\"", sizeof(tmp), tmp, NULL) == 0)
-                   continue;
-
-               if (strcmp(tmp, "yes") != 0) {
+               if (!two_btn_dialog("Delete this extended and all nested partitions?", "yes", "no")) {
                    mesg = TEXT("Deletion canceled by user.");
                    continue;
                }

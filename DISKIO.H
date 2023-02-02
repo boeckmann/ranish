@@ -72,10 +72,16 @@ extern unsigned short int const detected_os;
     ((mode == MODE_LBA || (p)->valid) ? ((p)->container_base + (p)->rel_sect) \
                                       : (ABS_REL_SECT(p)))
 
+#define QUICK_END(p)                                                         \
+    ((mode == MODE_LBA || (p)->valid) ? ((p)->container_base + (p)->rel_sect \
+                                      + (p)->num_sect - 1)                   \
+                                      : (ABS_END_SECT(p)))
+
 #define QUICK_SIZE(p)                                                         \
     ((mode == MODE_LBA || (p)->valid)                                         \
          ? ((p)->num_sect)                                                    \
          : (ABS_END_SECT(p) - ABS_REL_SECT(p) + 1))
+
 
 
 #define INT13_READ_EXT  0x4200

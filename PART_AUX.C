@@ -1,5 +1,48 @@
 #include "part.h"
 
+void part_set_id(struct part_long *part, unsigned short id)
+{
+    int i;
+    part->os_id = id;
+    for (i = 0;
+         os_desc[i].os_id != part->os_id && os_desc[i].os_id != OS_UNKN;
+         i++);
+    part->os_num = i;
+}
+
+
+void adjust_part_type(struct part_long *p, int interactive)
+{
+    /* adjust partition types to LBA or non-LBA */
+    if (QUICK_END(p) >= 1024ul * 255ul * 63ul && p->level == 1) {
+
+        if (p->os_id == 0x0500 || p->os_id == 0x1500) {
+            if(!interactive || two_btn_dialog("Partition type should be Extend LBA", "change", "ignore")) {
+                part_set_id(p, p->os_id + 0x0A00);
+            }
+        }
+        if (p->os_id == 0x0B00 || p->os_id == 0x1B00) {
+            if(!interactive || two_btn_dialog("Partition type should be FAT-32 LBA", "change", "ignore")) {
+                part_set_id(p, p->os_id + 0x0100);
+            }                            
+        }
+    }
+
+    if (QUICK_END(p) < 1024ul * 255ul * 63ul || p->level > 1) {
+        if (p->os_id == 0x0F00 || p->os_id == 0x1F00) {
+            if(!interactive || two_btn_dialog("Partition type should be Extend non-LBA", "change", "ignore")) {
+                part_set_id(p, p->os_id - 0x0A00);
+            }
+        }
+        if (p->os_id == 0x0C00 || p->os_id == 0x1C00) {
+            if(!interactive || two_btn_dialog("Partition type should be FAT-32 non-LBA", "change", "ignore")) {
+                part_set_id(p, p->os_id - 0x0100);
+            }                            
+        }        
+    }
+}
+
+
 void part_to_disk_addr(struct part_long *p, unsigned long rel_sect,
                        struct disk_addr *daddr)
 {

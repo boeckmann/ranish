@@ -347,6 +347,96 @@ int get_keys(unsigned short *keys, int num_keys)
     return num_keys;
 } /* get_keys */
 
+
+int two_btn_dialog(char *msg, char *btn1, char *btn2)
+{
+    int x, y = 8, w, h = 4, pressed;
+    struct event ev;
+    static char buf[4 * 80 * 2];
+    int result = 1;
+    int b1l, b2l;
+
+    b1l = strlen(btn1);
+    b2l = strlen(btn2);
+    w = strlen(msg) + 6;
+    if (w % 2 == 1)
+        w++;
+    if (w > 78)
+        w = 78;
+    x = (80 - w) / 2 + 1;
+
+    save_window(x, y, w, h, buf);
+    border_window(Yellow + BakWhite, x, y, w, h, Border22f);
+
+    write_string(Black + BakWhite, x + 3, y + 1, msg);
+    pressed = 0;
+
+    while (1) {
+        if (result) {
+            move_cursor(38-b1l, y+2);
+        }
+        else {
+            move_cursor(42, y+2);
+        }
+        write_string(result ? BrWhite + BakBlack : Black + BakWhite, 38 - b1l - 1, y + 2, " ");
+        write_string(result ? BrWhite + BakBlack : Black + BakWhite, 38 - b1l, y + 2, btn1);
+        write_string(result ? BrWhite + BakBlack : Black + BakWhite, 38, y + 2, " ");
+
+        write_string(result ? Black + BakWhite : BrWhite + BakBlack, 41, y + 2, " ");
+        write_string(result ? Black + BakWhite : BrWhite + BakBlack, 42, y + 2, btn2);
+        write_string(result ? Black + BakWhite : BrWhite + BakBlack, 42 + b2l, y + 2, " ");
+
+        get_event(&ev, EV_KEY | EV_MOUSE);
+
+        if (ev.key == 13) {
+            break;
+        }
+        else if (ev.key == 27) {
+            result = 0;
+            break;
+        }
+        else if (ev.key == 'y' || ev.key == 'Y') {
+            result = 1;
+            break;
+        }
+        else if (ev.key == 'n' || ev.key == 'N') {
+            result = 0;
+            break;
+        }        
+        if (ev.scan == 0x4BE0 || ev.scan == 0x4B00 /* left */
+            || ev.scan == 0x4DE0 || ev.scan == 0x4D00 /* right */
+            || ev.scan == 0x0F09) /* TAB */ {
+            result = !result;
+        }
+
+        else if (ev.ev_type & EV_MOUSE)
+            if (ev.x >= 41 && ev.x <= 42 + b2l &&
+                ev.y == y + 2) {
+                if (ev.left == 1)
+                    pressed = 1;
+                if (ev.left == 0 && pressed == 1) {
+                    result = 0;
+                    break;
+                }
+            } else if (ev.x >= 37 - b1l && ev.x <= 38 &&
+                ev.y == y + 2) {
+                if (ev.left == 1)
+                    pressed = 1;
+                if (ev.left == 0 && pressed == 1) {
+                    result = 1;
+                    break;
+                }
+            } else
+                pressed = 0;
+    }
+
+    load_window(x, y, w, h, buf);
+
+    return result;
+}
+
+
+
 void boot_menu_options(struct adv *adv)
 {
     struct event ev;
