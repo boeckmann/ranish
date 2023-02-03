@@ -77,7 +77,7 @@ _Packed struct boot_ms_dos
     unsigned short magic_num;  /* Magic number (Must be 0xAA55)     */
 };
 
-/* sectors 3 and 3 of FAT-32 extended boot record */
+/* sectors 2 and 3 of FAT-32 extended boot record */
 _Packed struct fat32_ext_bootrec {
     unsigned long lead_sig;
     char _resrvd1[480];
