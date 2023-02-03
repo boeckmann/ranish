@@ -28,7 +28,8 @@ enum {
 #define FAT32_LEAD_SIG 0x41615252
 #define FAT32_STRUC_SIG 0x61417272
 
-#define INVALID_CLUSTER 0xfffffff7
+#define FAT16_INV_CLUSTER 0xFFF7
+#define FAT32_INV_CLUSTER 0xFFFFFFF7
 
 _Packed struct boot_ms_dos
 {

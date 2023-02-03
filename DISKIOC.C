@@ -269,11 +269,13 @@ int disk_process_sectors(disk_operation op, struct disk_addr daddr,
 	    		for (i = 0; i < block_sect; i++) {
 	    			if ((*op)(&daddr, buf, 1) < 0) {
 	    				if (bbt_func) {
-	    					result = FAILED;
-	    					(*bbt_func)(daddr.sect);
+	    					if (!(*bbt_func)(daddr.sect)) {
+	    						result = FAILED;
+	    						goto done;
+	    					}
 	    				} else {
-	    					free(buf);
-	    					return FAILED;
+	    					result = FAILED;
+	    					goto done;
 	    				}
 	    			}
 	    			daddr.sect += 1;
@@ -287,8 +289,8 @@ int disk_process_sectors(disk_operation op, struct disk_addr daddr,
 
         	if (func) {
         		if ((*func)(curr_sect, num_sect) == 0) {
-        			free(buf);
-        			return CANCEL;
+        			result = CANCEL;
+        			goto done;
         		}
         	}
     	}
@@ -300,23 +302,26 @@ int disk_process_sectors(disk_operation op, struct disk_addr daddr,
     	daddr.sect = start_sect + curr_sect;
         if ((*op)(&daddr, buf, 1) < 0) {
             if (bbt_func) {
-            	result = FAILED;
-            	(*bbt_func)(daddr.sect);
+            	if (!(*bbt_func)(daddr.sect)) {
+            		result = FAILED;
+            		goto done;
+            	}
             } else {
-            	free(buf);
-            	return FAILED;
+	        	result = FAILED;
+            	goto done;
             }
         }
 
         curr_sect++;
         if (func) {
         	if ((*func)(curr_sect, num_sect) == 0) {
-        		free(buf);
-        		return CANCEL;
+        		result = CANCEL;
+        		goto done;
         	}
         }
     }
 
+done:
     free(buf);
 
 	return result;

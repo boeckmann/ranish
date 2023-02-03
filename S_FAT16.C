@@ -6,6 +6,7 @@
 #include <time.h>
 
 
+#define MAX_BAD_SECTORS 128
 #define BBT_SIZE 128
 
 #define F_NORM  0
@@ -21,6 +22,9 @@ static unsigned long fat_bad_sectors;
 /* block cache for two FAT tables */
 static cache_block_t fat_table_cache[2];
 
+/* fat bad block tracking data */
+static struct part_long *bbt_part;
+static struct boot_ms_dos *bbt_boot;
 
 /* according to Microsoft FAT specification */
 static unsigned short fat16_cluster_size(unsigned long sectors)
@@ -190,11 +194,11 @@ int fat_set_table_entry(struct part_long *p, struct boot_ms_dos *b, unsigned tab
     if (fat_num_data_clusters(b) + 2 < cluster) return FAILED;
 
     if (fat_typ == FAT_32) {
-        fat_sector = base + FAT32_ENTRY_SIZE * cluster / b->sect_size;
-        fat_offset = FAT32_ENTRY_SIZE * cluster % b->sect_size;
+        fat_sector = base + (FAT32_ENTRY_SIZE * cluster) / b->sect_size;
+        fat_offset = (FAT32_ENTRY_SIZE * cluster) % b->sect_size;
     } else if (fat_typ == FAT_16) {
-        fat_sector = base + FAT16_ENTRY_SIZE * cluster / b->sect_size;
-        fat_offset = FAT16_ENTRY_SIZE * cluster % b->sect_size;        
+        fat_sector = base + (FAT16_ENTRY_SIZE * cluster) / b->sect_size;
+        fat_offset = (FAT16_ENTRY_SIZE * cluster) % b->sect_size;        
     }
 
     buf = cache_read(p, &fat_table_cache[table_num], fat_sector);
@@ -215,19 +219,26 @@ int fat_set_table_entry(struct part_long *p, struct boot_ms_dos *b, unsigned tab
 /*--- cluster routines -----------------------------------------------------*/
 
 /* calculates the data sector for the given cluster */
-static unsigned long fat_cluster_to_data_sector(struct boot_ms_dos *b, unsigned long cluster)
+static unsigned long fat_cluster_to_sector(struct boot_ms_dos *b, unsigned long cluster)
 {
     return fat_non_data_sectors(b) + (cluster - 2) * b->clust_size;
 }
 
 
-int fat_read_cluster(unsigned char * buf,
+static unsigned long fat_sector_to_cluster(struct boot_ms_dos *b, unsigned long sector)
+{
+    return (sector - fat_non_data_sectors(b)) / b->clust_size + 2;
+}
+
+
+/*
+static int fat_read_cluster(unsigned char * buf,
     struct part_long *p, 
     struct boot_ms_dos *b,
     unsigned long clust)
 {
     int i;
-    unsigned long sect = fat_cluster_to_data_sector(b, clust);
+    unsigned long sect = fat_cluster_to_sector(b, clust);
     if (clust < 2) return FAILED;
 
     for (i = 0; i < b->clust_size; i++) {
@@ -238,13 +249,13 @@ int fat_read_cluster(unsigned char * buf,
 }
 
 
-int fat_write_cluster(unsigned char * buf,
+static int fat_write_cluster(unsigned char * buf,
     struct part_long *p, 
     struct boot_ms_dos *b,
     unsigned long clust)
 {
     int i;
-    unsigned long sect = fat_cluster_to_data_sector(b, clust);
+    unsigned long sect = fat_cluster_to_sector(b, clust);
     if (clust < 2) return FAILED;
 
     for (i = 0; i < b->clust_size; i++) {
@@ -253,7 +264,7 @@ int fat_write_cluster(unsigned char * buf,
     }
     return OK;
 }
-
+*/
 
 /* prepares a string to use as FAT volume label */
 /* converts character to uppercase and replaces forbidden chars with space */
@@ -302,7 +313,7 @@ static int fat_update_label_file(struct part_long *p, struct boot_ms_dos *b)
         data_cluster = b->x.f32.root_clust;
         if (fat_get_table_entry(p, b, 0, data_cluster, &next_data_cluster) == FAILED)
             goto failed;
-        start_sect = fat_cluster_to_data_sector(b, data_cluster);
+        start_sect = fat_cluster_to_sector(b, data_cluster);
         sector_count = b->clust_size;
     } else {
         start_sect = b->res_sects + b->num_fats * fat_size(b);
@@ -344,7 +355,7 @@ static int fat_update_label_file(struct part_long *p, struct boot_ms_dos *b)
                 data_cluster = next_data_cluster;
                 if (fat_get_table_entry(p, b, 0, data_cluster, &next_data_cluster) == FAILED)
                     goto failed;
-                start_sect = fat_cluster_to_data_sector(b, data_cluster);
+                start_sect = fat_cluster_to_sector(b, data_cluster);
             }
         } else {
             break;
@@ -494,7 +505,7 @@ static void fat32_initialize_ext_bootrec(struct boot_ms_dos *b,
     eb->lead_sig = FAT32_LEAD_SIG;
     eb->struc_sig = FAT32_STRUC_SIG;
     eb->free_cluster_count = fat_num_data_clusters(b) - 1; /* root cluster */
-    eb->next_free_cluster = 3;
+    eb->next_free_cluster = 2;
     eb->trail_sig = FAT32_TRAIL_SIG;
     eb->trail2_sig = FAT32_TRAIL_SIG;
 }
@@ -503,13 +514,13 @@ static void fat32_initialize_ext_bootrec(struct boot_ms_dos *b,
 
 int write_progress(unsigned long curr, unsigned long total)
 {
-    char buf[24];
+    char buf[32];
     static unsigned long last = 0;
     unsigned int t;
 
     if (curr - last > 16 * 63) {
         t = (unsigned long long)curr * 100 / (unsigned long long)total;
-        sprintf(buf, "%% %3u%% written", t);
+        sprintf(buf, "%% %3u%% | %lu errors", t, fat_bad_sectors);
         last = curr;
         return progress(buf) != CANCEL;
     }
@@ -596,7 +607,7 @@ int fat_initialize_root(struct part_long *p, struct boot_ms_dos *b)
     unsigned long abs_sector;
 
     if (is_fat32(b)) {
-        abs_sector = fat_cluster_to_data_sector(b, b->x.f32.root_clust);
+        abs_sector = fat_cluster_to_sector(b, b->x.f32.root_clust);
         num_sectors = b->clust_size;
     } else {
         abs_sector = b->res_sects + b->num_fats * fat_size(b);
@@ -608,10 +619,23 @@ int fat_initialize_root(struct part_long *p, struct boot_ms_dos *b)
     return OK;
 }
 
-int fat_bbt_track(unsigned long sector)
+int fat_bbt_track(unsigned long phys_sector)
 {
+    int typ = fat_type(bbt_boot);
+    int fat;
     fat_bad_sectors++;
-    return 1;
+
+    if (typ == FAT_12) return 1;
+
+    for (fat = 0; fat < bbt_boot->num_fats; fat++) {
+        fat_set_table_entry(bbt_part, 
+            bbt_boot,
+            fat, 
+            fat_sector_to_cluster(bbt_boot, phys_sector - 
+                bbt_part->container_base - bbt_part->rel_sect),
+            typ == FAT_32 ? FAT32_INV_CLUSTER : FAT16_INV_CLUSTER);
+    }
+    return fat_bad_sectors <= MAX_BAD_SECTORS;
 }
 
 int format_fat(struct part_long *p, char **argv, char **msg)
@@ -737,6 +761,30 @@ int format_fat(struct part_long *p, char **argv, char **msg)
         goto done;        
     }
 
+    bbt_part = p;
+    bbt_boot = b;
+
+    if (form_type == F_VERIFY && fat_type(b) != FAT_12) {
+        progress("^Format: searching for bad sectors ...   you may skip this step via ESC");
+        result = part_verify_sectors(p, fat_non_data_sectors(b), fat_num_sectors(b) - fat_non_data_sectors(b), verify_progress, fat_bbt_track);
+        if (result == FAILED) {
+            if (fat_bad_sectors >= MAX_BAD_SECTORS) {
+                *msg = TEXT("too many bad clusters found");
+            }
+            else {
+                *msg = TEXT("could not verify sectors");
+            }
+            goto done;        
+        }
+    } else if (form_type == F_DESTR) {
+        progress("^Format: cleaning data area...           you may skip this step via ESC");
+        result = part_fill_sectors(p, fat_non_data_sectors(b), fat_num_sectors(b) - fat_non_data_sectors(b), 0, write_progress, fat_bbt_track);
+        if (result == FAILED) {
+            *msg = TEXT("error cleaning data area");
+            goto done;        
+        }
+    }
+
     progress("^Format: updating volume label ...");
     result = fat_update_label_file(p, b);
     if (result != OK) {
@@ -744,23 +792,10 @@ int format_fat(struct part_long *p, char **argv, char **msg)
         goto done;        
     }
 
-    if (form_type == F_VERIFY) {
-        progress("^Format: searching for bad sectors ...   you may skip this step via ESC");
-        result = part_verify_sectors(p, fat_non_data_sectors(b), fat_num_sectors(b) - fat_non_data_sectors(b), verify_progress, fat_bbt_track);
-        if (result == FAILED) {
-            result = WARN;
-            *msg = TEXT("bad clusters found");
-            goto done;        
-        }
-    } else if (form_type == F_DESTR) {
-        progress("^Format: cleaning data area...           you may skip this step via ESC");
-        result = part_fill_sectors(p, fat_non_data_sectors(b), fat_num_sectors(b) - fat_non_data_sectors(b), 0, write_progress, NULL);
-        if (result == FAILED) {
-            *msg = TEXT("error cleaning data area");
-            goto done;        
-        }
+    if (fat_bad_sectors) {
+        *msg = TEXT("bad clusters found");
+        result = WARN;
     }
-    result = OK;
 
 done:
     /* flush FAT cache to disk */

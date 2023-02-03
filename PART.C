@@ -981,7 +981,7 @@ int setup_mbr(struct part_long *p)
             else if (fstatus == CANCEL)
                 mesg = WARN_FORMAT_CANCEL;
             else if (fstatus == WARN) {
-                snprintf(msg_buf, sizeof(msg_buf) - 1, 
+                snprintf(msg_buf, sizeof(msg_buf), 
                     TEXT("Format completed with warnings: %s"), format_msg);
                 mesg = msg_buf;                
             }
