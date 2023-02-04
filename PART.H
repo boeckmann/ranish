@@ -345,12 +345,9 @@ int format_embr(struct part_long *p, char **argv, char **msg);
 
 int setup_fat(struct part_long *p);
 int print_fat(struct part_long *p);
-int format_fat(struct part_long *p, char **argv, char **msg);
 
 int setup_fat32(struct part_long *p);
 int print_fat32(struct part_long *p);
-int format_fat32(struct part_long *p, char **argv);
-
 int format_unused(struct part_long *p, char **argv, char **msg);
 
 void set_messages(void);

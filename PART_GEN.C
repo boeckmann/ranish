@@ -14,6 +14,41 @@ genric_clean
 
 */
 
+
+int format_embr(struct part_long *p, char **argv, char **msg)
+{
+    struct mbr *mbr;
+    (void)argv;
+
+    if (!(mbr = malloc(sizeof(struct mbr)))) return FAILED;
+    flush_caches();
+
+    disk_lock(dinfo.disk);
+
+    progress("^Initializing Extended DOS partition ...");
+
+    progress("Writing Extended Master Boot Record ...");
+
+    memset(mbr, 0, SECT_SIZE);
+    memmove(mbr->x.std.code, EMP_IPL, EMP_IPL_SIZE);
+    strncpy(mbr->x.std.code + EMP_IPL_SIZE,
+            MESG_EXT_NONBOOT,
+            sizeof(mbr->x.std.code) - EMP_IPL_SIZE);
+    mbr->magic_num = MBR_MAGIC_NUM;
+
+    if (disk_write_rel(p, 0, mbr, 1) == FAILED) {
+        *msg = TEXT("error writing Extended MBR");
+        disk_unlock(dinfo.disk);
+        free(mbr);
+        return FAILED;
+    }
+
+    disk_unlock(dinfo.disk);
+    free(mbr);
+    return OK;
+} /* format_embr */
+
+
 int generic_verify(struct part_long *p, int bbt_size, unsigned long *bbt)
 {
     char *z, tmp[90];

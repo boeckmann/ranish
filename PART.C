@@ -947,8 +947,8 @@ int setup_mbr(struct part_long *p)
             if (part_is_fat_type(&part[row])) {
                 msg_buf[0] = '\0';
 
-                format_type = two_btn_dialog("Shall I do a quick format or overwrite data with zeros (slow)?",
-                    "quick", 2, "zero", 1);
+                format_type = two_btn_dialog("Shall I do a normal format or overwrite data with zeros (slow)?",
+                    "normal", 2, "overwrite", 1);
                 if (!format_type) {
                     mesg = WARN_FORMAT_CANCEL;
                     continue;                   

@@ -1,4 +1,5 @@
 #include "part.h"
+#include "fat.h"
 
 struct os_desc os_desc_tbl[] = {
 

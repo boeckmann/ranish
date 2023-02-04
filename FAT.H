@@ -1,35 +1,27 @@
 #ifndef FAT_HEADER
 #define FAT_HEADER
 
-#define FAT_LABEL_LEN (sizeof ((struct boot_ms_dos *)(0))->x.f16.label)
-
-#define MAX_DATA_CLUST_12 4084 
-#define MAX_DATA_CLUST_16 65524
-
-#define FAT12_MAX_TABLE_SECTS 12
-#define FAT12_MAX_TABLE_SIZE  6144
-#define FAT16_MAX_TABLE_SECTS 256
-
-#define FAT16_ENTRY_SIZE 2
-#define FAT32_ENTRY_SIZE 4
-
-#define FAT_ERR_TOO_SMALL -1
-#define FAT_ERR_TOO_LARGE -2
-
 enum {
     FAT_12 = 12,
     FAT_16 = 16,
     FAT_32 = 32
 };
 
-#define FAT32_BACKUP_SECTOR 6 /* location of second boot record copy */
+#define FAT12_MAX_DATA_CLUST 4084 
+#define FAT16_MAX_DATA_CLUST 65524
 
-#define FAT32_TRAIL_SIG 0xAA550000L
+#define FAT32_TRAIL_SIG 0xAA550000
 #define FAT32_LEAD_SIG 0x41615252
 #define FAT32_STRUC_SIG 0x61417272
 
 #define FAT16_INV_CLUSTER 0xFFF7
 #define FAT32_INV_CLUSTER 0xFFFFFFF7
+
+#define FAT_LABEL_LEN (sizeof ((struct boot_ms_dos *)(0))->x.f16.label)
+
+#define FAT_ERR_TOO_SMALL -1
+#define FAT_ERR_TOO_LARGE -2
+
 
 _Packed struct boot_ms_dos
 {
@@ -76,6 +68,7 @@ _Packed struct boot_ms_dos
     } x;
     unsigned short magic_num;  /* Magic number (Must be 0xAA55)     */
 };
+
 
 /* sectors 2 and 3 of FAT-32 extended boot record */
 _Packed struct fat32_ext_bootrec {
@@ -167,7 +160,7 @@ _Packed struct dirent
     unsigned long file_size;
 };
 
-static const unsigned DIRENT_PER_SECT = 512 / sizeof(struct dirent);
+#define DIRENT_PER_SECT (512 / sizeof(struct dirent))
 
 enum {
 	DIRENT_ATTR_READ_ONLY = 0x01,
@@ -178,13 +171,23 @@ enum {
     DIRENT_ATTR_ARCHIVE = 0x20
 };
 
-static const unsigned char  DIRENT_LONG_NAME_MASK = 
-    DIRENT_ATTR_READ_ONLY | DIRENT_ATTR_HIDDEN | DIRENT_ATTR_SYSTEM |DIRENT_ATTR_VOL;
+#define  DIRENT_LONG_NAME_MASK \
+    (DIRENT_ATTR_READ_ONLY | DIRENT_ATTR_HIDDEN | DIRENT_ATTR_SYSTEM |DIRENT_ATTR_VOL)
 
 #define NO_NAME_LABEL "NO NAME    "
 
-/* defined in S_FAT32.C */
+#define F_NORM  0
+#define F_VERIFY 1
+#define F_DESTR 2
+
+int format_fat(struct part_long *p, char **argv, char **msg);
+
+unsigned long fat_sector_count(struct boot_ms_dos *b);
+unsigned long fat_cluster_count(struct boot_ms_dos *b);
+unsigned long fat_non_data_sector_count(struct boot_ms_dos *b);
 unsigned long fat_calc_hidden_sectors(struct part_long *p);
 
+void fat_canonicalize_label(char *label);
+int fat_update_label_file(struct part_long *p, struct boot_ms_dos *b);
 
 #endif
