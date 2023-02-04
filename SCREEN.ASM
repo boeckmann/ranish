@@ -73,6 +73,8 @@ _screen_init:
 
       cmp   al,07h
       je .Mono
+      cmp   al,03h
+      je .Color
       mov   ax,03    ; If not mono set Color 80x25
       int   10h
     .Color:  

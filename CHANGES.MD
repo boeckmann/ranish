@@ -1,12 +1,15 @@
 # Change Log
 
 ## Version 2.90.13 alpha
+### Bug Fixes
+ * Prevent (non-saveable) overlapping of logical partition with extended if extended is the first entry in MBR.
+
 ### Enhancements
  * Automatically adjust extended and FAT partitions to LBA / non-LBA type.
+ * Re-implement bad block tracking.
+ * Replace FAT format command line dialog with FAT specific dialogs.
 
-### Bug Fixes
- * Prevent overlapping of logical partition with extended if extended is the first entry in MBR.
- 
+
 ## Version 2.90.12 alpha
 ### Critical Bug Fixes
  * Since v2.90.03: Fix a bug which results in the starting address of extended partitions nested two or more levels deep being calculated from the wrong base address.
