@@ -20,12 +20,12 @@ int cache_flush(cache_block_t *blk)
 
 int in_cache(struct part_long *p, cache_block_t *blk, unsigned long sector)
 {
-	return blk->part == p && blk->sector == sector;
+    return blk->part == p && blk->sector == sector;
 }
 
 void * cache_read(struct part_long *p, cache_block_t *blk, unsigned long sector)
 {
-	if (in_cache(p, blk, sector)) return blk->data;
+    if (in_cache(p, blk, sector)) return blk->data;
 
     cache_flush(blk);
     blk->part = p;
