@@ -5,26 +5,11 @@
 #include <string.h>
 #include <time.h>
 
-
-#define MAX_BAD_SECTORS 512
-
 #define FAT16_ENTRY_SIZE 2
 #define FAT32_ENTRY_SIZE 4
 
-#define FAT32_BACKUP_SECTOR 6 /* location of second boot record copy */
-
-
-/* temp buffer for constructing result messages */
-static char fat_format_msg[80];
-
 /* one block cache for two FAT tables to speed up things */
 static cache_block_t fat_table_cache[2];
-
-/* fat bad block tracking data */
-static struct part_long *bbt_part;
-static struct boot_ms_dos *bbt_boot;
-static unsigned long fat_bad_sectors;
-
 
 /* according to Microsoft FAT specification */
 static unsigned short fat16_cluster_size(unsigned long sectors)
@@ -65,7 +50,7 @@ static unsigned fat32_cluster_size(unsigned long sectors)
     else return 64;
 }
 
-static unsigned int fat32_eoc(unsigned long cluster)
+static unsigned int fat32_is_end_of_chain(unsigned long cluster)
 {
     return  cluster >= 0x0FFFFFF8;
 }
@@ -170,7 +155,7 @@ static void fat_calc_table_pos(struct boot_ms_dos *b, unsigned table_num,
 
 /* UNTESTED FOR FAT-12 !!! */
 /* find FAT table entry for cluster in specified table */
-static int fat_get_table_entry(struct part_long *p, struct boot_ms_dos *b, 
+int fat_get_table_entry(struct part_long *p, struct boot_ms_dos *b, 
     unsigned short table_num, unsigned long cluster, unsigned long *value)
 {
     unsigned long fat_sector;
@@ -216,7 +201,7 @@ static int fat_get_table_entry(struct part_long *p, struct boot_ms_dos *b,
 
 
 /* set FAT table entry for cluster  in specified table */
-static int fat_set_table_entry(struct part_long *p, struct boot_ms_dos *b,
+int fat_set_table_entry(struct part_long *p, struct boot_ms_dos *b,
     unsigned short table_num, unsigned long cluster, unsigned long value)
 {
     unsigned long fat_sector;
@@ -271,14 +256,14 @@ static int fat_set_table_entry(struct part_long *p, struct boot_ms_dos *b,
 /*--- cluster routines -----------------------------------------------------*/
 
 /* calculates sector for given cluster */
-static unsigned long fat_cluster_to_sector(struct boot_ms_dos *b, unsigned long cluster)
+unsigned long fat_cluster_to_sector(struct boot_ms_dos *b, unsigned long cluster)
 {
     return fat_non_data_sector_count(b) + (cluster - 2) * b->clust_size;
 }
 
 
 /* calculates cluster number for given sector */
-static unsigned long fat_sector_to_cluster(struct boot_ms_dos *b, unsigned long sector)
+unsigned long fat_sector_to_cluster(struct boot_ms_dos *b, unsigned long sector)
 {
     return (sector - fat_non_data_sector_count(b)) / b->clust_size + 2;
 }
@@ -343,7 +328,7 @@ void fat_canonicalize_label(char *label)
 
 
 /* returns pointer to label stored in boot record depending on FAT type */
-static char * fat_label(struct boot_ms_dos *b)
+char * fat_label(struct boot_ms_dos *b)
 {
     if (is_fat32(b)) return b->x.f32.label;
     else return b->x.f16.label;
@@ -410,7 +395,7 @@ int fat_update_label_file(struct part_long *p, struct boot_ms_dos *b)
         }
 
         if (fat_typ == FAT_32) {
-            if (fat32_eoc(next_data_cluster)) break;
+            if (fat32_is_end_of_chain(next_data_cluster)) break;
             else {
                 data_cluster = next_data_cluster;
                 if (fat_get_table_entry(p, b, 0, data_cluster, &next_data_cluster) == FAILED)
@@ -481,11 +466,9 @@ static unsigned long fat_calculate_serial(struct part_long *p, struct boot_ms_do
 
 /* initializes a new BPB in memory based on */
 /*    sector count, root dir entries and fat type */
-static int fat_initialize_bootrec(struct part_long *p,
-                                  struct boot_ms_dos *b,
-                                  unsigned short root_entr,
-                                  int fat_type,
-                                  char label[])
+int fat_initialize_bootrec(struct part_long *p, struct boot_ms_dos *b,
+                           unsigned short root_entr,int fat_type,
+                           char label[])
 {
     unsigned short cluster_size;
 
@@ -559,8 +542,8 @@ static int fat_initialize_bootrec(struct part_long *p,
 }
 
 
-static void fat32_initialize_ext_bootrec(struct boot_ms_dos *b,
-                                        struct fat32_ext_bootrec *eb)
+void fat32_initialize_ext_bootrec(struct boot_ms_dos *b,
+                                  struct fat32_ext_bootrec *eb)
 {
     memset(eb, 0, sizeof(struct fat32_ext_bootrec));
     eb->lead_sig = FAT32_LEAD_SIG;
@@ -572,48 +555,9 @@ static void fat32_initialize_ext_bootrec(struct boot_ms_dos *b,
 }
 
 
-
-/* status call-back for multi-sector disk routines */
-/* called when filling data area with zeros */
-int write_progress(unsigned long curr, unsigned long total)
-{
-    char buf[32];
-    static unsigned long last = 0;
-    unsigned int t;
-
-    if (curr - last > 16 * 63) {
-        t = (unsigned long long)curr * 100 / (unsigned long long)total;
-        sprintf(buf, "%% %3u%% | %lu errors", t, fat_bad_sectors);
-        last = curr;
-        return progress(buf) != CANCEL;
-    }
-
-    return 1;
-}
-
-
-/* status call-back for multi-sector disk routines */
-/* called when doing bad block tracking */
-int verify_progress(unsigned long curr, unsigned long total)
-{
-    char buf[32];
-    static unsigned long last = 0;
-    unsigned int t;
-
-    if (curr - last > 16 * 63) {
-        t = (unsigned long long)curr * 100 / (unsigned long long)total;
-        sprintf(buf, "%% %3u%% | %lu errors", t, fat_bad_sectors);
-        last = curr;
-        return progress(buf) != CANCEL;
-    }
-
-    return 1;
-}
-
-
 /* initializes the FAT-12/16/32 tables */
-static int fat_initialize_tables(struct part_long *p,
-                                struct boot_ms_dos *b)
+int fat_initialize_tables(struct part_long *p, struct boot_ms_dos *b,
+    int (*write_progress)(unsigned long, unsigned long))
 {
     unsigned long *fat;
     unsigned long fat_sz;
@@ -684,199 +628,11 @@ int fat_initialize_root(struct part_long *p, struct boot_ms_dos *b)
     return OK;
 }
 
-
-/* read error call-back for bad block tracking */
-/* marks the clusters containing the bad physical sectors as bad */
-/* has to translate physical sector numbers to partition-relative */
-int fat_bbt_track(unsigned long phys_sector)
-{
-    int fat;
-    fat_bad_sectors++;
-
-    for (fat = 0; fat < bbt_boot->num_fats; fat++) {
-        fat_set_table_entry(bbt_part, 
-            bbt_boot,
-            fat, 
-            fat_sector_to_cluster(bbt_boot, phys_sector - 
-                bbt_part->container_base - bbt_part->rel_sect),
-            FAT32_INV_CLUSTER);
-    }
-    return fat_bad_sectors < MAX_BAD_SECTORS;
-}
-
-
-/* formats a FAT-12/16/32 partition */
-int format_fat(struct part_long *p, char **argv, char **msg)
+int fat_flush()
 {
     int result;
-    char *data_pool;
-    struct boot_ms_dos *b;
-    struct fat32_ext_bootrec *eb;
-    unsigned long sys_type;
+    result = cache_flush(&fat_table_cache[0]);
+    if (!result) return result;
 
-    char label[FAT_LABEL_LEN + 1] = "";
-    unsigned int form_type  = F_VERIFY;
-    fat_bad_sectors = 0;
-
-    if ((data_pool = malloc(sizeof(struct boot_ms_dos) 
-        + sizeof(struct fat32_ext_bootrec))) == 0) {
-        show_error(ERROR_MALLOC);
-        return FAILED;
-    }
-
-    b   = (struct boot_ms_dos *) data_pool;
-    eb  = (struct fat32_ext_bootrec *) (data_pool + sizeof(struct boot_ms_dos));
-
-    /* parse arguments */
-    while (*argv != 0) {
-        if (_stricmp(*argv, "/destructive") == 0)
-            form_type = F_DESTR;
-        else if (_stricmp(*argv, "/verify") == 0)
-            form_type = F_VERIFY;
-        else if (_strnicmp(*argv, "/l:", 3) == 0) {
-            strncpy(label, (*argv) + 3, FAT_LABEL_LEN);
-            label[FAT_LABEL_LEN] = 0;
-        } else {
-            snprintf(fat_format_msg, sizeof(fat_format_msg)-1,
-                TEXT("unknown option: %s"), *argv);
-            *msg = fat_format_msg;
-            result = FAILED;
-            goto done;
-        }
-        argv++;
-    }
-
-    flush_caches();
-    disk_lock(dinfo.disk);
-
-    /* set FAT type */
-    switch(p->os_id) {
-        case 0x0b00: case 0x0c00:
-        case 0x1b00: case 0x1c00:
-            sys_type = FAT_32;
-            break;
-        case 0x0400: case 0x0600: case 0x0e00:
-        case 0x1400: case 0x1600: case 0x1e00:
-            sys_type = FAT_16;
-            break;
-        case 0x0100: case 0x1100:
-            sys_type = FAT_12;
-            break;
-    }
-
-    if (sys_type == FAT_32) {
-        result = fat_initialize_bootrec(p, b, 512, FAT_32, label);
-        
-        if (result == FAT_ERR_TOO_SMALL) {
-            *msg = TEXT("^FAT-32 partition too small. Use FAT-16 instead!");
-            result = FAILED;
-            goto done;
-        }
-
-        fat32_initialize_ext_bootrec(b, eb);       
-    }
-    else if (sys_type == FAT_16) {
-        result = fat_initialize_bootrec(p, b, 512, FAT_16, label);
-        
-        if (result == FAT_ERR_TOO_SMALL) {
-            *msg = TEXT("FAT-16 partition too small. Use FAT-12 instead!");
-            result = FAILED;
-            goto done;
-        }
-        if (result == FAT_ERR_TOO_LARGE) {
-            *msg = TEXT("FAT-16 partition too large. Use FAT-32 instead!");
-            result = FAILED;
-            goto done;
-        }
-    }
-    else if (sys_type == FAT_12) {
-        result = fat_initialize_bootrec(p, b, 224, FAT_12, label);
-
-        if (result == FAT_ERR_TOO_SMALL) {
-            *msg = TEXT("FAT-12 partition too small!");
-            result = FAILED;
-            goto done;
-        }
-        if (result == FAT_ERR_TOO_LARGE) {
-            *msg = TEXT("FAT-12 partition too large. Use FAT-16 or FAT-32 instead!");
-            result = FAILED;
-            goto done;
-        }
-    }
-
-    progress("^Format: writing boot sector ...");
-    if (sys_type == FAT_32) {
-        result = disk_write_rel(p, 0, b, 3);
-        result |= disk_write_rel(p, FAT32_BACKUP_SECTOR, b, 3);
-    } else {
-        result = disk_write_rel(p, 0, b, 1);
-    }
-    if (result != OK) {
-        *msg = TEXT("error writing boot sector.");
-        goto done;        
-    }
-
-    result = fat_initialize_tables(p, b);        
-
-    if (result != OK) {
-        *msg = TEXT("error writing FAT");
-        goto done;
-    }
-
-    progress("^Format: writing root directory ...");
-    result = fat_initialize_root(p, b);
-    if (result != OK) {
-        *msg = TEXT("error writing root directory");
-        goto done;        
-    }
-
-    bbt_part = p;
-    bbt_boot = b;
-
-    if (form_type == F_VERIFY) {
-        progress("^Format: searching for bad sectors ...   you may skip this step via ESC");
-        result = part_verify_sectors(p, fat_non_data_sector_count(b),
-            fat_sector_count(b) - fat_non_data_sector_count(b), 
-            verify_progress, fat_bbt_track);
-
-        if (result == FAILED) {
-            if (fat_bad_sectors >= MAX_BAD_SECTORS) {
-                *msg = TEXT("too many bad clusters found");
-            }
-            else {
-                *msg = TEXT("could not verify sectors");
-            }
-            goto done;        
-        }
-    } else if (form_type == F_DESTR) {
-        progress("^Format: cleaning data area...           you may skip this step via ESC");
-        result = part_fill_sectors(p, fat_non_data_sector_count(b), fat_sector_count(b) - fat_non_data_sector_count(b), 0, write_progress, fat_bbt_track);
-        if (result == FAILED) {
-            *msg = TEXT("error cleaning data area");
-            goto done;        
-        }
-    }
-
-    progress("^Format: updating volume label ...");
-    result = fat_update_label_file(p, b);
-    if (result != OK) {
-        *msg = TEXT("error updating volume label");
-        goto done;        
-    }
-
-    if (fat_bad_sectors) {
-        *msg = TEXT("bad clusters found");
-        result = WARN;
-    }
-
-done:
-    /* flush FAT cache to disk */
-    cache_flush(&fat_table_cache[0]);
-    cache_flush(&fat_table_cache[1]);
-
-    disk_unlock(dinfo.disk);
-    free(data_pool);
-
-    return result;
-
-} /* format_fat */
+    return cache_flush(&fat_table_cache[1]);    
+}

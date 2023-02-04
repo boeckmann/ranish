@@ -17,6 +17,8 @@ enum {
 #define FAT16_INV_CLUSTER 0xFFF7
 #define FAT32_INV_CLUSTER 0xFFFFFFF7
 
+#define FAT32_BACKUP_SECTOR 6 /* location of second boot record copy */
+
 #define FAT_LABEL_LEN (sizeof ((struct boot_ms_dos *)(0))->x.f16.label)
 
 #define FAT_ERR_TOO_SMALL -1
@@ -187,7 +189,33 @@ unsigned long fat_cluster_count(struct boot_ms_dos *b);
 unsigned long fat_non_data_sector_count(struct boot_ms_dos *b);
 unsigned long fat_calc_hidden_sectors(struct part_long *p);
 
+unsigned long fat_cluster_to_sector(struct boot_ms_dos *b, unsigned long cluster);
+unsigned long fat_sector_to_cluster(struct boot_ms_dos *b, unsigned long sector);
+
+
+/* fat initialization routines */
+int fat_initialize_bootrec(struct part_long *p, struct boot_ms_dos *b,
+                           unsigned short root_entr,int fat_type,
+                           char label[]);
+void fat32_initialize_ext_bootrec(struct boot_ms_dos *b,
+                                  struct fat32_ext_bootrec *eb);
+int fat_initialize_tables(struct part_long *p, struct boot_ms_dos *b,
+    int (*write_progress)(unsigned long, unsigned long));
+int fat_initialize_root(struct part_long *p, struct boot_ms_dos *b);
+
+
+/* FAT table functions */
+int fat_get_table_entry(struct part_long *p, struct boot_ms_dos *b, 
+    unsigned short table_num, unsigned long cluster, unsigned long *value);
+int fat_set_table_entry(struct part_long *p, struct boot_ms_dos *b,
+    unsigned short table_num, unsigned long cluster, unsigned long value);
+
+
+/* label functions */
+char * fat_label(struct boot_ms_dos *b);
 void fat_canonicalize_label(char *label);
 int fat_update_label_file(struct part_long *p, struct boot_ms_dos *b);
+
+int fat_flush();
 
 #endif
