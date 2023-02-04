@@ -2,10 +2,10 @@
 #define CACHE_H
 
 typedef struct cache_block {
-	unsigned char data[SECT_SIZE];
-	struct part_long *part;
-	unsigned long sector;
-	unsigned char dirty;
+    unsigned char data[SECT_SIZE];
+    struct part_long *part;
+    unsigned long sector;
+    unsigned char dirty;
 } cache_block_t;
 
 
