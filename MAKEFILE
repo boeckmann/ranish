@@ -19,15 +19,13 @@ part_asm_objects = SCREEN.OBJ DISKIO.OBJ IPL.OBJ FAT_BOOT.OBJ
 part_asm_objects+= MANOUTER.OBJ
 part_objects     = $(part_c_objects) $(part_asm_objects)
 
-header_files = PART.H DISKIO.H SCREEN.H ALLOCS.H CACHE.H
-
 !ifdef DEBUG
 compiler_flags += -d2
 !endif
 
 all : PART.EXE
 
-PART.EXE : $(part_objects) $(header_files) PART.LNK
+PART.EXE : $(part_objects) PART.LNK
 	$(linker) @part
 
 PART.LNK : $(part_objects)
@@ -41,13 +39,13 @@ PART.LNK : $(part_objects)
 !endif
    @for %i in ($(part_objects)) do @echo FILE %i >>$^@
 
-.C.OBJ : $(header_files)
+.C.OBJ : .AUTODEPEND
    $(compiler) $(compiler_flags) $*.C
 
-.ASM.OBJ : 
+.ASM.OBJ : COLORS.INC
    $(assembler) $(assembler_flags_obj) $*.ASM -o $@
 
-MANOUTER.OBJ: MANAGE.BIN
+MANOUTER.OBJ : MANAGE.BIN
 
 MANAGE.BIN : MANAGE.ASM 
    $(assembler) $(assembler_flags_bin) $^*.ASM -o $@
@@ -58,10 +56,12 @@ MESG.EXE :  SUPPORT\MESG.C
 KEYCODES.EXE : SUPPORT\KEYCODES.C SCREEN.OBJ SCREEN.H
    $(compiler) $(compiler_flags) SUPPORT\KEYCODES.C SCREEN.OBJ
 
-RANISH.ZIP: PART.EXE PART.HTM LICENSE.TXT README.MD CHANGES.MD SOURCES.ZIP
+RANISH.ZIP : PART.EXE PART.HTM LICENSE.TXT README.MD CHANGES.MD SOURCES.ZIP
+   if exist RANISH.ZIP @rm RANISH.ZIP   
    zip $@ $< 
 
-SOURCES.ZIP:
+SOURCES.ZIP : *.C *.H *.ASM *.INC MAKEFILE
+   if exist SOURCES.ZIP @rm SOURCES.ZIP   
    zip $@ *.C *.H *.ASM *.INC MAKEFILE
 
 clean :  .SYMBOLIC
