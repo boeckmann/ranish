@@ -73,6 +73,26 @@ static int is_fat32(struct boot_ms_dos *b)
 }
 
 
+unsigned long fat_calc_hidden_sectors(struct part_long *p)
+{
+    struct part_long *q = p;
+    while (q) {
+        if (q->os_id == 0x0C00 ||
+            q->os_id == 0x0E00 ||
+            q->os_id == 0x0F00 ||
+            q->os_id == 0x1C00 ||
+            q->os_id == 0x1E00 ||
+            q->os_id == 0x1F00)
+        {
+            return p->rel_sect + p->container_base;
+        }
+
+        q = q->container;
+    }
+    return p->rel_sect;
+}
+
+
 /* returns the number of root sectors for FAT-16 or 0 for FAT-32 */
 static unsigned long fat_root_sector_count(struct boot_ms_dos *b)
 {

@@ -1,6 +1,13 @@
 #ifndef _DISKIO_H
 #define _DISKIO_H
 
+#define SYS_DOS     0  
+#define SYS_DOS5    1
+#define SYS_DOS7    2
+#define SYS_WIN3    3
+#define SYS_WIN9X   4
+#define SYS_WIN_NT  5
+
 #define SECT_SIZE 512 /* Must not be changed */
 
 struct disk_addr_chs
@@ -40,7 +47,7 @@ extern unsigned long reported_total_sectors;
 
 extern int lba_enabled; /* on=1 by default, set 0 th disable lba access */
 
-extern unsigned short int const detected_os;
+extern unsigned short detected_os;
 
 #define SYS_DOS    0 /* MS-DOS v1.00 - v4.xx 	*/
 #define SYS_DOS5   1 /* MS-DOS v5.00 - v6.xx 	*/

@@ -62,7 +62,7 @@ RANISH.ZIP: PART.EXE PART.HTM LICENSE.TXT README.MD CHANGES.MD SOURCES.ZIP
    zip $@ $< 
 
 SOURCES.ZIP:
-   zip $@ *.C *.H *.ASM MAKEFILE
+   zip $@ *.C *.H *.ASM *.INC MAKEFILE
 
 clean :  .SYMBOLIC
    if exist *.BAK @rm *.BAK

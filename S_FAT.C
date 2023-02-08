@@ -117,7 +117,11 @@ int format_fat(struct part_long *p, char **argv, char **msg)
     }
 
     flush_caches();
-    disk_lock(dinfo.disk);
+    if (disk_lock(dinfo.disk) != OK) {
+        *msg = "could not lock disk";
+        result = FAILED;
+        goto done;
+    }
 
     /* set FAT type */
     switch(p->os_id) {

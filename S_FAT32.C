@@ -12,25 +12,6 @@
 
 #define MBR_MAGIC_NUM32 0xAA55
 
-unsigned long fat_calc_hidden_sectors(struct part_long *p)
-{
-    struct part_long *q = p;
-    while (q) {
-        if (q->os_id == 0x0C00 ||
-            q->os_id == 0x0E00 ||
-            q->os_id == 0x0F00 ||
-            q->os_id == 0x1C00 ||
-            q->os_id == 0x1E00 ||
-            q->os_id == 0x1F00)
-        {
-            return p->rel_sect + p->container_base;
-        }
-
-        q = q->container;
-    }
-    return p->rel_sect;
-}
-
 /* according to Microsoft FAT specification */
 unsigned fat32_cluster_size(unsigned long sectors)
 {

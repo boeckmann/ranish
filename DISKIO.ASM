@@ -366,10 +366,10 @@ _disk_lock:
 		jb	.skip
 
 		mov	ax, 440Dh
-		mov	cx, 084Bh	; Lock phisical disk
+		mov	cx, 484Bh	; Lock phisical disk
 		mov	bl, [bp+.disk]
 		mov	bh, 1		; Lock level (0-3)
-		mov	dx, 0		; Device permissions
+		mov	dx, 2		; Device permissions
 		int	21h
 
 		mov	ax, -1
@@ -394,7 +394,7 @@ _disk_unlock:
 		jb	.skip
 
 		mov	ax, 440Dh
-		mov	cx, 086Bh	; Unlock phisical disk
+		mov	cx, 486Bh	; Unlock phisical disk
 		mov	bl, [bp+.disk]
 		int	21h
 
