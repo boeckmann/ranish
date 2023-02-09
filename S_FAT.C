@@ -83,7 +83,8 @@ int format_fat(struct part_long *p, char **argv, char **msg)
     struct boot_ms_dos *b;
     struct fat32_ext_bootrec *eb;
     unsigned long sys_type;
-
+    int logical_drive = 0;
+    
     char label[FAT_LABEL_LEN + 1] = "";
     unsigned int form_type  = F_VERIFY;
     fat_bad_sectors = 0;
@@ -148,6 +149,7 @@ int format_fat(struct part_long *p, char **argv, char **msg)
         }
 
         fat32_initialize_ext_bootrec(b, eb);       
+        logical_drive = fat32_find_logical_drive(p);
     }
     else if (sys_type == FAT_16) {
         result = fat_initialize_bootrec(p, b, 512, FAT_16, label);
@@ -245,11 +247,17 @@ int format_fat(struct part_long *p, char **argv, char **msg)
         result = WARN;
     }
 
-done:
     /* flush FAT cache to disk */
     if (result == OK) result = fat_flush();
     else fat_flush();
     
+    /* inform Win9x about formated drive */
+    if (sys_type == FAT_32 && detected_os == SYS_WIN9X && logical_drive) {
+        dos_set_fsinfo(logical_drive, eb->free_cluster_count, eb->next_free_cluster);
+        dos_force_media_change(logical_drive);
+    }
+    
+done:
     disk_unlock(dinfo.disk);
     free(data_pool);
 

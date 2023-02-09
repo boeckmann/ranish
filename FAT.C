@@ -1,7 +1,10 @@
 #include "part.h"
 #include "fat.h"
 #include "cache.h"
+#include "dosext.h"
+#include <stdio.h>
 #include <ctype.h>
+#include <dos.h>
 #include <string.h>
 #include <time.h>
 
@@ -10,6 +13,42 @@
 
 /* one block cache for two FAT tables to speed up things */
 static cache_block_t fat_table_cache[2];
+
+
+int fat32_find_logical_drive(struct part_long *p)
+{
+    struct boot_ms_dos *b;
+    struct dos_disk_info di;
+    unsigned curr_drv, last_drv;
+    int result = 0;
+    
+    b = malloc(sizeof(struct boot_ms_dos));
+    if (!b) return FAILED;
+
+    if (disk_read_rel(p, 0, b, 1) != OK) {
+        result = FAILED;
+        goto done;
+    }
+
+    _dos_getdrive(&curr_drv);
+    _dos_setdrive(curr_drv, &last_drv);
+
+    for (curr_drv = 3; curr_drv <= last_drv; curr_drv++) {
+        if (!dos_get_serial(curr_drv, &di)) {
+            printf("drive %c: %08lX\n", 'A' + curr_drv - 1, di.serial_number);
+            /* found valid logical drive */
+            if (b->x.f32.serial_num == di.serial_number)
+            {
+                result = curr_drv;
+                goto done;
+            }
+        }
+    }
+        
+done:
+    free(b);
+    return result;
+}
 
 /* according to Microsoft FAT specification */
 static unsigned short fat16_cluster_size(unsigned long sectors)

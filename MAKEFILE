@@ -14,7 +14,7 @@ linker_flags    =
 
 part_c_objects   = PART.OBJ PART_AUX.OBJ PART_GEN.OBJ PART_GUI.OBJ PART_HTM.OBJ DISKIOC.OBJ
 part_c_objects  += PART_IDE.OBJ PART_MSG.OBJ PARTTYPE.OBJ ALLOCS.OBJ
-part_c_objects  += FAT.OBJ S_FAT.OBJ S_FAT32.OBJ S_UNKNWN.OBJ CACHE.OBJ
+part_c_objects  += FAT.OBJ S_FAT.OBJ S_FAT32.OBJ S_UNKNWN.OBJ CACHE.OBJ DOSEXT.OBJ
 part_asm_objects = SCREEN.OBJ DISKIO.OBJ IPL.OBJ FAT_BOOT.OBJ
 part_asm_objects+= MANOUTER.OBJ
 part_objects     = $(part_c_objects) $(part_asm_objects)

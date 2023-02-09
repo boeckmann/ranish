@@ -192,6 +192,7 @@ unsigned long fat_calc_hidden_sectors(struct part_long *p);
 unsigned long fat_cluster_to_sector(struct boot_ms_dos *b, unsigned long cluster);
 unsigned long fat_sector_to_cluster(struct boot_ms_dos *b, unsigned long sector);
 
+int fat32_find_logical_drive(struct part_long *p);
 
 /* fat initialization routines */
 int fat_initialize_bootrec(struct part_long *p, struct boot_ms_dos *b,
