@@ -1,5 +1,6 @@
 #include "part.h"
 #include "fat.h"
+#include "dosext.h"
 #include "cache.h"
 #include <ctype.h>
 #include <string.h>

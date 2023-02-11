@@ -1,5 +1,10 @@
 # Change Log
 
+## Version 2.90.14 alpha
+### Bug Fixes
+ * CRITICAL: fix a fsinfo invalidation bug when formatting existing FAT-32 partitions under Win9x. The bug results from Win9x not being correctly notified about the format process and therefore writes back old free cluster count values to newly formatted partition.
+
+
 ## Version 2.90.13 alpha
 ### Bug Fixes
  * Prevent (non-saveable) overlapping of logical partition with extended if extended is the first entry in MBR.

@@ -35,7 +35,6 @@ int fat32_find_logical_drive(struct part_long *p)
 
     for (curr_drv = 3; curr_drv <= last_drv; curr_drv++) {
         if (!dos_get_serial(curr_drv, &di)) {
-            printf("drive %c: %08lX\n", 'A' + curr_drv - 1, di.serial_number);
             /* found valid logical drive */
             if (b->x.f32.serial_num == di.serial_number)
             {
