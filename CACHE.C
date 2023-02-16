@@ -1,39 +1,45 @@
-#include "part.h"
 #include "cache.h"
+#include "part.h"
 
-void cache_mark_dirty(cache_block_t *blk)
+void cache_mark_dirty( cache_block_t *blk ) { blk->dirty = 1; }
+
+int cache_flush( cache_block_t *blk )
 {
-    blk->dirty = 1;
+   if ( !blk->part ) {
+      return OK;
+   }
+
+   if ( blk->dirty ) {
+      if ( disk_write_rel( blk->part, blk->sector, blk->data, 1 ) ==
+           FAILED ) {
+         return FAILED;
+      }
+      blk->dirty = 0;
+   }
+
+   return OK;
 }
 
-int cache_flush(cache_block_t *blk)
+int in_cache( struct part_long *p, cache_block_t *blk, unsigned long sector )
 {
-    if (!blk->part) return OK;
-
-    if (blk->dirty) {
-        if (disk_write_rel(blk->part, blk->sector, blk->data, 1) == FAILED) return FAILED;
-        blk->dirty = 0;
-    }
-
-    return OK;
+   return blk->part == p && blk->sector == sector;
 }
 
-int in_cache(struct part_long *p, cache_block_t *blk, unsigned long sector)
+void *cache_read( struct part_long *p, cache_block_t *blk,
+                  unsigned long sector )
 {
-    return blk->part == p && blk->sector == sector;
+   if ( in_cache( p, blk, sector ) ) {
+      return blk->data;
+   }
+
+   cache_flush( blk );
+   blk->part = p;
+   if ( disk_read_rel( blk->part, sector, blk->data, 1 ) == FAILED ) {
+      return NULL;
+   }
+
+   blk->sector = sector;
+   blk->part = p;
+
+   return blk->data;
 }
-
-void * cache_read(struct part_long *p, cache_block_t *blk, unsigned long sector)
-{
-    if (in_cache(p, blk, sector)) return blk->data;
-
-    cache_flush(blk);
-    blk->part = p;
-    if (disk_read_rel(blk->part, sector, blk->data, 1) == FAILED) return NULL;
-
-    blk->sector = sector;
-    blk->part = p;
-
-    return blk->data;
-}
-

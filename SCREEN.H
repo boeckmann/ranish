@@ -46,24 +46,23 @@
 
 #define EV_NONBLOCK 16
 
-#define SCREEN_TICKS_PER_SEC  18.2
-#define SCREEN_TIMER(seconds) ((seconds)*18.2)
+#define SCREEN_TICKS_PER_SEC    18.2
+#define SCREEN_TIMER( seconds ) ( (seconds)*18.2 )
 
-struct event
-{
-    unsigned int ev_type; /* Type of returned event */
+struct event {
+   unsigned int ev_type; /* Type of returned event */
 
-    unsigned int key;    /* Ascii Code of a key */
-    unsigned int scan;   /* Scan & Ascii Codes of a key  */
-    unsigned int shift;  /* Status of Shift keys */
-    unsigned int shiftX; /* Only those flags are set which was changed */
+   unsigned int key;    /* Ascii Code of a key */
+   unsigned int scan;   /* Scan & Ascii Codes of a key  */
+   unsigned int shift;  /* Status of Shift keys */
+   unsigned int shiftX; /* Only those flags are set which was changed */
 
-    unsigned int x, y; /* Mouse position */
-    unsigned int left;
-    unsigned int right; /* 1 - if button pressed, 0 - if not */
-    unsigned int middle;
+   unsigned int x, y; /* Mouse position */
+   unsigned int left;
+   unsigned int right; /* 1 - if button pressed, 0 - if not */
+   unsigned int middle;
 
-    long timer; /* number of ticks to wait, if EV_TIMER was set */
+   long timer; /* number of ticks to wait, if EV_TIMER was set */
 };
 
 extern unsigned char const ScreenWidth;
@@ -71,32 +70,31 @@ extern unsigned char const ScreenHeight;
 extern unsigned int const MouseInstalled;
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
-    void __cdecl screen_init(void);
-    void __cdecl screen_exit(void);
+void __cdecl screen_init( void );
+void __cdecl screen_exit( void );
 
-    void __cdecl show_mouse(void);
-    void __cdecl hide_mouse(void);
-    void __cdecl move_mouse(int x, int y);
+void __cdecl show_mouse( void );
+void __cdecl hide_mouse( void );
+void __cdecl move_mouse( int x, int y );
 
-    void __cdecl move_cursor(int x, int y);
-    void __cdecl cursor_size(int top, int bottom);
+void __cdecl move_cursor( int x, int y );
+void __cdecl cursor_size( int top, int bottom );
 
-    void __cdecl get_event(struct event *ev, int flags);
+void __cdecl get_event( struct event *ev, int flags );
 
-    void __cdecl write_char(int attr, int x, int y, int ch);
-    void __cdecl write_string(int attr, int x, int y, char *str);
+void __cdecl write_char( int attr, int x, int y, int ch );
+void __cdecl write_string( int attr, int x, int y, char *str );
 
-    void __cdecl save_window(int x, int y, int w, int h, char *buf);
-    void __cdecl load_window(int x, int y, int w, int h, char *buf);
+void __cdecl save_window( int x, int y, int w, int h, char *buf );
+void __cdecl load_window( int x, int y, int w, int h, char *buf );
 
-    void __cdecl clear_window(int attr, int x, int y, int w, int h);
-    void __cdecl scroll_window(int attr, int x, int y, int w, int h, int len);
-    void __cdecl border_window(int attr, int x, int y, int w, int h,
-                               char *border);
+void __cdecl clear_window( int attr, int x, int y, int w, int h );
+void __cdecl scroll_window( int attr, int x, int y, int w, int h, int len );
+void __cdecl border_window( int attr, int x, int y, int w, int h,
+                            char *border );
 
 #ifdef __cplusplus
 }
