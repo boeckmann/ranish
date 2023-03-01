@@ -1279,7 +1279,9 @@ int setup_mbr( struct part_long *p )
                   part[row].start_cyl = part[row].container->start_cyl + 1;
                }
                if ( ABS_END_SECT( &part[row] ) >
-                    ABS_END_SECT( part[row].container ) ) {
+                    ABS_END_SECT( part[row].container ) ||
+                    ABS_END_SECT( &part[row] ) <
+                    ABS_END_SECT_MINUS_1( &part[row] )) {
                   part[row].end_cyl = part[row].container->end_cyl - 1;
                }
             }

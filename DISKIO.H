@@ -66,6 +66,10 @@ extern unsigned short detected_os;
    ( ( p )->end_cyl * dinfo.sect_per_cyl +                                   \
      ( p )->end_head * dinfo.sect_per_track + ( p )->end_sect - 1 )
 
+#define ABS_END_SECT_MINUS_1( p )                                            \
+   ( ( ( p )->end_cyl - 1 ) * dinfo.sect_per_cyl +                           \
+     ( p )->end_head * dinfo.sect_per_track + ( p )->end_sect - 1 )
+
 #define REL_SECT( p ) ( ABS_REL_SECT( p ) - ( p )->container_base )
 #define NUM_SECT( p ) ( ABS_END_SECT( p ) - ABS_REL_SECT( p ) + 1 )
 
