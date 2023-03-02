@@ -1,8 +1,14 @@
 # Change Log
 
+
+## Version 2.90.15 alpha
+### Bug Fixes
+ * Fix overflow at 2TiB barrier if partition is created in CHS mode.
+
+
 ## Version 2.90.14 alpha
 ### Bug Fixes
- * CRITICAL: fix a fsinfo invalidation bug when formatting existing FAT-32 partitions under Win9x. The bug results from Win9x not being correctly notified about the format process and therefore writes back old free cluster count values to newly formatted partition.
+ * CRITICAL: Fix a fsinfo invalidation bug when formatting existing FAT-32 partitions under Win9x. The bug results from Win9x not being correctly notified about the format process and therefore writes back old free cluster count values to newly formatted partition.
 
 
 ## Version 2.90.13 alpha

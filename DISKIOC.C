@@ -159,12 +159,6 @@ int disk_read( struct disk_addr *daddr, void *buf, int num_sect )
    struct disk_addr_chs chs;
    int result;
 
-#ifdef DEBUG_DISKIO
-   if ( f_diskio ) {
-      fprintf( f_diskio, "r: %lu, len %d\n", daddr->sect, num_sect );
-   }
-#endif
-
    /* uint32 overflow check */
    if ( daddr->sect + num_sect < daddr->sect ) {
       return FAILED;
@@ -178,6 +172,12 @@ int disk_read( struct disk_addr *daddr, void *buf, int num_sect )
       result = disk_read_chs( &chs, buf, num_sect );
    }
 
+#ifdef DEBUG_DISKIO
+   if ( f_diskio ) {
+      fprintf( f_diskio, "r: %lu, len %d, res %d\n", daddr->sect, num_sect, result );
+   }
+#endif
+
    return result;
 }
 
@@ -185,12 +185,6 @@ int disk_write( struct disk_addr *daddr, void *buf, int num_sect )
 {
    struct disk_addr_chs chs;
    int result;
-
-#ifdef DEBUG_DISKIO
-   if ( f_diskio ) {
-      fprintf( f_diskio, "W: %lu, len %d\n", daddr->sect, num_sect );
-   }
-#endif
 
    /* uint32 overflow check */
    if ( daddr->sect + num_sect < daddr->sect ) {
@@ -204,6 +198,12 @@ int disk_write( struct disk_addr *daddr, void *buf, int num_sect )
       lba_to_chs( daddr, &chs );
       result = disk_write_chs( &chs, buf, num_sect );
    }
+
+#ifdef DEBUG_DISKIO
+   if ( f_diskio ) {
+      fprintf( f_diskio, "W: %lu, len %d, res %d\n", daddr->sect, num_sect, result );
+   }
+#endif
 
    return result;
 }
