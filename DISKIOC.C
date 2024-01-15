@@ -91,7 +91,7 @@ int get_disk_info( int hd, struct disk_info *di, char *buf_4096 )
          if ( di->total_sects > 63ul * 128ul * 1024ul ) {
             di->num_heads = 255;
          }
-         else if ( di->total_sects > 63ul * 128ul * 1024ul ) {
+         else if ( di->total_sects > 63ul * 64ul * 1024ul ) {
             di->num_heads = 128;
          }
          else if ( di->total_sects > 63ul * 32ul * 1024ul ) {
@@ -104,7 +104,7 @@ int get_disk_info( int hd, struct disk_info *di, char *buf_4096 )
             di->num_heads = 16;
          }
       }
-
+      
       addr.disk = dinfo.disk;
       addr.sect = dinfo.total_sects - 1;
 
