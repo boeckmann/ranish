@@ -11,8 +11,8 @@
 #include "diskio.h"
 #include "screen.h"
 
-#define WEBSITE_URL    "https://codeberg.org/boeckmann/ranish"
-#define REPOSITORY_URL "https://codeberg.org/boeckmann/ranish"
+#define WEBSITE_URL    "https://github.com/boeckmann/ranish"
+#define REPOSITORY_URL "https://github.com/boeckmann/ranish"
 
 #define CHS_MAX_SECT 1024ul * 255ul * 63ul
 
