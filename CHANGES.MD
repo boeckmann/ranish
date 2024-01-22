@@ -1,5 +1,12 @@
 # Change Log
 
+## Version 2.90.16 beta
+### Bug Fixes
+ * Fix bug in BIOS assisted LBA geometry translation.
+
+### Changes
+ * Change all references to the codeberg repository to github.
+
 
 ## Version 2.90.15 alpha
 ### Bug Fixes

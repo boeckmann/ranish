@@ -1,6 +1,6 @@
 #include "part.h"
 
-#define VERSION_DATE "2.90.16 SMOKEY built " __DATE__
+#define VERSION_DATE "2.90.16 BETA   built " __DATE__
 #define VERSION      "2.90.16"
 
 
